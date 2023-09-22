@@ -11,19 +11,18 @@ add_library(${PROJECT_NAME} ${SRC_LIB_FILES})
 ### Start of PhysX stuff
 set(PHYSX_ROOT_DIR ${CMAKE_SOURCE_DIR}/physx)
 set(PHYSX_LIB_PATH ${PHYSX_ROOT_DIR}/bin/linux.clang/checked)
-include_directories(${PHYSX_ROOT_DIR}/include)
+include_directories(${PHYSX_ROOT_DIR}/include ${CMAKE_SOURCE_DIR}/lib/src)
 
 set(PHYSX_LIBRARIES
     ${PHYSX_LIB_PATH}/libPhysXExtensions_static_64.a 
     ${PHYSX_LIB_PATH}/libPhysX_static_64.a
-    ${PHYSX_LIB_PATH}/libPhysXPvdSDK_static_64.a
-    ${PHYSX_LIB_PATH}/libPhysXVehicle_static_64.a
-    ${PHYSX_LIB_PATH}/libPhysXVehicle2_static_64.a
-    ${PHYSX_LIB_PATH}/libPhysXCharacterKinematic_static_64.a
+    #${PHYSX_LIB_PATH}/libPhysXPvdSDK_static_64.a
+    #${PHYSX_LIB_PATH}/libPhysXVehicle_static_64.a
+    #${PHYSX_LIB_PATH}/libPhysXVehicle2_static_64.a
+    #${PHYSX_LIB_PATH}/libPhysXCharacterKinematic_static_64.a
     ${PHYSX_LIB_PATH}/libPhysXCooking_static_64.a
     ${PHYSX_LIB_PATH}/libPhysXCommon_static_64.a
     ${PHYSX_LIB_PATH}/libPhysXFoundation_static_64.a
-    ${PHYSX_LIB_PATH}/libSnippetRender_static_64.a
     #${PHYSX_LIB_PATH}/libPhysXGpu_64.so
     #${PHYSX_LIB_PATH}/libPVDRuntime_64.so
 )
@@ -54,5 +53,9 @@ set(MISC_LIBRARIES
     pthread
     dl
 )
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -O0")
 
 target_link_libraries(${PROJECT_NAME} ${MISC_LIBRARIES} ${PHYSX_LIBRARIES})

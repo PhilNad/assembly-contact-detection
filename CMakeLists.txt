@@ -4,4 +4,5 @@ cmake_minimum_required(VERSION 3.7)
 project(assembly-contact-detection)
 
 add_subdirectory(lib)
+add_subdirectory(test)
 add_subdirectory(python_bindings)
