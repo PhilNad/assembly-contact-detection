@@ -68,15 +68,14 @@ class ContactReportCallback: public PxSimulationEventCallback
             PxShape* shape0 = pair.shapes[0];
             PxShape* shape1 = pair.shapes[1];
             
-            //Get the objects
-            Object* obj0 = static_cast<Object*>(shape0->userData);
-            Object* obj1 = static_cast<Object*>(shape1->userData);
-            
             //Get the actors
             PxRigidActor* actor0 = shape0->getActor();
             PxRigidActor* actor1 = shape1->getActor();
             string id_obj0 = actor0->getName();
             string id_obj1 = actor1->getName();
+            //Get the objects
+            Object* obj0 = static_cast<Object*>(actor0->userData);
+            Object* obj1 = static_cast<Object*>(actor1->userData);
 
             //Get the contact points
 			PxU32 contactCount = pair.contactCount;
