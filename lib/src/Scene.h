@@ -40,4 +40,8 @@ class Scene
         void run_simulation(float /*dt*/, float /*end_time*/);
         vector<string> get_contacted_objects(string /*id*/);
         MatrixX3f get_contact_points(string /*id1*/, string /*id2*/);
+        MatrixX3f get_tri_vertices(string /*id*/);
+        MatrixX3i get_tri_triangles(string /*id*/);
+        MatrixX3f get_tetra_vertices(string /*id*/);
+        MatrixX4i get_tetra_indices(string /*id*/);
 };

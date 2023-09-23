@@ -25,6 +25,14 @@ PYBIND11_MODULE(assembly_cd, m) {
                 py::arg("target_object"))
         .def("get_contact_points", &Scene::get_contact_points, "Get the contact points between two objects.",
                 py::arg("id1"), 
-                py::arg("id2"));
+                py::arg("id2"))
+        .def("get_tri_vertices", &Scene::get_tri_vertices, "Get the triangle vertices of an object.",
+                py::arg("id"))
+        .def("get_tri_triangles", &Scene::get_tri_triangles, "Get the triangle indices of an object.",
+                py::arg("id"))
+        .def("get_tetra_vertices", &Scene::get_tetra_vertices, "Get the tetrahedron vertices of an object.",
+                py::arg("id"))
+        .def("get_tetra_indices", &Scene::get_tetra_indices, "Get the tetrahedron indices of an object.",
+                py::arg("id"));
 
 }

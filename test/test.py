@@ -5,7 +5,7 @@ import open3d as o3d
 import numpy as np
 import assembly_cd as acd
 
-vert = np.array([
+""" vert = np.array([
     [-1, -1, -1],
     [-1,  1, -1],
     [ 1,  1, -1],
@@ -38,9 +38,8 @@ tm.orient_triangles()
 print(np.asarray(tm.triangles))
 print('Volume: ', tm.get_volume())
 print('Water tight: ', tm.is_watertight())
-o3d.visualization.draw([tm])
+o3d.visualization.draw([tm]) """
 
-exit()
 
 cube1 = o3d.geometry.TriangleMesh.create_box(width=1.0, height=1.0, depth=1.0)
 cube1.scale(1, center=cube1.get_center())
@@ -76,6 +75,18 @@ physxScene.add_object("cone",
                         np.array([0, 0, 0]), #CoM is expressed wrt local frame 
                         "wood")
 
-physxScene.step_simulation(1/60)
-print(physxScene.get_contacted_objects("cube1"))
-print(physxScene.get_contacted_objects("cone"))
+""" vert = physxScene.get_tri_vertices("cube1")
+tri = physxScene.get_tri_triangles("cube1")
+tm = o3d.geometry.TriangleMesh()
+tm.vertices  = o3d.utility.Vector3dVector(vert)
+tm.triangles = o3d.utility.Vector3iVector(tri)
+o3d.visualization.draw([tm]) """
+
+vert = physxScene.get_tetra_vertices("cube1")
+tetra = physxScene.get_tetra_indices("cube1").astype(np.int64)
+tm = o3d.geometry.TetraMesh(o3d.utility.Vector3dVector(vert), o3d.utility.Vector4iVector(tetra))
+o3d.visualization.draw_geometries([tm])
+
+#physxScene.step_simulation(1/60)
+#print(physxScene.get_contacted_objects("cube1"))
+#print(physxScene.get_contacted_objects("cone"))

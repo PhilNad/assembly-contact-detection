@@ -677,6 +677,9 @@ void Scene::add_object(
     PxArray<PxConvexMeshDesc> convexMeshDescs;
     createThetrahedronSet(tetMeshVertices, tetMeshIndices, convexMeshDescs);
     
+    obj->set_tri_mesh(newSurfaceMesh);
+    obj->set_tetra_mesh(tetMeshVertices, tetMeshIndices);
+
     PxTolerancesScale scale;
     PxCookingParams params(scale);
     PxArray<PxShape*> convexShapes;
@@ -809,4 +812,52 @@ Matrix4f Scene::get_object_pose(string id)
             return obj->get_pose();
     cout << "Object with id " << id << " not found" << endl;
     return Matrix4f::Identity();
+}
+
+/// @brief Get the vertices of the triangle mesh of an object
+/// @param id unique identifier for the object
+/// @return Nx3 matrix representing the vertices of the object
+MatrixX3f Scene::get_tri_vertices(string id)
+{
+    for(const auto& obj : this->object_ptrs)
+        if(obj->get_id() == id)
+            return obj->get_tri_vertices();
+    cout << "Object with id " << id << " not found" << endl;
+    return MatrixX3f::Zero(0, 3);
+}
+
+/// @brief Get the triangles of the triangle mesh of an object
+/// @param id unique identifier for the object
+/// @return Mx3 matrix representing the triangles of the object
+MatrixX3i Scene::get_tri_triangles(string id)
+{
+    for(const auto& obj : this->object_ptrs)
+        if(obj->get_id() == id)
+            return obj->get_tri_triangles();
+    cout << "Object with id " << id << " not found" << endl;
+    return MatrixX3i::Zero(0, 3);
+}
+
+/// @brief Get the vertices of the tetrahedral mesh of an object
+/// @param id unique identifier for the object
+/// @return Nx3 matrix representing the vertices of the object
+MatrixX3f Scene::get_tetra_vertices(string id)
+{
+    for(const auto& obj : this->object_ptrs)
+        if(obj->get_id() == id)
+            return obj->get_tetra_vertices();
+    cout << "Object with id " << id << " not found" << endl;
+    return MatrixX3f::Zero(0, 3);
+}
+
+/// @brief Get the tetrahedra of the tetrahedral mesh of an object
+/// @param id unique identifier for the object
+/// @return Mx4 matrix representing the tetrahedra of the object
+MatrixX4i Scene::get_tetra_indices(string id)
+{
+    for(const auto& obj : this->object_ptrs)
+        if(obj->get_id() == id)
+            return obj->get_tetra_indices();
+    cout << "Object with id " << id << " not found" << endl;
+    return MatrixX4i::Zero(0, 4);
 }

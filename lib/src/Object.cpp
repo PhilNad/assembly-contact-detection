@@ -17,14 +17,61 @@ Object::Object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i triangles
 :
     id{id},
     pose{pose},
-    vertices{vertices},
-    triangles{triangles},
+    tri_vertices{vertices},
+    tri_triangles{triangles},
     is_fixed{is_fixed},
     mass{mass},
     com{com},
     material_name{material_name}
 {}
 Object::~Object(){}
+
+/// @brief Record the description of the tetrahedral mesh that represents the volume of the object
+/// @param vertices Vertices of the mesh
+/// @param indices Indices of the mesh, referring to the vertices, 4 per tetrahedron
+void Object::set_tetra_mesh(PxArray<PxVec3> vertices, PxArray<PxU32> indices)
+{
+    //Convert PxArray to Eigen Matrix
+    this->tetra_vertices.resize(vertices.size(), 3);
+    for (int i = 0; i < vertices.size(); i++) {
+        this->tetra_vertices(i, 0) = vertices[i].x;
+        this->tetra_vertices(i, 1) = vertices[i].y;
+        this->tetra_vertices(i, 2) = vertices[i].z;
+    }
+
+    this->tetra_indices.resize(indices.size()/4, 4);
+    for (int i = 0; i < indices.size()/4; i++) {
+        this->tetra_indices(i, 0) = indices[i*4+0];
+        this->tetra_indices(i, 1) = indices[i*4+1];
+        this->tetra_indices(i, 2) = indices[i*4+2];
+        this->tetra_indices(i, 3) = indices[i*4+3];
+        cout << indices[i*4+0] << " " << indices[i*4+1] << " " << indices[i*4+2] << " " << indices[i*4+3] << endl;
+    }
+}
+
+/// @brief Record the description of the triangle mesh that represents the surface of the object
+/// @param simpleTriMesh Triangle mesh
+void Object::set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh)
+{
+    //Convert PxSimpleTriangleMesh to Eigen Matrix
+    this->tri_vertices.resize(simpleTriMesh.points.count, 3);
+    for (int i = 0; i < simpleTriMesh.points.count/3; i++) {
+        PxVec3* data;
+        data = (PxVec3*)simpleTriMesh.points.data;
+        this->tri_vertices(i, 0) = data->x;
+        this->tri_vertices(i, 1) = data->y;
+        this->tri_vertices(i, 2) = data->z;
+    }
+
+    this->tri_triangles.resize(simpleTriMesh.triangles.count, 3);
+    PxU32* data;
+    data = (PxU32*)simpleTriMesh.triangles.data;
+    for (int i = 0; i < simpleTriMesh.triangles.count/3; i++) {
+        this->tri_triangles(i, 0) = data[i*3+0];
+        this->tri_triangles(i, 1) = data[i*3+1];
+        this->tri_triangles(i, 2) = data[i*3+2];
+    }
+}
 
 /// @brief Get the id of the object
 /// @return id of the object
@@ -42,16 +89,30 @@ Matrix4f Object::get_pose()
 
 /// @brief Get the vertices of the object
 /// @return Nx3 matrix representing the vertices of the object
-MatrixX3f Object::get_vertices()
+MatrixX3f Object::get_tri_vertices()
 {
-    return this->vertices;
+    return this->tri_vertices;
 }
 
 /// @brief Get the triangles of the object
 /// @return Mx3 matrix representing the triangles of the object
-MatrixX3i Object::get_triangles()
+MatrixX3i Object::get_tri_triangles()
 {
-    return this->triangles;
+    return this->tri_triangles;
+}
+
+/// @brief Get the vertices of the tetrahedral mesh that represents the volume of the object
+/// @return Nx3 matrix representing the vertices 
+MatrixX3f Object::get_tetra_vertices()
+{
+    return this->tetra_vertices;
+}
+
+/// @brief Get the indices of the tetrahedral mesh that represents the volume of the object
+/// @return Mx4 matrix representing the indices
+MatrixX4i Object::get_tetra_indices()
+{
+    return this->tetra_indices;
 }
 
 /// @brief Get whether the object is fixed in space
@@ -93,14 +154,14 @@ void Object::set_pose(Matrix4f pose)
 /// @param vertices Nx3 matrix representing the vertices of the object
 void Object::set_vertices(MatrixX3f vertices)
 {
-    this->vertices = vertices;
+    this->tri_vertices = vertices;
 }
 
 /// @brief Set the triangles of the object
 /// @param triangles Mx3 matrix representing the triangles of the object
 void Object::set_triangles(MatrixX3i triangles)
 {
-    this->triangles = triangles;
+    this->tri_triangles = triangles;
 }
 
 /// @brief Set whether the object is fixed in space
@@ -131,12 +192,12 @@ void Object::set_material_name(string material_name)
     this->material_name = material_name;
 }
 
-/// @brief Get the vertices of the object in world coordinates
+/// @brief Get the vertices of the triangle mesh in world coordinates
 /// @return Nx3 matrix representing the vertices of the object in world coordinates
 MatrixX3f Object::get_world_vertices()
 {
     Matrix3f R = this->pose.block<3, 3>(0, 0);
     Vector3f t = this->pose.block<3, 1>(0, 3);
-    MatrixX3f vert_wrt_world = (R * this->vertices.transpose()).transpose().rowwise() + t.transpose();
+    MatrixX3f vert_wrt_world = (R * this->tri_vertices.transpose()).transpose().rowwise() + t.transpose();
     return vert_wrt_world;
 }
