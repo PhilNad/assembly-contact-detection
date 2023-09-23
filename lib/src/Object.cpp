@@ -22,7 +22,8 @@ Object::Object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i triangles
     is_fixed{is_fixed},
     mass{mass},
     com{com},
-    material_name{material_name}
+    material_name{material_name},
+    max_separation{0.01f}
 {}
 Object::~Object(){}
 
@@ -141,6 +142,13 @@ Vector3f Object::get_com()
 string Object::get_material_name()
 {
     return this->material_name;
+}
+
+/// @brief Set the maximal distance from the object to a valid contact point
+/// @param max_separation Distance in the object's units
+void Object::set_max_separation(float max_separation)
+{
+    this->max_separation = abs(max_separation);
 }
 
 /// @brief Set the pose of the object

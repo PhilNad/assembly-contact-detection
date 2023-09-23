@@ -97,10 +97,12 @@ class ContactReportCallback: public PxSimulationEventCallback
                     PxReal sep = contactPoints[j].separation;
                     PxVec3 normal = contactPoints[j].normal;
                     //Create a contact instance and add it to the list of contact points
-                    Contact contact(id_obj0, id_obj1, pos, normal, sep);
-                    gContacts.push_back(contact);
-                    //Add the contact position to the list of contact positions
-					gContactPositions.push_back(contactPoints[j].position);
+                    if(abs(sep) < min(obj0->max_separation, obj1->max_separation)){
+                        Contact contact(id_obj0, id_obj1, pos, normal, sep);
+                        gContacts.push_back(contact);
+                        //Add the contact position to the list of contact positions
+                        gContactPositions.push_back(contactPoints[j].position);
+                    }
 				}
 			}
 		}
@@ -129,7 +131,7 @@ void Scene::startupPhysics()
     sceneDesc.simulationEventCallback = gContactReportCallback;
     //When getting more contact points matters, its better to disable PCM.
     // See: https://nvidia-omniverse.github.io/PhysX/physx/5.2.1/docs/AdvancedCollisionDetection.html#persistent-contact-manifold-pcm
-    //sceneDesc.flags &= ~PxSceneFlag::eENABLE_PCM;
+    sceneDesc.flags &= ~PxSceneFlag::eENABLE_PCM;
 
     gScene = gPhysics->createScene(sceneDesc);
     gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.1f);

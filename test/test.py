@@ -82,11 +82,16 @@ tm.vertices  = o3d.utility.Vector3dVector(vert)
 tm.triangles = o3d.utility.Vector3iVector(tri)
 o3d.visualization.draw([tm]) """
 
-vert = physxScene.get_tetra_vertices("cube1")
+""" vert = physxScene.get_tetra_vertices("cube1")
 tetra = physxScene.get_tetra_indices("cube1").astype(np.int64)
 tm = o3d.geometry.TetraMesh(o3d.utility.Vector3dVector(vert), o3d.utility.Vector4iVector(tetra))
-o3d.visualization.draw_geometries([tm])
+o3d.visualization.draw_geometries([tm]) """
 
-#physxScene.step_simulation(1/60)
+physxScene.step_simulation(1/60)
 #print(physxScene.get_contacted_objects("cube1"))
 #print(physxScene.get_contacted_objects("cone"))
+
+contact_points = physxScene.get_contact_points("cube1", "cone")
+contact_point_cloud = o3d.geometry.PointCloud()
+contact_point_cloud.points = o3d.utility.Vector3dVector(contact_points)
+o3d.visualization.draw([cube1, cone, contact_point_cloud])

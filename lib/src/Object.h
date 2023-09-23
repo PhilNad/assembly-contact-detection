@@ -25,6 +25,7 @@ class Object
         string material_name;
     public:
         string id;
+        float max_separation;
         Object(
             string /*id*/, 
             Matrix4f /*pose*/, 
@@ -46,6 +47,7 @@ class Object
         float get_mass();
         Vector3f get_com();
         string get_material_name();
+        void set_max_separation(float /*max_separation*/);
         void set_pose(Matrix4f /*pose*/);
         void set_vertices(MatrixX3f /*vertices*/);
         void set_triangles(MatrixX3i /*triangles*/);
