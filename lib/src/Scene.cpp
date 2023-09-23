@@ -213,64 +213,35 @@ MatrixX3f Scene::get_contact_points(string id1, string id2)
     return contact_points_matrix;
 }
 
-/// @brief  Create a set of convex PxShapes from a tetrahedron mesh.
-/// @param tetMeshVertices Points of the tetrahedron mesh expressed in the reference frame of the actor/object.
-/// @param tetMeshIndices For each tetrahedron, the indices of the four vertices.
-/// @return Array of PxShapes that can be attached to an actor.
-void Scene::shapesFromTetMesh(PxArray<PxVec3>* tetMeshVertices, PxArray<PxU32>* tetMeshIndices, PxArray<PxShape>* outShapes)
+/// @brief Iterates over the vertices and triangles of a PxTriangleMesh and stores them in supplied arrays
+/// @param triMesh The triangle mesh to extract the vertices and triangles from
+/// @param triVerts Array to store the vertices in
+/// @param triIndices Array to store the indices in
+void get_triangles_from_trimesh(PxTriangleMesh* triMesh, PxArray<PxVec3>& triVerts, PxArray<PxU32>& triIndices)
 {
-    // PxTolerancesScale scale;
-    // PxCookingParams params(scale);
+    const PxVec3* triMeshVertices = triMesh->getVertices();
+    for(int i = 0; i < triMesh->getNbVertices(); i++){
+        triVerts.pushBack(triMeshVertices[i]);
+    }
+    const void* idxBuffer = triMesh->getTriangles();
+    PxTriangleMeshFlags flags = triMesh->getTriangleMeshFlags();
+    const PxU32* remapTable = triMesh->getTrianglesRemap();
     
-    // for(PxArray<PxU32>::Iterator it = tetMeshIndices.begin(); it != tetMeshIndices.end(); ++it)
-    // {
-    //     PxU32 indices;
-    // }
-
-    // PxDefaultMemoryOutputStream writeBuffer;
-    // PxTriangleMeshCookingResult::Enum result;
-
-    // bool status = PxCookConvexMesh(params, meshDesc, writeBuffer);
-    // if(!status)
-    //     throw runtime_error("Error cooking mesh");
-
-    // PxDefaultMemoryInputData readBuffer(writeBuffer.getData(), writeBuffer.getSize());
-    // PxConvexMesh* trimesh = gPhysics->createConvexMesh(readBuffer);
-
-    // //The shape has to be exclusive (hence the "true") such that it is guaranteed to be
-    // // associated with only one actor. That way, the actor can be retrieved from the shape
-    // // in the contact report callback.
-    // PxShape* shape = gPhysics->createShape(PxConvexMeshGeometry(trimesh), *gMaterial, true);
-    // shapes.pushBack(*shape);
-}
-
-void createCube(PxArray<PxVec3>& triVerts, PxArray<PxU32>& triIndices, const PxVec3& pos, PxReal scaling)
-{
-	triVerts.clear();
-	triIndices.clear();
-	triVerts.pushBack(scaling * PxVec3(0.5f, -0.5f, -0.5f) + pos);  //0
-	triVerts.pushBack(scaling * PxVec3(0.5f, -0.5f, 0.5f) + pos);   //1
-	triVerts.pushBack(scaling * PxVec3(-0.5f, -0.5f, 0.5f) + pos);  //2
-	triVerts.pushBack(scaling * PxVec3(-0.5f, -0.5f, -0.5f) + pos); //3
-	triVerts.pushBack(scaling * PxVec3(0.5f, 0.5f, -0.5f) + pos);   //4
-	triVerts.pushBack(scaling * PxVec3(0.5f, 0.5f, 0.5f) + pos);    //5
-	triVerts.pushBack(scaling * PxVec3(-0.5f, 0.5f, 0.5f) + pos);   //6
-	triVerts.pushBack(scaling * PxVec3(-0.5f, 0.5f, -0.5f) + pos);  //7
-
-	triIndices.pushBack(1); triIndices.pushBack(2); triIndices.pushBack(3);
-	triIndices.pushBack(7); triIndices.pushBack(6); triIndices.pushBack(5);
-	triIndices.pushBack(4); triIndices.pushBack(5); triIndices.pushBack(1);
-	triIndices.pushBack(5); triIndices.pushBack(6); triIndices.pushBack(2);
-
-	triIndices.pushBack(2); triIndices.pushBack(6); triIndices.pushBack(7);
-	triIndices.pushBack(0); triIndices.pushBack(3); triIndices.pushBack(7);
-	triIndices.pushBack(0); triIndices.pushBack(1); triIndices.pushBack(3);
-	triIndices.pushBack(4); triIndices.pushBack(7); triIndices.pushBack(5);
-
-	triIndices.pushBack(0); triIndices.pushBack(4); triIndices.pushBack(1);
-	triIndices.pushBack(1); triIndices.pushBack(5); triIndices.pushBack(2);
-	triIndices.pushBack(3); triIndices.pushBack(2); triIndices.pushBack(7);
-	triIndices.pushBack(4); triIndices.pushBack(0); triIndices.pushBack(7);
+    if(flags.isSet(PxTriangleMeshFlag::e16_BIT_INDICES)){
+        for(int i = 0; i < triMesh->getNbTriangles(); i++){
+            const physx::PxU16* triMeshIndices = reinterpret_cast<const physx::PxU16*>(idxBuffer);
+            triIndices.pushBack(static_cast<const PxU16*>(triMeshIndices)[i*3]);
+            triIndices.pushBack(static_cast<const PxU16*>(triMeshIndices)[i*3+1]);
+            triIndices.pushBack(static_cast<const PxU16*>(triMeshIndices)[i*3+2]);
+        }
+    }else{
+        for(int i = 0; i < triMesh->getNbTriangles(); i++){
+            const physx::PxU32* triMeshIndices = reinterpret_cast<const physx::PxU32*>(idxBuffer);
+            triIndices.pushBack(static_cast<const PxU32*>(triMeshIndices)[i*3]);
+            triIndices.pushBack(static_cast<const PxU32*>(triMeshIndices)[i*3+1]);
+            triIndices.pushBack(static_cast<const PxU32*>(triMeshIndices)[i*3+2]);
+        }
+    }
 }
 
 /// @brief Check the triangle mesh for any common issues that the tetrahedron meshing algorithm cannot handle.
@@ -573,95 +544,6 @@ void Scene::add_object(
     // It can also alleviate the problem of eCONTAINS_ACUTE_ANGLED_TRIANGLES.
     PxTetMaker::simplifyTriangleMesh(remeshVerts, remeshIndices, 100, 0, simplifiedVerts, simplifiedIndices);
 
-    /*
-
-    PxTriangleMeshDesc meshDesc;
-    //PxConvexMeshDesc meshDesc;
-    PxU32 numVertices = static_cast<uint32_t>(vertices.rows());
-    meshDesc.points.count           = numVertices;
-    meshDesc.points.stride          = sizeof(PxVec3);
-    PxVec3* pxVertices = new PxVec3[numVertices];
-    for (PxU32 i = 0; i < numVertices; i++)
-    {
-        pxVertices[i] = PxVec3(vertices(i, 0), vertices(i, 1), vertices(i, 2));
-    }
-    meshDesc.points.data            = pxVertices;
-
-    PxU32 numTriangles = static_cast<uint32_t>(triangles.rows());
-    meshDesc.triangles.count        = numTriangles;
-    meshDesc.triangles.stride       = 3*sizeof(PxU32);
-    PxU32* pxTriangles = new PxU32[numTriangles*3];
-    for (PxU32 i = 0; i < numTriangles; i++)
-    {
-        pxTriangles[i*3]    = triangles(i, 0);
-        pxTriangles[i*3+1]  = triangles(i, 1);
-        pxTriangles[i*3+2]  = triangles(i, 2);
-    }
-    meshDesc.triangles.data         = pxTriangles;
-    //meshDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX;
-
-    PxTolerancesScale scale;
-    PxCookingParams params(scale);
-    PxDefaultMemoryOutputStream writeBuffer;
-    PxDefaultMemoryInputData readBuffer = PxDefaultMemoryInputData(writeBuffer.getData(), writeBuffer.getSize());
-    PxTriangleMeshCookingResult::Enum result;
-
-    //Create a tetrahedron mesh from the surface mesh
-    //PxSimpleTriangleMesh surfaceMesh;
-    //surfaceMesh.points      = meshDesc.points;
-    //surfaceMesh.triangles   = meshDesc.triangles;
-
-    //Cooking the triangle mesh will make sure it is adequate for further processing.
-    bool status = PxCookTriangleMesh(params, meshDesc, writeBuffer);
-    if(!status)
-        throw runtime_error("Error cooking mesh");
-
-    PxDefaultMemoryInputData buffer(writeBuffer.getData(), writeBuffer.getSize());
-    PxTriangleMesh* triMesh = gPhysics->createTriangleMesh(buffer);
-
-    triVerts.clear();
-	triIndices.clear();
-
-    const PxVec3* triMeshVertices = triMesh->getVertices();
-    for(int i = 0; i < triMesh->getNbVertices(); i++){
-        triVerts.pushBack(triMeshVertices[i]);
-    }
-    const void* idxBuffer = triMesh->getTriangles();
-    PxTriangleMeshFlags flags = triMesh->getTriangleMeshFlags();
-    const PxU32* remapTable = triMesh->getTrianglesRemap();
-    
-    if(flags.isSet(PxTriangleMeshFlag::e16_BIT_INDICES)){
-        for(int i = 0; i < triMesh->getNbTriangles(); i++){
-            const physx::PxU16* triMeshIndices = reinterpret_cast<const physx::PxU16*>(idxBuffer);
-            triIndices.pushBack(static_cast<const PxU16*>(triMeshIndices)[i*3]);
-            triIndices.pushBack(static_cast<const PxU16*>(triMeshIndices)[i*3+1]);
-            triIndices.pushBack(static_cast<const PxU16*>(triMeshIndices)[i*3+2]);
-        }
-    }else{
-        for(int i = 0; i < triMesh->getNbTriangles(); i++){
-            const physx::PxU32* triMeshIndices = reinterpret_cast<const physx::PxU32*>(idxBuffer);
-            triIndices.pushBack(static_cast<const PxU32*>(triMeshIndices)[i*3]);
-            triIndices.pushBack(static_cast<const PxU32*>(triMeshIndices)[i*3+1]);
-            triIndices.pushBack(static_cast<const PxU32*>(triMeshIndices)[i*3+2]);
-        }
-    }
-
-    // for(int i = 0; i < vertices.rows(); i++){
-    //     triVerts.pushBack(PxVec3(vertices(i, 0), vertices(i, 1), vertices(i, 2)));
-    // }
-    // for(int i = 0; i < triangles.rows(); i++){
-    //     triIndices.pushBack(triangles(i, 0));
-    //     triIndices.pushBack(triangles(i, 1));
-    //     triIndices.pushBack(triangles(i, 2));
-    // }
-    PxSimpleTriangleMesh surfaceMesh;
-	surfaceMesh.points.count = triVerts.size();
-	surfaceMesh.points.data = triVerts.begin();
-	surfaceMesh.triangles.count = triIndices.size() / 3;
-	surfaceMesh.triangles.data = triIndices.begin();
-
-    */
-
     PxSimpleTriangleMesh newSurfaceMesh;
 	newSurfaceMesh.points.count = simplifiedVerts.size();
 	newSurfaceMesh.points.data = simplifiedVerts.begin();
@@ -679,6 +561,7 @@ void Scene::add_object(
     PxArray<PxConvexMeshDesc> convexMeshDescs;
     createThetrahedronSet(tetMeshVertices, tetMeshIndices, convexMeshDescs);
     
+    //Record the triangle mesh and tetrahedron mesh in the object
     obj->set_tri_mesh(newSurfaceMesh);
     obj->set_tetra_mesh(tetMeshVertices, tetMeshIndices);
 
@@ -687,7 +570,6 @@ void Scene::add_object(
     PxArray<PxShape*> convexShapes;
     //Create a shape from each mesh description.
     for(int i = 0; i < convexMeshDescs.size(); i++){
-        cout << "Creating shape " << i << endl;
         PxConvexMeshDesc convexMeshDesc = convexMeshDescs[i];
         PxShape* convexShape = createTetrahedronShape(params, convexMeshDesc);
         //Assign a pointer to the object such that it can be retrieved in the contact report callback.
@@ -695,72 +577,11 @@ void Scene::add_object(
         //And also set the name of the shape as the object id.
         convexShape->setName(obj->id.c_str());
         convexShapes.pushBack(convexShape);
-        /*
-        //Cook the convex mesh
-        PxConvexMeshCookingResult::Enum result;
-        PxDefaultMemoryOutputStream buf;
-        if(!PxCookConvexMesh(params, convexMeshDesc, buf, &result))
-            throw runtime_error("Error cooking mesh");
-
-        //writeBuffer = PxDefaultMemoryOutputStream();
-        //readBuffer  = PxDefaultMemoryInputData(writeBuffer.getData(), writeBuffer.getSize());
-        //PxConvexMesh* convexMesh = gPhysics->createConvexMesh(readBuffer);
-
-        PxDefaultMemoryInputData input(buf.getData(), buf.getSize());
-        PxConvexMesh* convexMesh = gPhysics->createConvexMesh(input);
-
-        //WARNING: I had no luck in making below function work as it always complained about
-        // physx/source/geomutils/src/cooking/GuCookingConvexHullBuilder.cpp#L479
-        //bool res = PxValidateConvexMesh(params, convexMeshDesc);
-
-        //Create convex mesh without cooking
-        //PxConvexMesh* convexMesh = PxCreateConvexMesh(params, convexMeshDesc, gPhysics->getPhysicsInsertionCallback());
-        if(!convexMesh)
-            throw runtime_error("Error creating mesh");
-
-        //Create a shape from the convex mesh
-        // The shape has to be exclusive (hence the "true") such that it is guaranteed to be
-        // associated with only one actor. That way, the actor can be retrieved from the shape
-        // in the contact report callback.
-        PxConvexMeshGeometry convexGeometry = PxConvexMeshGeometry(convexMesh);
-        bool isValid = convexGeometry.isValid();
-        if(!isValid)
-            throw runtime_error("Invalid convex mesh geometry");
-        PxShape* convexShape = gPhysics->createShape(convexGeometry, *gMaterial, true);
-        convexShapes.pushBack(convexShape);
-        */
+        //Assign the maximal distance at which a contact can be made between the object and another object.
+        convexShape->setContactOffset(obj->max_separation);
     }
 
-    /*
-    PxTetrahedronMeshDesc tetMeshDesc = PxTetrahedronMeshDesc(tetMeshVertices, tetMeshIndices);
-    status = PxCookTetrahedronMesh(params, tetMeshDesc, writeBuffer);
-    if(!status)
-        throw runtime_error("Error cooking mesh");
-    readBuffer = PxDefaultMemoryInputData(writeBuffer.getData(), writeBuffer.getSize());
-    PxTetrahedronMesh* tetMesh = gPhysics->createTetrahedronMesh(readBuffer);
-    PxShape* tetShape = gPhysics->createShape(PxTetrahedronMeshGeometry(tetMesh), *gMaterial, true);
-
-    //PxSoftBodyMesh* softBodyMesh = PxSoftBodyExt::createSoftBodyMeshNoVoxels(params, surfaceMesh, gPhysics->getPhysicsInsertionCallback());
-    //PxTetrahedronMeshGeometry tetGeometry(softBodyMesh->getCollisionMesh());
-
-    //bool status = PxCookConvexMesh(params, meshDesc, writeBuffer);
-    status = PxCookTriangleMesh(params, meshDesc, writeBuffer);
-    if(!status)
-        throw runtime_error("Error cooking mesh");
-
-    readBuffer = PxDefaultMemoryInputData(writeBuffer.getData(), writeBuffer.getSize());
-    PxTriangleMesh* trimesh = gPhysics->createTriangleMesh(readBuffer);
-    //PxConvexMesh* trimesh = gPhysics->createConvexMesh(readBuffer);
-
-    //The shape has to be exclusive (hence the "true") such that it is guaranteed to be
-    // associated with only one actor. That way, the actor can be retrieved from the shape
-    // in the contact report callback.
-    PxShape* shape = gPhysics->createShape(PxTriangleMeshGeometry(trimesh), *gMaterial, true);
-    //PxShape* shape = gPhysics->createShape(PxConvexMeshGeometry(trimesh), *gMaterial, true);
-    
-    shape->userData = obj.get();
-    shape->setName(obj->id.c_str());
-    */
+    //Pose of the object/actor with respect to the world frame
     PxTransform pxPose = PxTransform(PxMat44(
         PxVec4(pose(0, 0), pose(0, 1), pose(0, 2), pose(0, 3)),
         PxVec4(pose(1, 0), pose(1, 1), pose(1, 2), pose(1, 3)),
@@ -768,13 +589,13 @@ void Scene::add_object(
         PxVec4(pose(3, 0), pose(3, 1), pose(3, 2), pose(3, 3))
     ));
     
+    //If the object is fixed, there is no dynamics involved
     if(is_fixed){
         PxRigidStatic* actor = gPhysics->createRigidStatic(pxPose);
         //Attach all shapes in the object to the actor
         for(int i = 0; i < convexShapes.size(); i++){
             actor->attachShape(*convexShapes[i]);
         }
-        //actor->attachShape(*shape);
         gScene->addActor(*actor);
         actor->setName(obj->id.c_str());
         actor->userData = obj.get();
@@ -792,7 +613,6 @@ void Scene::add_object(
         for(int i = 0; i < convexShapes.size(); i++){
             actor->attachShape(*convexShapes[i]);
         }
-        //actor->attachShape(*shape);
         PxVec3 pxCom = PxVec3(com(0), com(1), com(2));
         //PxRigidBodyExt::setMassAndUpdateInertia(*actor, mass, &pxCom, true);
         actor->setMass(mass);

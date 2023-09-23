@@ -23,7 +23,7 @@ Object::Object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i triangles
     mass{mass},
     com{com},
     material_name{material_name},
-    max_separation{0.01f}
+    max_separation{0.04f}
 {}
 Object::~Object(){}
 
