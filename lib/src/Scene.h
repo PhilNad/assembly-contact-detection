@@ -9,6 +9,7 @@ class Scene;
 #include <eigen3/Eigen/Eigen>
 #include "Object.h"
 #include "Contact.h"
+#include "OccupancyGrid.h"
 
 using namespace std;
 using namespace Eigen;

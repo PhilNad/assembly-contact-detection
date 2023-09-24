@@ -14,26 +14,27 @@ class GridCell
 {
     public:
         uint32_t id;
-        vector<float> position;
-        vector<float> normal;
-        vector<float> half_extents;
-        vector<float> centre;
-        GridCell(uint32_t id, vector<float> position, vector<float> normal, vector<float> cell_size, vector<float> cell_centre);
+        Vector3f position;
+        Vector3f normal;
+        Vector3f half_extents;
+        Vector3f centre;
+        GridCell(uint32_t id, const Vector3f& position, const Vector3f& normal, const Vector3f& cell_size, const Vector3f& cell_centre);
 };
 
 class OccupancyGrid
 {
     private:
-        vector<float> bb_origin;
-        vector<float> bb_extents;
-        vector<float> cell_size;
-        vector<float> resolution;
+        Vector3f bb_origin;
+        Vector3f bb_extents;
+        Vector3f cell_size;
+        int resolution;
         vector<GridCell> grid_cells;
-        Vector3f OccupancyGrid::cell_centre(uint32_t idx);
+        Vector3f cell_centre(uint32_t idx);
+        vector<Vector3f> sample_points_in_triangle(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2);
     public:
-        uint32_t idx_cell_at(Vector3f point);
-        Vector3f reverse_cell_idx(uint32_t idx);
+        uint32_t idx_cell_at(const Vector3f& point);
+        vector<int> reverse_cell_idx(uint32_t idx);
         vector<GridCell> get_grid_cells();
-        bool is_cell_occupied(Vector3f point);
-        OccupancyGrid(MatrixX3f vertices, MatrixX3i triangles, float resolution);
+        bool is_cell_occupied(const Vector3f& point);
+        OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangles, int resolution);
 };

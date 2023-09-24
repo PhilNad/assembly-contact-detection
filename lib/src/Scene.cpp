@@ -431,20 +431,20 @@ void createThetrahedronSet(PxArray<PxVec3> tetVertices, PxArray<PxU32> tetIndice
         // although we produce the exact same mesh as when using eCOMPUTE_CONVEX.
         convexDesc.flags                    |= PxConvexFlag::eDISABLE_MESH_VALIDATION;
 
-        cout << "Vertices: " << endl;
-        for(int i=0; i < convexDesc.points.count; i++){
-            cout << "    " << vertices[i].x << ", " << vertices[i].y << ", " << vertices[i].z << endl;
-        }
+        // cout << "Vertices: " << endl;
+        // for(int i=0; i < convexDesc.points.count; i++){
+        //     cout << "    " << vertices[i].x << ", " << vertices[i].y << ", " << vertices[i].z << endl;
+        // }
 
-        cout << "Planes: " << endl;
-        for(int i=0; i < convexDesc.polygons.count; i++){
-            cout << "    " << polyFaces[i].mPlane[0] << ", " << polyFaces[i].mPlane[1] << ", " << polyFaces[i].mPlane[2] << ", " << polyFaces[i].mPlane[3] << endl;
-        }
+        // cout << "Planes: " << endl;
+        // for(int i=0; i < convexDesc.polygons.count; i++){
+        //     cout << "    " << polyFaces[i].mPlane[0] << ", " << polyFaces[i].mPlane[1] << ", " << polyFaces[i].mPlane[2] << ", " << polyFaces[i].mPlane[3] << endl;
+        // }
 
-        cout << "Indices: " << endl;
-        for(int i=0; i < convexDesc.indices.count/3; i++){
-            cout << "    " << indexBuffer[i*3] << ", " << indexBuffer[i*3+1] << ", " << indexBuffer[i*3+2] << endl;
-        }
+        // cout << "Indices: " << endl;
+        // for(int i=0; i < convexDesc.indices.count/3; i++){
+        //     cout << "    " << indexBuffer[i*3] << ", " << indexBuffer[i*3+1] << ", " << indexBuffer[i*3+2] << endl;
+        // }
 
         if(!convexDesc.isValid())
             throw runtime_error("Invalid convex mesh description");
@@ -496,6 +496,23 @@ PxShape* createTetrahedronShape(PxCookingParams params, PxConvexMeshDesc convexM
     PxShape* shape = gPhysics->createShape(convexGeometry, *gMaterial, true);
     if(!shape)
         throw runtime_error("Error creating shape");
+
+    return shape;
+}
+
+/// @brief Create a PxShape representing a cube with the given half extents at the given position.
+/// @param halfExtents Vector of half extents of the cube.
+/// @param position  Vector representing the position of the cube.
+/// @return Shape representing the cube.
+PxShape* createVoxelShape(GridCell& cell)
+{
+    PxBoxGeometry boxGeometry = PxBoxGeometry(cell.half_extents[0], cell.half_extents[1], cell.half_extents[2]);
+    PxShape* shape = gPhysics->createShape(boxGeometry, *gMaterial, true);
+    if(!shape)
+        throw runtime_error("Error creating shape");
+
+    shape->userData = &cell;
+    shape->setLocalPose(PxTransform(PxVec3(cell.centre[0], cell.centre[1], cell.centre[2])));
 
     return shape;
 }
@@ -563,6 +580,9 @@ void Scene::add_object(
     //Record the triangle mesh and tetrahedron mesh in the object
     obj->set_tri_mesh(newSurfaceMesh);
     obj->set_tetra_mesh(tetMeshVertices, tetMeshIndices);
+
+    //Create a occupancy grid
+    shared_ptr<OccupancyGrid> grid = obj->create_occupancy_grid(10);
 
     PxTolerancesScale scale;
     PxCookingParams params(scale);

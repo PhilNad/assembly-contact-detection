@@ -46,7 +46,6 @@ void Object::set_tetra_mesh(PxArray<PxVec3> vertices, PxArray<PxU32> indices)
         this->tetra_indices(i, 1) = indices[i*4+1];
         this->tetra_indices(i, 2) = indices[i*4+2];
         this->tetra_indices(i, 3) = indices[i*4+3];
-        cout << indices[i*4+0] << " " << indices[i*4+1] << " " << indices[i*4+2] << " " << indices[i*4+3] << endl;
     }
 }
 
@@ -56,9 +55,9 @@ void Object::set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh)
 {
     //Convert PxSimpleTriangleMesh to Eigen Matrix
     this->tri_vertices.resize(simpleTriMesh.points.count, 3);
-    for (int i = 0; i < simpleTriMesh.points.count/3; i++) {
+    for (int i = 0; i < simpleTriMesh.points.count; i++) {
         PxVec3* data;
-        data = (PxVec3*)simpleTriMesh.points.data;
+        data = (PxVec3*)(simpleTriMesh.points.data + i*sizeof(PxVec3));
         this->tri_vertices(i, 0) = data->x;
         this->tri_vertices(i, 1) = data->y;
         this->tri_vertices(i, 2) = data->z;
@@ -66,12 +65,25 @@ void Object::set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh)
 
     this->tri_triangles.resize(simpleTriMesh.triangles.count, 3);
     PxU32* data;
-    data = (PxU32*)simpleTriMesh.triangles.data;
-    for (int i = 0; i < simpleTriMesh.triangles.count/3; i++) {
+    data = (PxU32*)(simpleTriMesh.triangles.data);
+    for (int i = 0; i < simpleTriMesh.triangles.count; i++) {
         this->tri_triangles(i, 0) = data[i*3+0];
         this->tri_triangles(i, 1) = data[i*3+1];
         this->tri_triangles(i, 2) = data[i*3+2];
     }
+}
+
+/// @brief Create a grid of cells that represent the volume of the object.
+/// @param resolution Number of cells per unit of length.
+/// @return Pointer to the occupancy grid
+shared_ptr<OccupancyGrid> Object::create_occupancy_grid(int resolution)
+{
+    MatrixX3f vertices = this->tri_vertices;
+    MatrixX3i triangles = this->tri_triangles;
+    //Build the grid
+    shared_ptr<OccupancyGrid> grid = make_shared<OccupancyGrid>(vertices, triangles, resolution);
+    this->occupancy_grid = grid;
+    return this->occupancy_grid;
 }
 
 /// @brief Get the id of the object

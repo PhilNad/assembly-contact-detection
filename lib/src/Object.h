@@ -3,9 +3,11 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <memory>
 #include "PxPhysicsAPI.h"
 #include "geometry/PxSimpleTriangleMesh.h"
 #include <eigen3/Eigen/Eigen>
+#include "OccupancyGrid.h"
 
 using namespace std;
 using namespace Eigen;
@@ -19,6 +21,7 @@ class Object
         MatrixX3i tri_triangles;
         MatrixX3f tetra_vertices;
         MatrixX4i tetra_indices;
+        shared_ptr<OccupancyGrid> occupancy_grid;
         bool is_fixed;
         float mass;
         Vector3f com;
@@ -57,5 +60,6 @@ class Object
         void set_material_name(string /*material_name*/);
         void set_tetra_mesh(PxArray<PxVec3> /*vertices*/, PxArray<PxU32> /*indices*/);
         void set_tri_mesh(PxSimpleTriangleMesh& /*simpleTriMesh*/);
+        shared_ptr<OccupancyGrid> create_occupancy_grid(int resolution);
         MatrixX3f get_world_vertices();
 };
