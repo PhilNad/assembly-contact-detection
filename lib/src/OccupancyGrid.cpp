@@ -2,17 +2,15 @@
 
 /// @brief Build a grid cell that contains all necessary information for collision detection.
 /// @param id The index of the cell in the grid.
-/// @param position Position of the point that was sampled in the triangle, to be returned upon collision.
-/// @param normal Normal of the triangle, to be returned upon collision.
+/// @param surface_point Oriented point (position and normal) that was sampled on the surface.
 /// @param cell_size Size of the cell along each dimension.
 /// @param cell_centre Position of the centre of the cuboid that represents the cell.
-GridCell::GridCell(uint32_t id, const Vector3f& position, const Vector3f& normal, const Vector3f& cell_size, const Vector3f& cell_centre)
+GridCell::GridCell(uint32_t id, const OrientedPoint& surface_point, const Vector3f& cell_size, const Vector3f& cell_centre)
 {
     this->id = id;
     //NOTE: The position does not correspond to the centre of the cell
     // Intead, it is the position of the point that was sampled in the triangle
-    this->position = position;
-    this->normal = normal;
+    this->surface_points.push_back(surface_point);
 
     //Record half-extents
     this->half_extents = {cell_size[0]/2, cell_size[1]/2, cell_size[2]/2};
@@ -21,6 +19,48 @@ GridCell::GridCell(uint32_t id, const Vector3f& position, const Vector3f& normal
     this->centre = cell_centre;
 }
 
+/// @brief Add information about a surface point to the grid cell.
+/// @param surface_point Oriented point (position and normal) that was sampled on the surface.
+void GridCell::additional_point(const OrientedPoint& surface_point){
+    this->surface_points.push_back(surface_point);
+}
+
+/// @brief Compute the weighted average of the surface points positions and normals based on their distance to the query point.
+/// @param query_point World frame coordinates of the query point.
+/// @return Oriented point (position and normal) that is the weighted average of the surface points.
+/// @note This should work well only if the grid cells are small enough. In that case, intersections with edges is possible.
+OrientedPoint GridCell::weighted_average(const Vector3f& query_point){
+    //Compute the distance between the query point and each surface point
+    vector<float> distances;
+    for (int i = 0; i < this->surface_points.size(); i++){
+        distances.push_back((query_point - this->surface_points[i].position).norm());
+    }
+    //Compute the weights of each surface point
+    vector<float> weights;
+    float sum = 0;
+    for (int i = 0; i < distances.size(); i++){
+        float weight = 1/distances[i];
+        weights.push_back(weight);
+        sum += weight;
+    }
+    //Compute the weighted average of the surface points
+    Vector3f position_average = Vector3f::Zero();
+    for (int i = 0; i < this->surface_points.size(); i++){
+        position_average += weights[i]/sum * this->surface_points[i].position;
+    }
+    //Compute the weighted average of the surface normals
+    Vector3f normal_average = Vector3f::Zero();
+    for (int i = 0; i < this->surface_points.size(); i++){
+        normal_average += weights[i]/sum * this->surface_points[i].normal;
+    }
+
+    //Create a new OrientedPoint
+    OrientedPoint weighted_average;
+    weighted_average.position = position_average;
+    weighted_average.normal   = normal_average;
+
+    return weighted_average;
+}
 
 /// @brief Determines whether a given point is inside a triangle defined by three vertices.
 /// @param point The point to check.
@@ -32,6 +72,9 @@ GridCell::GridCell(uint32_t id, const Vector3f& position, const Vector3f& normal
 /// @note See: Real-Time Collision Detection page 137.
 bool point_inside_triangle(const Vector3f& p, const Vector3f& v0, const Vector3f& v1, const Vector3f& v2)
 {
+    //Tolerance such that points directly on the triangle edge are considered to be inside the triangle
+    float tol = 1e-6;
+
     //Express points relative to first vertex
     Vector3f v0r = v1 - v0;
     Vector3f v1r = v2 - v0;
@@ -50,9 +93,9 @@ bool point_inside_triangle(const Vector3f& p, const Vector3f& v0, const Vector3f
     float beta  = (d00 * d21 - d01 * d20) * inv_denom;
     float gamma = 1.0f - alpha - beta;
     //Check if point is inside triangle
-    return ((0 <= alpha) && (alpha <= 1) &&
-            (0 <= beta)  && (beta  <= 1) &&
-            (0 <= gamma) && (gamma <= 1));
+    return ((0 <= alpha+tol) && (alpha-tol <= 1) &&
+            (0 <= beta+tol)  && (beta-tol  <= 1) &&
+            (0 <= gamma+tol) && (gamma-tol <= 1));
 }
 
 /// @brief Sample points uniformly, and keep only those that are inside the triangle.
@@ -67,27 +110,36 @@ vector<Vector3f> OccupancyGrid::sample_points_in_triangle(const Vector3f& v0, co
     assert((v1 - v0).norm() > 0);
     assert((v2 - v0).norm() > 0);
     assert((v2 - v1).norm() > 0);
+    //OccupancyGrid should be initialized
+    assert(this->cell_size[0] > 1e-12 && this->cell_size[1] > 1e-12 && this->cell_size[2] > 1e-12);
+
+    //Express vertices relative to v0
+    Vector3f v0r;
+    v0r << 0, 0, 0;
+    Vector3f v1r = v1 - v0;
+    Vector3f v2r = v2 - v0;
 
     //Project the triangle onto the x-y plane
-    Vector3f normal = (v1 - v0).cross(v2 - v0).normalized();
-    Vector3f x_axis = (v1 - v0).normalized();
+    Vector3f normal = v1r.cross(v2r).normalized();
+    Vector3f x_axis = v1r.normalized();
     Vector3f y_axis = normal.cross(x_axis).normalized();
     //Rotation matrix that projects points onto the x-y plane
-    Matrix3f projection;
-    projection << x_axis, y_axis, normal;
+    Matrix3f projection = (MatrixX3f(3, 3) << x_axis, y_axis, normal).finished();
+    //Matrix3f is initialized column by column and needs to be transposed to get the desired rotation matrix
+    projection.transposeInPlace();
     //Each column is the coordinates of a vertex
-    Matrix3f vertices_in_columns = (MatrixX3f(3, 3) << v0, v1, v2).finished().transpose();
+    Matrix3f vertices_in_columns = (MatrixX3f(3, 3) << v0r, v1r, v2r).finished();
     //Each row is the coordinates of a vertex projected onto the x-y plane
-    Matrix3f projected_vertices = (projection * vertices_in_columns).transpose();
-    Vector3f v0_proj = projected_vertices.row(0);
-    Vector3f v1_proj = projected_vertices.row(1);
-    Vector3f v2_proj = projected_vertices.row(2);
+    Matrix3f projected_vertices = projection * vertices_in_columns;
+    Vector3f v0_proj = projected_vertices.col(0);
+    Vector3f v1_proj = projected_vertices.col(1);
+    Vector3f v2_proj = projected_vertices.col(2);
 
     //Get the bounding box of the projected triangle
-    float min_x = projected_vertices.col(0).minCoeff();
-    float min_y = projected_vertices.col(1).minCoeff();
-    float max_x = projected_vertices.col(0).maxCoeff();
-    float max_y = projected_vertices.col(1).maxCoeff();
+    float min_x = projected_vertices.row(0).minCoeff();
+    float min_y = projected_vertices.row(1).minCoeff();
+    float max_x = projected_vertices.row(0).maxCoeff();
+    float max_y = projected_vertices.row(1).maxCoeff();
 
     //Side length of each grid cell
     float side_length_x = abs(x_axis.dot(this->cell_size));
@@ -102,7 +154,7 @@ vector<Vector3f> OccupancyGrid::sample_points_in_triangle(const Vector3f& v0, co
             //Check if point is inside triangle
             if (point_inside_triangle(Vector3f(x, y, 0), v0_proj, v1_proj, v2_proj))
             {
-                Vector3f unprojected_point = projection.inverse() * Vector3f(x, y, 0);
+                Vector3f unprojected_point = projection.inverse() * Vector3f(x, y, 0) + v0;
                 points.push_back(unprojected_point);
             }
         }
@@ -112,18 +164,42 @@ vector<Vector3f> OccupancyGrid::sample_points_in_triangle(const Vector3f& v0, co
 
 /// @brief Check is the given point is in a cell that is already occupied.
 /// @param point Query point, expressed in world coordinates.
-/// @return True if the cell in which the point would fall is occupied, false otherwise.
-bool OccupancyGrid::is_cell_occupied(const Vector3f& point){
-    //Get cell indices
-    int cell_idx = this->idx_cell_at(point);
-    //Iterate over the grid cells
-    for (int i = 0; i < this->grid_cells.size(); i++){
-        //Check if the cell is occupied
-        if (this->grid_cells[i].id == cell_idx){
-            return true;
-        }
+/// @return Returns the index of the cell that contains the point if it is occupied, zero otherwise.
+uint32_t OccupancyGrid::is_cell_occupied(const Vector3f& point){
+    //Get cell index that would contain the point
+    uint32_t cell_idx = this->idx_cell_at(point);
+    if (cell_idx == 0){
+        //The point is outside the grid
+        return 0;
     }
-    return false;
+    size_t exists = this->grid_cells.count(cell_idx);
+    if (exists == 0){
+        //The cell does not exist
+        return 0;
+    }
+    if (exists > 1){
+        throw runtime_error("There is more than one cell with the same index.");
+    }
+    //The cell exists and there is only one of them
+    return cell_idx;
+}
+
+uint32_t OccupancyGrid::is_cell_occupied(uint32_t cell_idx)
+{
+    if (cell_idx == 0){
+        //The point is outside the grid
+        return 0;
+    }
+    size_t exists = this->grid_cells.count(cell_idx);
+    if (exists == 0){
+        //The cell does not exist
+        return 0;
+    }
+    if (exists > 1){
+        throw runtime_error("There is more than one cell with the same index.");
+    }
+    //The cell exists and there is only one of them
+    return cell_idx;
 }
 
 
@@ -146,11 +222,20 @@ Vector3f OccupancyGrid::cell_centre(uint32_t idx)
     return cell_centre;
 }
 
-/// @brief Get the indices of the cell that contains a given point.
+/// @brief Get the index of the cell that contains a given point.
 /// @param point 3x1 vector representing the point.
-/// @return 3x1 vector representing the indices of the cell.
+/// @return Index of the cell that contains the point, or zero if the point is outside the grid.
 uint32_t OccupancyGrid::idx_cell_at(const Vector3f& point)
 {
+    // Check if point is inside the bounding box of the occupancy grid
+    if ((point[0] < this->bb_origin[0]) || (point[0] > this->bb_origin[0] + this->bb_extents[0] + this->cell_size[0]) ||
+        (point[1] < this->bb_origin[1]) || (point[1] > this->bb_origin[1] + this->bb_extents[1] + this->cell_size[1]) ||
+        (point[2] < this->bb_origin[2]) || (point[2] > this->bb_origin[2] + this->bb_extents[2] + this->cell_size[2]))
+    {
+        // Point is outside bounding box, there is no cell that could contain it
+        return 0;
+    }
+
     // Get cell indices. The (i,j,k)th cell is the one that is reached
     // when moving i cells in the x direction, j cells in the y direction,
     // and k cells in the z direction from the origin of the bounding box.
@@ -159,7 +244,13 @@ uint32_t OccupancyGrid::idx_cell_at(const Vector3f& point)
     int k = (point[2] - this->bb_origin[2]) / this->cell_size[2];
 
     //There is this->resolution cells along each dimension
-    uint32_t idx = i + j*this->resolution + k*this->resolution*this->resolution;
+    // We can assume that i, j, and k are positive as we checked that the point is inside the bounding box.
+    assert(i >= 0);
+    assert(j >= 0);
+    assert(k >= 0);
+    uint32_t idx = 1 + i + j*this->resolution + k*this->resolution*this->resolution;
+
+    //cout << "Cell with indices (" << i << ", " << j << ", " << k << ") has index " << idx << endl;
 
     // Return cell indices
     return idx;
@@ -174,9 +265,12 @@ vector<int> OccupancyGrid::reverse_cell_idx(uint32_t idx)
     //  int idx = i + j*this->resolution + k*this->resolution*this->resolution;
 
     // Get cell indices
+    idx -= 1;
     int i = idx % this->resolution;
     int j = (idx / this->resolution) % this->resolution;
     int k = idx / (this->resolution*this->resolution);
+
+    //cout << "Cell with index " << idx << " has coordinates (" << i << ", " << j << ", " << k << ")" << endl;
 
     // Return cell coordinates
     return {i, j, k};
@@ -184,7 +278,7 @@ vector<int> OccupancyGrid::reverse_cell_idx(uint32_t idx)
 
 /// @brief  Get the list of grid cells.
 /// @return List of grid cells.
-vector<GridCell> OccupancyGrid::get_grid_cells()
+unordered_map<uint32_t, GridCell> OccupancyGrid::get_grid_cells()
 {
     return this->grid_cells;
 }
@@ -207,15 +301,17 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
     float max_y = vertices.col(1).maxCoeff();
     float max_z = vertices.col(2).maxCoeff();
 
-    // Get bounding box origin and extents
-    this->bb_origin = {min_x, min_y, min_z};
+    // Get bounding box extents
     this->bb_extents = {max_x - min_x, max_y - min_y, max_z - min_z};
 
     // Get grid resolution, which is the number of cells along each dimension
     this->resolution = resolution;
 
     // Get grid cell size
-    this->cell_size = {this->bb_extents[0] / resolution, this->bb_extents[1] / resolution, this->bb_extents[2] / resolution};
+    this->cell_size = {this->bb_extents[0] /(resolution-1), this->bb_extents[1]/(resolution-1), this->bb_extents[2] /(resolution-1)};
+
+    // Get grid origin, slightly greater than the extent such the the mesh is inside the grid
+    this->bb_origin = {min_x - this->cell_size[0]/2, min_y - this->cell_size[1]/2, min_z - this->cell_size[2]/2};
 
     // Iterate over triangles
     for (int i = 0; i < triangles.rows(); i++)
@@ -235,16 +331,27 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
         //For each sample point, check if a grid cell has already been created for it
         // If not, create a new grid cell
         for (int j = 0; j < sampled_points.size(); j++){
-            bool occupied = this->is_cell_occupied(sampled_points[j]);
-            if(!occupied){
-                //Get the cell indices
-                int cell_idx = this->idx_cell_at(sampled_points[j]);
-                //Get the centre of the cell
-                Vector3f cell_centre = this->cell_centre(cell_idx);
-                //Create the grid cell
-                GridCell grid_cell = GridCell(cell_idx, sampled_points[j], normal, this->cell_size, cell_centre);
-                //Add the grid cell to the list of grid cells
-                this->grid_cells.push_back(grid_cell);
+            //Get the cell indices, will be zero for points outside the grid
+            uint32_t cell_idx = this->idx_cell_at(sampled_points[j]);
+            if(cell_idx != 0){
+                //Create the oriented surface point
+                OrientedPoint surface_point;
+                surface_point.position = sampled_points[j];
+                surface_point.normal   = normal;
+                //Check if the cell is already occupied
+                bool occupied = this->is_cell_occupied(cell_idx);
+                if(!occupied){
+                    //Get the centre of the cell
+                    Vector3f cell_centre = this->cell_centre(cell_idx);
+                    //Create the grid cell
+                    GridCell grid_cell = GridCell(cell_idx, surface_point, this->cell_size, cell_centre);
+                    //Add the grid cell to the list of grid cells
+                    this->grid_cells.emplace(cell_idx, grid_cell);
+                    //cout << "Index of cell containing point " << sampled_points[j].transpose() << " is " << cell_idx << endl;
+                }else{
+                    //Add the point to the existing grid cell
+                    this->grid_cells.at(cell_idx).additional_point(surface_point);
+                }
             }
         }
     }

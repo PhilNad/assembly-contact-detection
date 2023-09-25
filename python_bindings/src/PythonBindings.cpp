@@ -33,6 +33,10 @@ PYBIND11_MODULE(assembly_cd, m) {
         .def("get_tetra_vertices", &Scene::get_tetra_vertices, "Get the tetrahedron vertices of an object.",
                 py::arg("id"))
         .def("get_tetra_indices", &Scene::get_tetra_indices, "Get the tetrahedron indices of an object.",
+                py::arg("id"))
+        .def("get_voxel_centres", &Scene::get_voxel_centres, "Get the occupied voxel centres of an object.",
+                py::arg("id"))
+        .def("get_voxel_side_lengths", &Scene::get_voxel_side_lengths, "Get the voxel side lengths of an object.",
                 py::arg("id"));
 
 }

@@ -46,6 +46,8 @@ class Object
         MatrixX3i get_tri_triangles();
         MatrixX3f get_tetra_vertices();
         MatrixX4i get_tetra_indices();
+        MatrixX3f get_voxel_centres();
+        Vector3f get_voxel_side_lengths();
         bool get_is_fixed();
         float get_mass();
         Vector3f get_com();

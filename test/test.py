@@ -75,17 +75,38 @@ physxScene.add_object("cone",
                         np.array([0, 0, 0]), #CoM is expressed wrt local frame 
                         "wood")
 
-""" vert = physxScene.get_tri_vertices("cube1")
+vert = physxScene.get_tri_vertices("cube1")
 tri = physxScene.get_tri_triangles("cube1")
 tm = o3d.geometry.TriangleMesh()
 tm.vertices  = o3d.utility.Vector3dVector(vert)
 tm.triangles = o3d.utility.Vector3iVector(tri)
-o3d.visualization.draw([tm]) """
 
 """ vert = physxScene.get_tetra_vertices("cube1")
 tetra = physxScene.get_tetra_indices("cube1").astype(np.int64)
 tm = o3d.geometry.TetraMesh(o3d.utility.Vector3dVector(vert), o3d.utility.Vector4iVector(tetra))
 o3d.visualization.draw_geometries([tm]) """
+
+voxels = []
+#Add voxels from cube1
+voxel_positions = physxScene.get_voxel_centres("cube1")
+voxel_side_lengths = physxScene.get_voxel_side_lengths("cube1")
+for i in range(len(voxel_positions)):
+    cube = o3d.geometry.TriangleMesh.create_box(width=voxel_side_lengths[0], height=voxel_side_lengths[1], depth=voxel_side_lengths[2])
+    cube.scale(1, center=cube.get_center())
+    cube.translate(voxel_positions[i], relative=False)
+    voxels.append(cube)
+
+#Add voxels from cone
+voxel_positions = physxScene.get_voxel_centres("cone")
+voxel_side_lengths = physxScene.get_voxel_side_lengths("cone")
+for i in range(len(voxel_positions)):
+    cube = o3d.geometry.TriangleMesh.create_box(width=voxel_side_lengths[0], height=voxel_side_lengths[1], depth=voxel_side_lengths[2])
+    cube.scale(1, center=cube.get_center())
+    cube.translate(voxel_positions[i], relative=False)
+    voxels.append(cube)
+
+o3d.visualization.draw([tm]+voxels)
+exit()
 
 physxScene.step_simulation(1/60)
 #print(physxScene.get_contacted_objects("cube1"))

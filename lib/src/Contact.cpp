@@ -16,6 +16,23 @@ Contact::Contact(string object1_id, string object2_id, PxVec3 position, PxVec3 n
     cout << "Separation: " << separation << endl;
 }
 
+
+Contact::Contact(string object1_id, string object2_id, Vector3f position, Vector3f normal, float separation)
+{
+    this->object1_id = object1_id;
+    this->object2_id = object2_id;
+    this->position   = position;
+    this->normal     = normal;
+    this->separation = separation;
+
+    //Print all information
+    cout << "Contact between " << object1_id << " and " << object2_id << endl;
+    cout << "Position: " << position[0] << ", " << position[1] << ", " << position[2] << endl;
+    cout << "Normal: " << normal[0] << ", " << normal[1] << ", " << normal[2] << endl;
+    cout << "Separation: " << separation << endl;
+}
+
+
 Contact::~Contact(){}
 
 Vector3f Contact::get_position()

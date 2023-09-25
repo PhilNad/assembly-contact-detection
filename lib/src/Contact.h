@@ -19,6 +19,7 @@ class Contact
 
     public:
         Contact(string object1_id, string object2_id, PxVec3 position, PxVec3 normal, PxReal separation);
+        Contact(string object1_id, string object2_id, Vector3f position, Vector3f normal, float separation);
         ~Contact();
         Vector3f get_position();
         Vector3f get_normal();

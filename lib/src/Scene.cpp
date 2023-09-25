@@ -41,7 +41,7 @@ static PxFilterFlags contactReportFilterShader(	PxFilterObjectAttributes attribu
 }
 
 /// @brief Callback class for contact reports. This will be called by fetchResults() at the end of each simulation step.
-class ContactReportCallback: public PxSimulationEventCallback
+class ContactReportCallbackForTetrahedra: public PxSimulationEventCallback
 {
 	void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)	{ PX_UNUSED(constraints); PX_UNUSED(count); }
 	void onWake(PxActor** actors, PxU32 count)							{ PX_UNUSED(actors); PX_UNUSED(count); }
@@ -108,6 +108,84 @@ class ContactReportCallback: public PxSimulationEventCallback
 	}
 };
 
+/// @brief Callback class for contact reports. This will be called by fetchResults() at the end of each simulation step.
+class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
+{
+	void onConstraintBreak(PxConstraintInfo* constraints, PxU32 count)	{ PX_UNUSED(constraints); PX_UNUSED(count); }
+	void onWake(PxActor** actors, PxU32 count)							{ PX_UNUSED(actors); PX_UNUSED(count); }
+	void onSleep(PxActor** actors, PxU32 count)							{ PX_UNUSED(actors); PX_UNUSED(count); }
+	void onTrigger(PxTriggerPair* pairs, PxU32 count)					{ PX_UNUSED(pairs); PX_UNUSED(count); }
+	void onAdvance(const PxRigidBody*const*, const PxTransform*, const PxU32) {}
+	void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) 
+	{
+		PX_UNUSED((pairHeader));
+		std::vector<PxContactPairPoint> contactPoints;
+		
+		for(PxU32 i=0;i<nbPairs;i++)
+		{
+            PxContactPair pair = pairs[i];
+            //Get the shapes involved in the collision
+            PxShape* shape0 = pair.shapes[0];
+            PxShape* shape1 = pair.shapes[1];
+            
+            //Get the actors
+            PxRigidActor* actor0 = shape0->getActor();
+            PxRigidActor* actor1 = shape1->getActor();
+            string id_obj0 = actor0->getName();
+            string id_obj1 = actor1->getName();
+
+            //Get the objects
+            Object* obj0 = static_cast<Object*>(actor0->userData);
+            Object* obj1 = static_cast<Object*>(actor1->userData);
+
+            //Get the grid cells involved in the collision
+            GridCell* gridCell0 = static_cast<GridCell*>(shape0->userData);
+            GridCell* gridCell1 = static_cast<GridCell*>(shape1->userData);
+
+            //TODO: For some reason, the surface points in the grid cells are not properly recorded.
+
+            //Get the contact points
+			PxU32 contactCount = pair.contactCount;
+            cout << contactCount << " contacts between " << id_obj0 << " and " << id_obj1 << endl;
+			if(contactCount)
+			{
+
+                //Add the pair of objects to the list of contacted objects.
+                gContactedObjects.push_back(make_pair(id_obj0, id_obj1));
+
+				contactPoints.resize(contactCount);
+				pair.extractContacts(&contactPoints[0], contactCount);
+
+				for(PxU32 j=0;j<contactCount;j++)
+				{
+                    //Contact point data
+                    PxVec3 pos = contactPoints[j].position;
+                    PxReal sep = contactPoints[j].separation;
+                    PxVec3 normal = contactPoints[j].normal;
+                    //Create a contact instance and add it to the list of contact points
+                    if(abs(sep) < min(obj0->max_separation, obj1->max_separation)){
+                        Vector3f query_point = Vector3f(contactPoints[j].position.x, contactPoints[j].position.y, contactPoints[j].position.z);
+                        //Get the weighted average of the surface points of the two grid cells
+                        OrientedPoint op0 = gridCell0->weighted_average(query_point);
+                        OrientedPoint op1 = gridCell1->weighted_average(query_point);
+                        //Compute the average of the two oriented points by first aligning the normal in the same half-space
+                        Vector3f pos = (op0.position + op1.position) / 2;
+                        if(op0.normal.dot(op1.normal) < 0){
+                            op1.normal = -op1.normal;
+                        }
+                        Vector3f normal = (op0.normal + op1.normal) / 2;
+
+                        Contact contact(id_obj0, id_obj1, pos, normal, sep);
+                        gContacts.push_back(contact);
+                        //Add the contact position to the list of contact positions
+                        gContactPositions.push_back(contactPoints[j].position);
+                    }
+				}
+			}
+		}
+	}
+};
+
 /// @brief Initialize the physics engine.
 void Scene::startupPhysics()
 {
@@ -115,7 +193,10 @@ void Scene::startupPhysics()
 
     gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale());
 
-    gContactReportCallback = new ContactReportCallback();
+    //To be used if the tetrahedral method is used.
+    //gContactReportCallback = new ContactReportCallbackForTetrahedra();
+    //To be used if the voxel grid method is used.
+    gContactReportCallback = new ContactReportCallbackForVoxelgrid();
 
     PxSceneDesc sceneDesc(gPhysics->getTolerancesScale());
     sceneDesc.gravity = PxVec3(0.0f, 0.0f, -9.81f);
@@ -500,9 +581,7 @@ PxShape* createTetrahedronShape(PxCookingParams params, PxConvexMeshDesc convexM
     return shape;
 }
 
-/// @brief Create a PxShape representing a cube with the given half extents at the given position.
-/// @param halfExtents Vector of half extents of the cube.
-/// @param position  Vector representing the position of the cube.
+/// @brief Create a PxShape representing a cube for the given occupancy cell.
 /// @return Shape representing the cube.
 PxShape* createVoxelShape(GridCell& cell)
 {
@@ -513,6 +592,16 @@ PxShape* createVoxelShape(GridCell& cell)
 
     shape->userData = &cell;
     shape->setLocalPose(PxTransform(PxVec3(cell.centre[0], cell.centre[1], cell.centre[2])));
+    //Since the voxel will be at a half-extent away from the surface of the object,
+    // we set the contact offset to zero, the minimal contact distance is actually the half-extent.
+    //               |-----------------|
+    //        |------|-----|           |
+    //        |<--D--X     |           |
+    //        |------|-----|           |
+    //               |                 |
+    //               |-----------------|
+    shape->setRestOffset(0);
+    shape->setContactOffset(1e-6);
 
     return shape;
 }
@@ -587,7 +676,8 @@ void Scene::add_object(
     PxTolerancesScale scale;
     PxCookingParams params(scale);
     PxArray<PxShape*> convexShapes;
-    //Create a shape from each mesh description.
+
+    //Create a shape from each tetrahedron mesh description.
     for(int i = 0; i < convexMeshDescs.size(); i++){
         PxConvexMeshDesc convexMeshDesc = convexMeshDescs[i];
         PxShape* convexShape = createTetrahedronShape(params, convexMeshDesc);
@@ -598,6 +688,15 @@ void Scene::add_object(
         convexShapes.pushBack(convexShape);
         //Assign the maximal distance at which a contact can be made between the object and another object.
         convexShape->setContactOffset(obj->max_separation);
+    }
+
+    //Create a shape from each voxel in the occupancy grid.
+    unordered_map<uint32_t, GridCell> cells = grid->get_grid_cells();
+    //Create a shape for each occupancy grid cell
+    for(pair<const uint32_t, GridCell>& item : cells){
+        uint32_t index = item.first;
+        GridCell& cell = item.second;
+        PxShape* voxelShape = createVoxelShape(cell);
     }
 
     //Pose of the object/actor with respect to the world frame
@@ -701,4 +800,28 @@ MatrixX4i Scene::get_tetra_indices(string id)
             return obj->get_tetra_indices();
     cout << "Object with id " << id << " not found" << endl;
     return MatrixX4i::Zero(0, 4);
+}
+
+/// @brief Get the voxel centres of the occupied voxels of an object
+/// @param id unique identifier for the object
+/// @return Nx3 matrix representing the voxel centres of the object
+MatrixX3f Scene::get_voxel_centres(string id)
+{
+    for(const auto& obj : this->object_ptrs)
+        if(obj->get_id() == id)
+            return obj->get_voxel_centres();
+    cout << "Object with id " << id << " not found" << endl;
+    return MatrixX3f::Zero(0, 3);
+}
+
+/// @brief Get the voxel side lengths of the voxels of an object (assuming at least one voxel is occupied)
+/// @param id unique identifier for the object
+/// @return 3x1 vector representing the voxel side lengths of the object
+Vector3f Scene::get_voxel_side_lengths(string id)
+{
+    for(const auto& obj : this->object_ptrs)
+        if(obj->get_id() == id)
+            return obj->get_voxel_side_lengths();
+    cout << "Object with id " << id << " not found" << endl;
+    return Vector3f::Zero();
 }
