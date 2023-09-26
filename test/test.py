@@ -50,8 +50,7 @@ cube2.scale(1, center=cube2.get_center())
 cube2.translate((0, 0.25, 1), relative=False)
 
 cone = o3d.geometry.TriangleMesh.create_cone(radius=0.5, height=1.0)
-cone.scale(1, center=cone.get_center())
-cone.translate((0, 0, 0.5), relative=False)
+cone.translate((0, 0, 0.54545455), relative=False)
 
 #o3d.visualization.draw_geometries([cube1, cone])
 
@@ -75,17 +74,20 @@ physxScene.add_object("cone",
                         np.array([0, 0, 0]), #CoM is expressed wrt local frame 
                         "wood")
 
+'''
 vert = physxScene.get_tri_vertices("cube1")
 tri = physxScene.get_tri_triangles("cube1")
 tm = o3d.geometry.TriangleMesh()
 tm.vertices  = o3d.utility.Vector3dVector(vert)
 tm.triangles = o3d.utility.Vector3iVector(tri)
+'''
 
 """ vert = physxScene.get_tetra_vertices("cube1")
 tetra = physxScene.get_tetra_indices("cube1").astype(np.int64)
 tm = o3d.geometry.TetraMesh(o3d.utility.Vector3dVector(vert), o3d.utility.Vector4iVector(tetra))
 o3d.visualization.draw_geometries([tm]) """
 
+'''
 voxels = []
 #Add voxels from cube1
 voxel_positions = physxScene.get_voxel_centres("cube1")
@@ -106,12 +108,13 @@ for i in range(len(voxel_positions)):
     voxels.append(cube)
 
 o3d.visualization.draw([tm]+voxels)
-exit()
+'''
 
 physxScene.step_simulation(1/60)
 #print(physxScene.get_contacted_objects("cube1"))
 #print(physxScene.get_contacted_objects("cone"))
 
+#physxScene.merge_similar_contact_points()
 contact_points = physxScene.get_contact_points("cube1", "cone")
 contact_point_cloud = o3d.geometry.PointCloud()
 contact_point_cloud.points = o3d.utility.Vector3dVector(contact_points)

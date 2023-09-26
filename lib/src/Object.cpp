@@ -90,10 +90,10 @@ shared_ptr<OccupancyGrid> Object::create_occupancy_grid(int resolution)
 /// @return Nx3 matrix representing the centre positions
 MatrixX3f Object::get_voxel_centres()
 {
-    std::unordered_map<uint32_t, GridCell> grid = this->occupancy_grid->get_grid_cells();
-    MatrixX3f cube_centres(grid.size(), 3);
+    std::unordered_map<uint32_t, GridCell>* grid = this->occupancy_grid->get_grid_cells();
+    MatrixX3f cube_centres(grid->size(), 3);
     int i = 0;
-    for (auto& it : grid) {
+    for (auto& it : *grid) {
         cube_centres(i, 0) = it.second.centre(0);
         cube_centres(i, 1) = it.second.centre(1);
         cube_centres(i, 2) = it.second.centre(2);
@@ -106,9 +106,9 @@ MatrixX3f Object::get_voxel_centres()
 /// @return 3x1 vector representing the side lengths
 Vector3f Object::get_voxel_side_lengths()
 {
-    std::unordered_map<uint32_t, GridCell> grid = this->occupancy_grid->get_grid_cells();
+    std::unordered_map<uint32_t, GridCell>* grid = this->occupancy_grid->get_grid_cells();
     //All cells have the same side lengths
-    Vector3f cube_side_lengths = grid.begin()->second.half_extents * 2;
+    Vector3f cube_side_lengths = grid->begin()->second.half_extents * 2;
     return cube_side_lengths;
 }
 

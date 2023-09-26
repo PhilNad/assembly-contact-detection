@@ -2,6 +2,7 @@
 #include "PxPhysicsAPI.h"
 #include <iostream>
 #include <vector>
+#include <set>
 #include "eigen3/Eigen/Eigen"
 
 using namespace physx;
@@ -129,10 +130,10 @@ int main(int argc, char** argv) {
     scene.step_simulation(dt);
 
     // Get the list of objects in contact with the cube
-    vector<string> contacted_objects = scene.get_contacted_objects(id);
+    set<string> contacted_objects = scene.get_contacted_objects(id);
     cout << "Contacted objects: ";
-    for (int i = 0; i < contacted_objects.size(); i++) {
-        cout << contacted_objects[i] << " ";
+    for(auto it = contacted_objects.begin(); it != contacted_objects.end(); ++it){
+        cout << *it << " ";
     }
     cout << endl;
 

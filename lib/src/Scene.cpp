@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include <iostream>
 #include <memory>
+#include <set>
 #include "PxPhysicsAPI.h"
 #include "extensions/PxTetMakerExt.h"
 #include "extensions/PxSoftBodyExt.h"
@@ -79,7 +80,7 @@ class ContactReportCallbackForTetrahedra: public PxSimulationEventCallback
 
             //Get the contact points
 			PxU32 contactCount = pair.contactCount;
-            cout << contactCount << " contacts between " << id_obj0 << " and " << id_obj1 << endl;
+            //cout << contactCount << " contacts between " << id_obj0 << " and " << id_obj1 << endl;
 			if(contactCount)
 			{
 
@@ -97,7 +98,7 @@ class ContactReportCallbackForTetrahedra: public PxSimulationEventCallback
                     PxVec3 normal = contactPoints[j].normal;
                     //Create a contact instance and add it to the list of contact points
                     if(abs(sep) < min(obj0->max_separation, obj1->max_separation)){
-                        Contact contact(id_obj0, id_obj1, pos, normal, sep);
+                        Contact contact(obj0, obj1, pos, normal, sep);
                         gContacts.push_back(contact);
                         //Add the contact position to the list of contact positions
                         gContactPositions.push_back(contactPoints[j].position);
@@ -142,11 +143,16 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
             GridCell* gridCell0 = static_cast<GridCell*>(shape0->userData);
             GridCell* gridCell1 = static_cast<GridCell*>(shape1->userData);
 
-            //TODO: For some reason, the surface points in the grid cells are not properly recorded.
+            //Surface points can be obtained with
+            //  gridCell0->surface_points[0].get()->position
+            //  gridCell0->surface_points[1].get()->position
+            //  ...
+            //  gridCell0->surface_points[0].get()->normal
+            //  ...
 
             //Get the contact points
 			PxU32 contactCount = pair.contactCount;
-            cout << contactCount << " contacts between " << id_obj0 << " and " << id_obj1 << endl;
+            //cout << contactCount << " contacts between " << id_obj0 << " and " << id_obj1 << endl;
 			if(contactCount)
 			{
 
@@ -175,10 +181,17 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                         }
                         Vector3f normal = (op0.normal + op1.normal) / 2;
 
-                        Contact contact(id_obj0, id_obj1, pos, normal, sep);
-                        gContacts.push_back(contact);
-                        //Add the contact position to the list of contact positions
-                        gContactPositions.push_back(contactPoints[j].position);
+                        //Distance between the two oriented points
+                        float pos_dist = (op0.position - op1.position).norm();
+                        float normal_dist = 1-op0.normal.dot(op1.normal);
+
+                        //cout << "pos_dist: " << pos_dist << " and normal_dist: " << normal_dist << endl;
+
+                        //Only add contacts where the two surface points are fairly close and the normals are fairly aligned
+                        if(pos_dist < 2*max(gridCell0->half_extents[0], gridCell1->half_extents[0]) && normal_dist < 0.25){
+                            Contact contact(obj0, obj1, pos, normal, pos_dist);
+                            gContacts.push_back(contact);
+                        }
                     }
 				}
 			}
@@ -249,18 +262,18 @@ void Scene::step_simulation(float dt)
 /// @brief Get the list of objects in contact with a given object.
 /// @param target_object id of the object
 /// @return list of objects in contact with the target object
-vector<string> Scene::get_contacted_objects(string target_object)
+set<string> Scene::get_contacted_objects(string target_object)
 {
-    vector<string> contacted_objects;
+    set<string> contacted_objects;
     for (int i = 0; i < gContactedObjects.size(); i++)
     {
         if (gContactedObjects[i].first == target_object)
         {
-            contacted_objects.push_back(gContactedObjects[i].second);
+            contacted_objects.insert(gContactedObjects[i].second);
         }
         else if (gContactedObjects[i].second == target_object)
         {
-            contacted_objects.push_back(gContactedObjects[i].first);
+            contacted_objects.insert(gContactedObjects[i].first);
         }
     }
     return contacted_objects;
@@ -282,7 +295,7 @@ MatrixX3f Scene::get_contact_points(string id1, string id2)
         if (object_ids.first == id2 && object_ids.second == id1)
             contact_points.push_back(gContacts[i].get_position());
     }
-    
+
     //Convert the vector of contact points to a matrix
     MatrixX3f contact_points_matrix(contact_points.size(), 3);
     for (int i = 0; i < contact_points.size(); i++)
@@ -291,6 +304,67 @@ MatrixX3f Scene::get_contact_points(string id1, string id2)
         contact_points_matrix.row(i) = contact_points[i].transpose();
     }
     return contact_points_matrix;
+}
+
+/// @brief Compare each pair of contact points and merge them if they are close enough.
+/// @param position_threshold Maximal distance between two contact points to be merged
+/// @param normal_threshold Maximum angle cosine between the normals of two contact points to be merged
+/// @note This is slow, use it only when necessary.
+void Scene::merge_similar_contact_points(float position_threshold = 0, float normal_threshold = 0.1)
+{
+    //If the position threshold is not specified, use an adaptive threshold based on the
+    // size of the voxels in contact.
+    bool compute_adaptive_threshold = (position_threshold == 0);
+
+    //Merge points that are less than some distance apart if their normal is mostly aligned
+    for (int i = 0; i < gContacts.size(); i++)
+    {
+        Contact contact1 = gContacts[i];
+
+        if(compute_adaptive_threshold){
+            pair<Object*, Object*> objects = contact1.get_objects();
+            Object* object1 = objects.first;
+            Object* object2 = objects.second;
+            Vector3f o1_sides = object1->get_voxel_side_lengths();
+            Vector3f o2_sides = object2->get_voxel_side_lengths();
+            float max_side = max(o1_sides.maxCoeff(), o2_sides.maxCoeff());
+            float position_threshold = 0.1*max_side;
+        }
+
+        for (int j = i + 1; j < gContacts.size(); j++)
+        {
+            Contact contact2 = gContacts[j];
+
+            if(compute_adaptive_threshold){
+                pair<Object*, Object*> objects = contact1.get_objects();
+                Object* object1 = objects.first;
+                Object* object2 = objects.second;
+                Vector3f o1_sides = object1->get_voxel_side_lengths();
+                Vector3f o2_sides = object2->get_voxel_side_lengths();
+                float max_side = max(o1_sides.maxCoeff(), o2_sides.maxCoeff());
+                position_threshold = max(position_threshold, 0.1f*max_side);
+            }
+
+            Vector3f pos1 = contact1.get_position();
+            Vector3f pos2 = contact2.get_position();
+            Vector3f normal1 = contact1.get_normal();
+            Vector3f normal2 = contact2.get_normal();
+            float pos_dist = (pos1 - pos2).norm();
+            float normal_dist = 1 - normal1.dot(normal2);
+            //If the two contact points are close enough, merge them
+            if (pos_dist < position_threshold && normal_dist < normal_threshold)
+            {
+                //Merge the two contact points
+                Vector3f pos = (pos1 + pos2) / 2;
+                Vector3f normal = (normal1 + normal2) / 2;
+                contact1.set_position(pos);
+                contact1.set_normal(normal);
+                //Remove the second contact point
+                gContacts.erase(gContacts.begin() + j);
+                j--;
+            }
+        }
+    }
 }
 
 /// @brief Iterates over the vertices and triangles of a PxTriangleMesh and stores them in supplied arrays
@@ -583,15 +657,15 @@ PxShape* createTetrahedronShape(PxCookingParams params, PxConvexMeshDesc convexM
 
 /// @brief Create a PxShape representing a cube for the given occupancy cell.
 /// @return Shape representing the cube.
-PxShape* createVoxelShape(GridCell& cell)
+PxShape* createVoxelShape(GridCell* cell)
 {
-    PxBoxGeometry boxGeometry = PxBoxGeometry(cell.half_extents[0], cell.half_extents[1], cell.half_extents[2]);
+    PxBoxGeometry boxGeometry = PxBoxGeometry(cell->half_extents[0], cell->half_extents[1], cell->half_extents[2]);
     PxShape* shape = gPhysics->createShape(boxGeometry, *gMaterial, true);
     if(!shape)
         throw runtime_error("Error creating shape");
 
-    shape->userData = &cell;
-    shape->setLocalPose(PxTransform(PxVec3(cell.centre[0], cell.centre[1], cell.centre[2])));
+    shape->userData = cell;
+    shape->setLocalPose(PxTransform(PxVec3(cell->centre[0], cell->centre[1], cell->centre[2])));
     //Since the voxel will be at a half-extent away from the surface of the object,
     // we set the contact offset to zero, the minimal contact distance is actually the half-extent.
     //               |-----------------|
@@ -671,13 +745,14 @@ void Scene::add_object(
     obj->set_tetra_mesh(tetMeshVertices, tetMeshIndices);
 
     //Create a occupancy grid
-    shared_ptr<OccupancyGrid> grid = obj->create_occupancy_grid(10);
+    //TODO: Add the resolution as a parameter
+    shared_ptr<OccupancyGrid> grid = obj->create_occupancy_grid(20);
 
     PxTolerancesScale scale;
     PxCookingParams params(scale);
     PxArray<PxShape*> convexShapes;
 
-    //Create a shape from each tetrahedron mesh description.
+    /* //Create a shape from each tetrahedron mesh description.
     for(int i = 0; i < convexMeshDescs.size(); i++){
         PxConvexMeshDesc convexMeshDesc = convexMeshDescs[i];
         PxShape* convexShape = createTetrahedronShape(params, convexMeshDesc);
@@ -688,15 +763,16 @@ void Scene::add_object(
         convexShapes.pushBack(convexShape);
         //Assign the maximal distance at which a contact can be made between the object and another object.
         convexShape->setContactOffset(obj->max_separation);
-    }
+    } */
 
     //Create a shape from each voxel in the occupancy grid.
-    unordered_map<uint32_t, GridCell> cells = grid->get_grid_cells();
+    unordered_map<uint32_t, GridCell>* cells = grid->get_grid_cells();
     //Create a shape for each occupancy grid cell
-    for(pair<const uint32_t, GridCell>& item : cells){
+    for(auto& item : *cells){
         uint32_t index = item.first;
-        GridCell& cell = item.second;
+        GridCell* cell  = &item.second;
         PxShape* voxelShape = createVoxelShape(cell);
+        convexShapes.pushBack(voxelShape);
     }
 
     //Pose of the object/actor with respect to the world frame

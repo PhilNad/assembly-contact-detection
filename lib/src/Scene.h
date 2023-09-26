@@ -3,6 +3,7 @@
 class Scene;
 
 #include <vector>
+#include <set>
 #include <memory>
 #include <iostream>
 #include <string>
@@ -39,8 +40,9 @@ class Scene
         Matrix4f get_object_pose(string /*id*/);
         void step_simulation(float /*dt*/);
         void run_simulation(float /*dt*/, float /*end_time*/);
-        vector<string> get_contacted_objects(string /*id*/);
+        set<string> get_contacted_objects(string target_object);
         MatrixX3f get_contact_points(string /*id1*/, string /*id2*/);
+        void merge_similar_contact_points(float position_threshold, float normal_threshold);
         MatrixX3f get_tri_vertices(string /*id*/);
         MatrixX3i get_tri_triangles(string /*id*/);
         MatrixX3f get_tetra_vertices(string /*id*/);

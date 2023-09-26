@@ -5,7 +5,7 @@
 /// @param surface_point Oriented point (position and normal) that was sampled on the surface.
 /// @param cell_size Size of the cell along each dimension.
 /// @param cell_centre Position of the centre of the cuboid that represents the cell.
-GridCell::GridCell(uint32_t id, const OrientedPoint& surface_point, const Vector3f& cell_size, const Vector3f& cell_centre)
+GridCell::GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const Vector3f& cell_size, const Vector3f& cell_centre)
 {
     this->id = id;
     //NOTE: The position does not correspond to the centre of the cell
@@ -21,7 +21,7 @@ GridCell::GridCell(uint32_t id, const OrientedPoint& surface_point, const Vector
 
 /// @brief Add information about a surface point to the grid cell.
 /// @param surface_point Oriented point (position and normal) that was sampled on the surface.
-void GridCell::additional_point(const OrientedPoint& surface_point){
+void GridCell::additional_point(shared_ptr<OrientedPoint> surface_point){
     this->surface_points.push_back(surface_point);
 }
 
@@ -33,7 +33,7 @@ OrientedPoint GridCell::weighted_average(const Vector3f& query_point){
     //Compute the distance between the query point and each surface point
     vector<float> distances;
     for (int i = 0; i < this->surface_points.size(); i++){
-        distances.push_back((query_point - this->surface_points[i].position).norm());
+        distances.push_back((query_point - this->surface_points[i]->position).norm());
     }
     //Compute the weights of each surface point
     vector<float> weights;
@@ -46,12 +46,12 @@ OrientedPoint GridCell::weighted_average(const Vector3f& query_point){
     //Compute the weighted average of the surface points
     Vector3f position_average = Vector3f::Zero();
     for (int i = 0; i < this->surface_points.size(); i++){
-        position_average += weights[i]/sum * this->surface_points[i].position;
+        position_average += weights[i]/sum * this->surface_points[i]->position;
     }
     //Compute the weighted average of the surface normals
     Vector3f normal_average = Vector3f::Zero();
     for (int i = 0; i < this->surface_points.size(); i++){
-        normal_average += weights[i]/sum * this->surface_points[i].normal;
+        normal_average += weights[i]/sum * this->surface_points[i]->normal;
     }
 
     //Create a new OrientedPoint
@@ -278,9 +278,9 @@ vector<int> OccupancyGrid::reverse_cell_idx(uint32_t idx)
 
 /// @brief  Get the list of grid cells.
 /// @return List of grid cells.
-unordered_map<uint32_t, GridCell> OccupancyGrid::get_grid_cells()
+unordered_map<uint32_t, GridCell>* OccupancyGrid::get_grid_cells()
 {
-    return this->grid_cells;
+    return &(this->grid_cells);
 }
 
 /// @brief Builds a grid of cells that represent the volume of the object.
@@ -335,9 +335,9 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
             uint32_t cell_idx = this->idx_cell_at(sampled_points[j]);
             if(cell_idx != 0){
                 //Create the oriented surface point
-                OrientedPoint surface_point;
-                surface_point.position = sampled_points[j];
-                surface_point.normal   = normal;
+                shared_ptr<OrientedPoint> surface_point = make_shared<OrientedPoint>();
+                surface_point->position = sampled_points[j];
+                surface_point->normal   = normal;
                 //Check if the cell is already occupied
                 bool occupied = this->is_cell_occupied(cell_idx);
                 if(!occupied){

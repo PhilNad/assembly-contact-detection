@@ -3,6 +3,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <memory>
 #include <unordered_map>
 #include "PxPhysicsAPI.h"
 #include <eigen3/Eigen/Eigen>
@@ -21,11 +22,11 @@ class GridCell
 {
     public:
         uint32_t id;
-        vector<OrientedPoint> surface_points;
+        vector<shared_ptr<OrientedPoint>> surface_points;
         Vector3f half_extents;
         Vector3f centre;
-        GridCell(uint32_t id, const OrientedPoint& surface_point, const Vector3f& cell_size, const Vector3f& cell_centre);
-        void additional_point(const OrientedPoint& surface_point);
+        GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const Vector3f& cell_size, const Vector3f& cell_centre);
+        void additional_point(shared_ptr<OrientedPoint> surface_point);
         OrientedPoint weighted_average(const Vector3f& query_point);
 };
 
@@ -42,7 +43,7 @@ class OccupancyGrid
     public:
         uint32_t idx_cell_at(const Vector3f& point);
         vector<int> reverse_cell_idx(uint32_t idx);
-        unordered_map<uint32_t, GridCell> get_grid_cells();
+        unordered_map<uint32_t, GridCell>* get_grid_cells();
         uint32_t is_cell_occupied(const Vector3f& point);
         uint32_t is_cell_occupied(uint32_t cell_idx);
         OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangles, int resolution);
