@@ -142,8 +142,21 @@ vector<Vector3f> OccupancyGrid::sample_points_in_triangle(const Vector3f& v0, co
     float max_y = projected_vertices.row(1).maxCoeff();
 
     //Side length of each grid cell
+    // Note: The side lengths can be zero if the axis is orthogonal to (1,1,1)
     float side_length_x = abs(x_axis.dot(this->cell_size));
     float side_length_y = abs(y_axis.dot(this->cell_size));
+
+    //This is done to avoid issues with very small side lengths
+    if(side_length_x < this->cell_size[0] / 10)
+        side_length_x = this->cell_size[0];
+
+    if(side_length_y < this->cell_size[1] / 10)
+        side_length_y = this->cell_size[1];
+
+    assert(side_length_x > 0);
+    assert(side_length_y > 0);
+
+    cout << "Will execute " << ((max_x-min_x)/side_length_x) * ((max_y-min_y)/side_length_y) << " point checks." << endl;
 
     //Sample points in the bounding box
     vector<Vector3f> points;
@@ -154,7 +167,8 @@ vector<Vector3f> OccupancyGrid::sample_points_in_triangle(const Vector3f& v0, co
             //Check if point is inside triangle
             if (point_inside_triangle(Vector3f(x, y, 0), v0_proj, v1_proj, v2_proj))
             {
-                Vector3f unprojected_point = projection.inverse() * Vector3f(x, y, 0) + v0;
+                //Here we are using the fact the the inverse is the transpose for a proper rotation matrix
+                Vector3f unprojected_point = projection.transpose() * Vector3f(x, y, 0) + v0;
                 points.push_back(unprojected_point);
             }
         }
@@ -316,6 +330,7 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
     // Iterate over triangles
     for (int i = 0; i < triangles.rows(); i++)
     {
+        //cout << "Triangle " << i << endl;
         // Get triangle vertices
         Vector3f v0 = vertices.row(triangles(i, 0));
         Vector3f v1 = vertices.row(triangles(i, 1));

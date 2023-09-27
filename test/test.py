@@ -43,14 +43,14 @@ o3d.visualization.draw([tm]) """
 
 cube1 = o3d.geometry.TriangleMesh.create_box(width=1.0, height=1.0, depth=1.0)
 cube1.scale(1, center=cube1.get_center())
-cube1.translate((0, 0, 0), relative=False)
+cube1.translate((0, 0, 0))
 
 cube2 = o3d.geometry.TriangleMesh.create_box(width=1.0, height=1.0, depth=1.0)
 cube2.scale(1, center=cube2.get_center())
-cube2.translate((0, 0.25, 1), relative=False)
+cube2.translate((0, 0.25, 1))
 
 cone = o3d.geometry.TriangleMesh.create_cone(radius=0.5, height=1.0)
-cone.translate((0, 0, 0.54545455), relative=False)
+cone.translate((0.5, 0.5, 1))
 
 #o3d.visualization.draw_geometries([cube1, cone])
 

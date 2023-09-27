@@ -64,6 +64,7 @@ class ContactReportCallbackForTetrahedra: public PxSimulationEventCallback
 		
 		for(PxU32 i=0;i<nbPairs;i++)
 		{
+            cout << "Contact pair " << i << endl;
             PxContactPair pair = pairs[i];
             //Get the shapes involved in the collision
             PxShape* shape0 = pair.shapes[0];
@@ -92,6 +93,7 @@ class ContactReportCallbackForTetrahedra: public PxSimulationEventCallback
 
 				for(PxU32 j=0;j<contactCount;j++)
 				{
+                    cout << "Contact point " << j << endl;
                     //Contact point data
                     PxVec3 pos = contactPoints[j].position;
                     PxReal sep = contactPoints[j].separation;
@@ -124,6 +126,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 		
 		for(PxU32 i=0;i<nbPairs;i++)
 		{
+            //cout << "Contact pair " << i << endl;
             PxContactPair pair = pairs[i];
             //Get the shapes involved in the collision
             PxShape* shape0 = pair.shapes[0];
@@ -150,6 +153,13 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
             //  gridCell0->surface_points[0].get()->normal
             //  ...
 
+            //Compute the position threshold based on the size of the voxels in contact
+            // two contact points are merged if they are closer than this threshold
+            Vector3f o1_sides = obj0->get_voxel_side_lengths();
+            Vector3f o2_sides = obj1->get_voxel_side_lengths();
+            float max_side = max(o1_sides.maxCoeff(), o2_sides.maxCoeff());
+            float position_threshold = max(position_threshold, 0.1f*max_side);
+
             //Get the contact points
 			PxU32 contactCount = pair.contactCount;
             //cout << contactCount << " contacts between " << id_obj0 << " and " << id_obj1 << endl;
@@ -164,16 +174,22 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 
 				for(PxU32 j=0;j<contactCount;j++)
 				{
+                    //If at least one contact point has been added, we set contact_added to true
+                    bool contact_added = false;
+                    //cout << "Contact point " << j << endl;
                     //Contact point data
                     PxVec3 pos = contactPoints[j].position;
                     PxReal sep = contactPoints[j].separation;
-                    PxVec3 normal = contactPoints[j].normal;
+
                     //Create a contact instance and add it to the list of contact points
                     if(abs(sep) < min(obj0->max_separation, obj1->max_separation)){
                         Vector3f query_point = Vector3f(contactPoints[j].position.x, contactPoints[j].position.y, contactPoints[j].position.z);
                         //Get the weighted average of the surface points of the two grid cells
                         OrientedPoint op0 = gridCell0->weighted_average(query_point);
                         OrientedPoint op1 = gridCell1->weighted_average(query_point);
+                        //cout << "Object 1 Point Normal: (" << op0.normal[0] << ", " << op0.normal[1] << ", " << op0.normal[2] << ")" << endl;
+                        //cout << "Object 2 Point Normal: (" << op1.normal[0] << ", " << op1.normal[1] << ", " << op1.normal[2] << ")" << endl;
+                        
                         //Compute the average of the two oriented points by first aligning the normal in the same half-space
                         Vector3f pos = (op0.position + op1.position) / 2;
                         if(op0.normal.dot(op1.normal) < 0){
@@ -189,9 +205,27 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 
                         //Only add contacts where the two surface points are fairly close and the normals are fairly aligned
                         if(pos_dist < 2*max(gridCell0->half_extents[0], gridCell1->half_extents[0]) && normal_dist < 0.25){
+                            
+                            //Compute the distance between this contact and the previous one from this pair of objects
+                            if(j > 0 && contact_added){
+                                Contact previous_contact = gContacts.back();
+                                Vector3f prev_pos = previous_contact.get_position();
+                                float prev_pos_dist = (prev_pos - pos).norm();
+                                //If the distance is too small, we consider that its the same point and we don't add it
+                                if(prev_pos_dist < position_threshold){
+                                    continue;
+                                }
+                            }
+                            //Add a new contact point to the list
                             Contact contact(obj0, obj1, pos, normal, pos_dist);
                             gContacts.push_back(contact);
+                            contact_added = true;
+                            //cout << "Contact added" << endl;
+                        }else{
+                            //cout << "Contact not added, pos_dist: " << pos_dist << " and normal_dist: " << normal_dist << endl;
                         }
+                    }else{
+                        //cout << "Contact not added, separation too large." << endl;
                     }
 				}
 			}
@@ -224,7 +258,7 @@ void Scene::startupPhysics()
     sceneDesc.simulationEventCallback = gContactReportCallback;
     //When getting more contact points matters, its better to disable PCM.
     // See: https://nvidia-omniverse.github.io/PhysX/physx/5.2.1/docs/AdvancedCollisionDetection.html#persistent-contact-manifold-pcm
-    sceneDesc.flags &= ~PxSceneFlag::eENABLE_PCM;
+    // sceneDesc.flags &= ~PxSceneFlag::eENABLE_PCM;
 
     gScene = gPhysics->createScene(sceneDesc);
     gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
@@ -746,7 +780,7 @@ void Scene::add_object(
 
     //Create a occupancy grid
     //TODO: Add the resolution as a parameter
-    shared_ptr<OccupancyGrid> grid = obj->create_occupancy_grid(20);
+    shared_ptr<OccupancyGrid> grid = obj->create_occupancy_grid(10);
 
     PxTolerancesScale scale;
     PxCookingParams params(scale);

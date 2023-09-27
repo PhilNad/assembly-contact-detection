@@ -141,7 +141,7 @@ int main(int argc, char** argv) {
     MatrixX3f contact_points = scene.get_contact_points("cube1", "cube2");
     cout << "Contact points: ";
     for (int i = 0; i < contact_points.rows(); i++) {
-        cout << contact_points.row(i) << endl;
+        //cout << contact_points.row(i) << endl;
     }
     cout << endl;
 
