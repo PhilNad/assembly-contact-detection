@@ -52,8 +52,8 @@ float Contact::get_separation()
 
 pair<string, string> Contact::get_object_ids()
 {
-    string object1_id = this->object1->get_id();
-    string object2_id = this->object2->get_id();
+    string object1_id = this->object1->id;
+    string object2_id = this->object2->id;
     return make_pair(object1_id, object2_id);
 }
 
