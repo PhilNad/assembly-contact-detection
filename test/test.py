@@ -4,6 +4,7 @@ sys.path.append(pathlib.Path(__file__).parent.resolve().as_posix() + "/../build/
 import open3d as o3d
 import numpy as np
 import assembly_cd as acd
+import time
 
 """ vert = np.array([
     [-1, -1, -1],
@@ -54,7 +55,11 @@ cone.translate((0.5, 0.5, 1))
 
 #o3d.visualization.draw_geometries([cube1, cone])
 
+start_time = time.time()
 physxScene = acd.Scene()
+print("Scene created in: ", time.time() - start_time)
+
+start_time = time.time()
 #Arguments: id, pose, vertices, triangles, is_fixed, mass, com , material_name
 physxScene.add_object("cube1", 
                         np.identity(4), 
@@ -64,7 +69,9 @@ physxScene.add_object("cube1",
                         1.0, 
                         np.array([0, 0, 0]), #CoM is expressed wrt local frame 
                         "wood")
+print("Cube1 added in: ", time.time() - start_time)
 
+start_time = time.time()
 physxScene.add_object("cone",
                         np.identity(4),
                         np.asarray(cone.vertices),
@@ -73,6 +80,7 @@ physxScene.add_object("cone",
                         1.0,
                         np.array([0, 0, 0]), #CoM is expressed wrt local frame 
                         "wood")
+print("Cone added in: ", time.time() - start_time)
 
 '''
 vert = physxScene.get_tri_vertices("cube1")
@@ -110,12 +118,17 @@ for i in range(len(voxel_positions)):
 o3d.visualization.draw([tm]+voxels)
 '''
 
+start_time = time.time()
 physxScene.step_simulation(1/60)
+print("Simulation step in: ", time.time() - start_time)
 #print(physxScene.get_contacted_objects("cube1"))
 #print(physxScene.get_contacted_objects("cone"))
 
 #physxScene.merge_similar_contact_points()
+start_time = time.time()
 contact_points = physxScene.get_contact_points("cube1", "cone")
+print("Contact points processed in: ", time.time() - start_time)
+
 contact_point_cloud = o3d.geometry.PointCloud()
 contact_point_cloud.points = o3d.utility.Vector3dVector(contact_points)
 o3d.visualization.draw([cube1, cone, contact_point_cloud])

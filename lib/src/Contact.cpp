@@ -26,10 +26,10 @@ Contact::Contact(Object* object1, Object* object2, Vector3f position, Vector3f n
     this->separation = separation;
 
     //Print all information
-    cout << "Contact between " << object1->id << " and " << object2->id << endl;
-    cout << "Position: " << position[0] << ", " << position[1] << ", " << position[2] << endl;
-    cout << "Normal: " << normal[0] << ", " << normal[1] << ", " << normal[2] << endl;
-    cout << "Separation: " << separation << endl;
+    // cout << "Contact between " << object1->id << " and " << object2->id << endl;
+    // cout << "Position: " << position[0] << ", " << position[1] << ", " << position[2] << endl;
+    // cout << "Normal: " << normal[0] << ", " << normal[1] << ", " << normal[2] << endl;
+    // cout << "Separation: " << separation << endl;
 }
 
 

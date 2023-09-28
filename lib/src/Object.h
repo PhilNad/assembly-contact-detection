@@ -62,6 +62,7 @@ class Object
         void set_material_name(string /*material_name*/);
         void set_tetra_mesh(PxArray<PxVec3> /*vertices*/, PxArray<PxU32> /*indices*/);
         void set_tri_mesh(PxSimpleTriangleMesh& /*simpleTriMesh*/);
-        shared_ptr<OccupancyGrid> create_occupancy_grid(int resolution);
+        void set_tri_mesh(MatrixX3f& vertices, MatrixX3i& triangles);
+        shared_ptr<OccupancyGrid> create_occupancy_grid(int resolution, int sampling_method);
         MatrixX3f get_world_vertices();
 };

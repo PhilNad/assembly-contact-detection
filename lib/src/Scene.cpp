@@ -2,6 +2,7 @@
 #include <iostream>
 #include <memory>
 #include <set>
+#include <chrono>
 #include "PxPhysicsAPI.h"
 #include "extensions/PxTetMakerExt.h"
 #include "extensions/PxSoftBodyExt.h"
@@ -741,46 +742,52 @@ void Scene::add_object(
     shared_ptr<Object> obj = make_shared<Object>(id, pose, vertices, triangles, is_fixed, mass, com, material_name);
     object_ptrs.push_back(obj);
 
-    //Perform remeshing to make sure the triangle mesh is adequate for further processing.
-    PxArray<PxVec3> triVerts, remeshVerts, simplifiedVerts;
-    PxArray<PxU32> triIndices, remeshIndices, simplifiedIndices;
-    for(int i = 0; i < vertices.rows(); i++){
-        triVerts.pushBack(PxVec3(vertices(i, 0), vertices(i, 1), vertices(i, 2)));
-    }
-    for(int i = 0; i < triangles.rows(); i++){
-        triIndices.pushBack(triangles(i, 0));
-        triIndices.pushBack(triangles(i, 1));
-        triIndices.pushBack(triangles(i, 2));
-    }
-    PxTetMaker::remeshTriangleMesh(triVerts, triIndices, PxU32(10), remeshVerts, remeshIndices);
-    //Remeshing creates a lot of vertices and triangles. We can simplify the mesh to reduce the number of vertices and triangles.
-    // It can also alleviate the problem of eCONTAINS_ACUTE_ANGLED_TRIANGLES.
-    PxTetMaker::simplifyTriangleMesh(remeshVerts, remeshIndices, 100, 0, simplifiedVerts, simplifiedIndices);
+    // //Perform remeshing to make sure the triangle mesh is adequate for further processing.
+    // PxArray<PxVec3> triVerts, remeshVerts, simplifiedVerts;
+    // PxArray<PxU32> triIndices, remeshIndices, simplifiedIndices;
+    // for(int i = 0; i < vertices.rows(); i++){
+    //     triVerts.pushBack(PxVec3(vertices(i, 0), vertices(i, 1), vertices(i, 2)));
+    // }
+    // for(int i = 0; i < triangles.rows(); i++){
+    //     triIndices.pushBack(triangles(i, 0));
+    //     triIndices.pushBack(triangles(i, 1));
+    //     triIndices.pushBack(triangles(i, 2));
+    // }
+    // PxTetMaker::remeshTriangleMesh(triVerts, triIndices, PxU32(10), remeshVerts, remeshIndices);
+    // //Remeshing creates a lot of vertices and triangles. We can simplify the mesh to reduce the number of vertices and triangles.
+    // // It can also alleviate the problem of eCONTAINS_ACUTE_ANGLED_TRIANGLES.
+    // PxTetMaker::simplifyTriangleMesh(remeshVerts, remeshIndices, 100, 0, simplifiedVerts, simplifiedIndices);
 
-    PxSimpleTriangleMesh newSurfaceMesh;
-	newSurfaceMesh.points.count = simplifiedVerts.size();
-	newSurfaceMesh.points.data = simplifiedVerts.begin();
-	newSurfaceMesh.triangles.count = simplifiedIndices.size() / 3;
-	newSurfaceMesh.triangles.data = simplifiedIndices.begin();
+    // PxSimpleTriangleMesh newSurfaceMesh;
+	// newSurfaceMesh.points.count = simplifiedVerts.size();
+	// newSurfaceMesh.points.data = simplifiedVerts.begin();
+	// newSurfaceMesh.triangles.count = simplifiedIndices.size() / 3;
+	// newSurfaceMesh.triangles.data = simplifiedIndices.begin();
 
-    PxArray<PxVec3> tetMeshVertices;
-    PxArray<PxU32> tetMeshIndices;
+    // PxArray<PxVec3> tetMeshVertices;
+    // PxArray<PxU32> tetMeshIndices;
    
-    bool isValid = validateMesh(newSurfaceMesh);
+    // bool isValid = validateMesh(newSurfaceMesh);
 
-    //Create a tetrahedron mesh from the surface mesh
-    bool success = PxTetMaker::createConformingTetrahedronMesh(newSurfaceMesh, tetMeshVertices, tetMeshIndices);
-    //For each tetrahedron, create a convex mesh.
-    PxArray<PxConvexMeshDesc> convexMeshDescs;
-    createThetrahedronSet(tetMeshVertices, tetMeshIndices, convexMeshDescs);
+    // //Create a tetrahedron mesh from the surface mesh
+    // bool success = PxTetMaker::createConformingTetrahedronMesh(newSurfaceMesh, tetMeshVertices, tetMeshIndices);
+    // //For each tetrahedron, create a convex mesh.
+    // PxArray<PxConvexMeshDesc> convexMeshDescs;
+    // createThetrahedronSet(tetMeshVertices, tetMeshIndices, convexMeshDescs);
     
-    //Record the triangle mesh and tetrahedron mesh in the object
-    obj->set_tri_mesh(newSurfaceMesh);
-    obj->set_tetra_mesh(tetMeshVertices, tetMeshIndices);
+    // //Record the triangle mesh and tetrahedron mesh in the object
+    // obj->set_tri_mesh(newSurfaceMesh);
+    // obj->set_tetra_mesh(tetMeshVertices, tetMeshIndices);
+
+    obj->set_tri_mesh(vertices, triangles);
 
     //Create a occupancy grid
-    //TODO: Add the resolution as a parameter
-    shared_ptr<OccupancyGrid> grid = obj->create_occupancy_grid(10);
+    auto t1 = chrono::high_resolution_clock::now();
+    shared_ptr<OccupancyGrid> grid = obj->create_occupancy_grid(15, OccupancyGrid::sampling_method::random);
+    auto t2 = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+    cout << "Occupancy grid created in " << duration << " ms" << endl;
+    
 
     PxTolerancesScale scale;
     PxCookingParams params(scale);

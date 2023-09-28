@@ -73,15 +73,24 @@ void Object::set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh)
     }
 }
 
+/// @brief Record the description of the triangle mesh that represents the surface of the object
+/// @param vertices Nx3 matrix with each row representing the coordinates of a vertex
+/// @param triangles Mx3 matrix with each row representing the indices of a triangle
+void Object::set_tri_mesh(MatrixX3f& vertices, MatrixX3i& triangles)
+{
+    this->tri_vertices  = vertices;
+    this->tri_triangles = triangles;
+}
+
 /// @brief Create a grid of cells that represent the volume of the object.
 /// @param resolution Number of cells per unit of length.
 /// @return Pointer to the occupancy grid
-shared_ptr<OccupancyGrid> Object::create_occupancy_grid(int resolution)
+shared_ptr<OccupancyGrid> Object::create_occupancy_grid(int resolution, int sampling_method)
 {
     MatrixX3f vertices = this->tri_vertices;
     MatrixX3i triangles = this->tri_triangles;
     //Build the grid
-    shared_ptr<OccupancyGrid> grid = make_shared<OccupancyGrid>(vertices, triangles, resolution);
+    shared_ptr<OccupancyGrid> grid = make_shared<OccupancyGrid>(vertices, triangles, resolution, sampling_method);
     this->occupancy_grid = grid;
     return this->occupancy_grid;
 }

@@ -67,45 +67,118 @@ OrientedPoint GridCell::weighted_average(const Vector3f& query_point){
 /// @param v0 The first vertex of the triangle.
 /// @param v1 The second vertex of the triangle.
 /// @param v2 The third vertex of the triangle.
+/// @param cache Cache for computations that can be reused if the function is called multiple times for the same triangle.
 /// @return True if the point is inside the triangle, false otherwise.
 /// @note See: https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Barycentric_coordinates_on_triangles
 /// @note See: Real-Time Collision Detection page 137.
-bool point_inside_triangle(const Vector3f& p, const Vector3f& v0, const Vector3f& v1, const Vector3f& v2)
+bool OccupancyGrid::point_inside_triangle(const Vector3f& p, const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, point_inside_triangle_computations_cache& cache)
 {
     //Tolerance such that points directly on the triangle edge are considered to be inside the triangle
     float tol = 1e-6;
 
+    //If the vertices in the cache match the ones in the triangle, we can reuse the computations
+    if(cache.v0 == v0 && cache.v1 == v1 && cache.v2 == v2){
+        cache.active = true;
+    }else{
+        //Otherwise, we perform the computations and record the current vertices in the cache
+        cache.active = false;
+        cache.v0 = v0;
+        cache.v1 = v1;
+        cache.v2 = v2;
+    }
+
     //Express points relative to first vertex
-    Vector3f v0r = v1 - v0;
-    Vector3f v1r = v2 - v0;
-    Vector3f v2r = p - v0;
+    Vector3f v0r, v1r, v2r;
+    if(cache.active == false){
+        cache.v0r = v1 - v0;
+        cache.v1r = v2 - v0;
+    }
+    v0r = cache.v0r;
+    v1r = cache.v1r;
+    v2r = p - v0;
+
     //Compute dot products
-    float d00 = v0r.dot(v0r);
-    float d01 = v0r.dot(v1r);
-    float d11 = v1r.dot(v1r);
-    float d20 = v2r.dot(v0r);
-    float d21 = v2r.dot(v1r);
-    //This is two times the triangle area
-    float inv_denom = 1/(d00 * d11 - d01 * d01);
+    float d00, d01, d11, d20, d21;
+    if(cache.active == false){
+        cache.d00 = v0r.dot(v0r);
+        cache.d01 = v0r.dot(v1r);
+        cache.d11 = v1r.dot(v1r);
+    }
+    d00 = cache.d00;
+    d01 = cache.d01;
+    d11 = cache.d11;
+    d20 = v2r.dot(v0r);
+    d21 = v2r.dot(v1r);
+
+    //The denominator is equal to two times the triangle area
+    float inv_denom;
+    if(cache.active == false){
+        cache.inv_denom = 1/(d00 * d11 - d01 * d01);
+    }
+    inv_denom = cache.inv_denom;
+
     //Barycentric weights that each describe the area of a sub-triangle over the area of the triangle
     // so they must be between 0 and 1. The weights also describe how much each vertex attracts the point.
     float alpha = (d11 * d20 - d01 * d21) * inv_denom;
     float beta  = (d00 * d21 - d01 * d20) * inv_denom;
     float gamma = 1.0f - alpha - beta;
-    cout << "alpha = " << alpha << ", beta = " << beta << ", gamma = " << gamma << endl;
+    //cout << "alpha = " << alpha << ", beta = " << beta << ", gamma = " << gamma << endl;
+
     //Check if point is inside triangle
     return ((0 <= alpha+tol) && (alpha-tol <= 1) &&
             (0 <= beta+tol)  && (beta-tol  <= 1) &&
             (0 <= gamma+tol) && (gamma-tol <= 1));
 }
 
+/// @brief Sample points randomly in the triangle defined by its vertices.
+/// @param v0 First vertex of the triangle.
+/// @param v1 Second vertex of the triangle.
+/// @param v2 Third vertex of the triangle.
+/// @param density Distance between sampled points (in number per area)
+/// @return Vector of points randomly distributed in the triangle.
+/// @note This method is much faster than sample_uniform_points_in_triangle(), but the points are not uniformly distributed.
+vector<Vector3f> OccupancyGrid::sample_random_points_in_triangle(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, float density)
+{
+    //Make sure that each edge of the triangle is non-zero
+    assert((v1 - v0).norm() > 0);
+    assert((v2 - v0).norm() > 0);
+    assert((v2 - v1).norm() > 0);
+    //OccupancyGrid should be initialized
+    assert(this->cell_size[0] > 1e-12 && this->cell_size[1] > 1e-12 && this->cell_size[2] > 1e-12);
+
+    //Compute the number of samples to get the desired density on average
+    float triangle_area = 0.5 * (v1 - v0).cross(v2 - v0).norm();
+    float num_samples = triangle_area * density;
+
+    vector<Vector3f> points;
+    for (int i = 0; i < num_samples; i++)
+    {
+        //Sample two random numbers that will act as the barycentric weights
+        float u = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+        float v = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+
+        //If (u+v)>1, then the point will be outside the triangle.
+        // However, to avoid wasting rand() computations, we can create a valid
+        // point by performing a 180 degrees rotation about the centroid.
+        if (u + v > 1){
+            u = 1 - u;
+            v = 1 - v;
+        }
+
+        //Use barycentric coordinates and weights to get the point
+        Vector3f point = v0 + (v1 - v0) * u + (v2 - v0) * v;
+        points.push_back(point);
+    }
+    return points;
+}
+
 /// @brief Sample points uniformly, and keep only those that are inside the triangle.
 /// @param v0 First vertex of the triangle.
 /// @param v1 Second vertex of the triangle.
 /// @param v2 Third vertex of the triangle.
-/// @param resolution Distance between sampled points.
-/// @return Matrix with each row representing a sampled point.
-vector<Vector3f> OccupancyGrid::sample_points_in_triangle(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2)
+/// @param density Distance between sampled points.
+/// @return Vector of points uniformly distributed in the triangle.
+vector<Vector3f> OccupancyGrid::sample_uniform_points_in_triangle(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, float density)
 {
     //Make sure that each edge of the triangle is non-zero
     assert((v1 - v0).norm() > 0);
@@ -122,15 +195,15 @@ vector<Vector3f> OccupancyGrid::sample_points_in_triangle(const Vector3f& v0, co
     //Set the origin as the vertex in contact with the two longest sides
     Vector3f origin;
     uint32_t origin_idx;
-    if(side_length_0 < side_length_1 && side_length_0 < side_length_2){
+    if(side_length_0 <= side_length_1 && side_length_0 <= side_length_2){
         //Side 0 is the shortest, v2 is the origin
         origin << v2;
         origin_idx = 2;
-    }else if(side_length_1 < side_length_0 && side_length_1 < side_length_2){
+    }else if(side_length_1 <= side_length_0 && side_length_1 <= side_length_2){
         //Side 1 is the shortest, v0 is the origin
         origin << v0;
         origin_idx = 0;
-    }else if(side_length_2 < side_length_0 && side_length_2 < side_length_1){
+    }else if(side_length_2 <= side_length_0 && side_length_2 <= side_length_1){
         //Side 2 is the shortest, v1 is the origin
         origin << v1;
         origin_idx = 1;
@@ -194,7 +267,7 @@ vector<Vector3f> OccupancyGrid::sample_points_in_triangle(const Vector3f& v0, co
     //Also define the inverse transformation
     Affine3f inv_transfo = Affine3f::Identity();
     inv_transfo.linear()        = rotation.transpose();
-    inv_transfo.translation()   = rotation.transpose()*origin;
+    inv_transfo.translation()   = origin;
 
     //Express vertices in the newly defined frame
     Matrix3f vertices_in_columns = (MatrixX3f(3, 3) << v0, v1, v2).finished();
@@ -208,48 +281,44 @@ vector<Vector3f> OccupancyGrid::sample_points_in_triangle(const Vector3f& v0, co
     float max_x = projected_vertices.row(0).maxCoeff();
     float max_y = projected_vertices.row(1).maxCoeff();
 
-    //Project the voxel diagonal onto the x-y plane
-    Vector3f diag_proj = rotation * this->cell_size;
-
-    //Step size
-    //TODO: Should this change depending on the orientation of the triangle?
-    float step_size_x = this->cell_size[0] / 5;
-    float step_size_y = this->cell_size[0] / 5;
-
-    assert(step_size_x > 0);
-    assert(step_size_y > 0);
+    //Get resolution from density
+    float area = 0.5 * (v1 - v0).cross(v2 - v0).norm();
+    float num_samples = area * density;
+    float resolution_x = max_x/sqrt(num_samples);
+    float resolution_y = max_y/sqrt(num_samples);
 
     //Sample points in the bounding box
     vector<Vector3f> points;
     int saved_checks = 0;
-    for (float x = 0; x <= max_x; x += step_size_x)
+    point_inside_triangle_computations_cache cache;
+    for (float x = 0; x <= max_x; x += resolution_x)
     {
         //Tracks when we enter and leave the triangle
         bool prev_point_inside = false;
-        for (float y = 0; y <= max_y; y += step_size_y)
+        for (float y = 0; y <= max_y; y += resolution_y)
         {
+            Vector3f point_2D = Vector3f(x, y, 0);
             //Check if the (x,y) point is inside triangle.
             // Our reference frame fixed in the triangle guarantees that any point with y=0
             // will be inside the triangle, saving a few more costly checks.
-            if (y == 0 || point_inside_triangle(Vector3f(x, y, 0), v0_proj, v1_proj, v2_proj))
+            if (y == 0 || point_inside_triangle(point_2D, v0_proj, v1_proj, v2_proj, cache))
             {
                 //Use the inverse transformation to get the point in the world frame
-                Vector3f unprojected_point = inv_transfo.linear() * Vector3f(x, y, 0) + inv_transfo.translation();
+                Vector3f unprojected_point = inv_transfo.linear() * point_2D + inv_transfo.translation();
                 points.push_back(unprojected_point);
                 prev_point_inside = true;
-                cout << "Coord (" << x << ", " << y << ") is INSIDE the triangle." << endl;
+                //cout << "Coord (" << x << ", " << y << ") is INSIDE the triangle." << endl;
             }else{
-                cout << "Coord (" << x << ", " << y << ") is OUTSIDE the triangle." << endl;
+                //cout << "Coord (" << x << ", " << y << ") is OUTSIDE the triangle." << endl;
                 if(prev_point_inside){
                     //We are leaving the triangle, no need to check more points
                     // as the triangle is convex.
-                    saved_checks += ceil((max_y - y)/step_size_y) + 1;
+                    saved_checks += ceil((max_y - y)/resolution) + 1;
                     break;
                 }
             }
         }
     }
-    cout << "Saved " << saved_checks << "/" << points.size()+saved_checks << " checks." << endl;
     return points;
 }
 
@@ -378,7 +447,7 @@ unordered_map<uint32_t, GridCell>* OccupancyGrid::get_grid_cells()
 /// @param vertices Array of vertices of the triangle mesh representing the object, one vertex per row.
 /// @param triangles Array of indices of the triangle mesh representing the object, one triangle per row.
 /// @param resolution Desired number of cells per unit of length.
-OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangles, int resolution)
+OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangles, int resolution, int sampling_method = OccupancyGrid::sampling_method::uniform)
 {
     //The resolution is the number of cells along each dimension
     // and must be at least 1.
@@ -405,6 +474,7 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
     this->bb_origin = {min_x - this->cell_size[0]/2, min_y - this->cell_size[1]/2, min_z - this->cell_size[2]/2};
 
     // Iterate over triangles
+    int total_sampled_points = 0;
     for (int i = 0; i < triangles.rows(); i++)
     {
         //cout << "Triangle " << i << endl;
@@ -417,15 +487,17 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
         // ordered with the PhysX convention.
         Vector3f normal = (v1 - v0).cross(v2 - v0).normalized();
 
-        //TEST TO REMOVE AFTER USE
-        Vector3f t0, t1, t2;
-        t0 << 0, 0, 1;
-        t1 << 0.5, 0, 1;
-        t2 << -0.25, 0.25, 1;
-        sample_points_in_triangle(t0, t1, t2);
-
         // Sample points in the triangle
-        vector<Vector3f> sampled_points = sample_points_in_triangle(v0, v1, v2);
+        float sample_density = 10/(this->cell_size[0]*this->cell_size[0]);
+        vector<Vector3f> sampled_points;
+        if(sampling_method == OccupancyGrid::sampling_method::uniform)
+            sampled_points = sample_uniform_points_in_triangle(v0, v1, v2, sample_density);
+        else if(sampling_method == OccupancyGrid::sampling_method::random)  
+            sampled_points = sample_random_points_in_triangle(v0, v1, v2, sample_density);
+        else
+            throw runtime_error("Invalid sampling method.");
+
+        total_sampled_points += sampled_points.size();
 
         //For each sample point, check if a grid cell has already been created for it
         // If not, create a new grid cell
@@ -454,5 +526,6 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
             }
         }
     }
+    cout << "Total number of sampled points: " << total_sampled_points << endl;
 }
         

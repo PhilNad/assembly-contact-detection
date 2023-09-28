@@ -101,7 +101,7 @@ int main(int argc, char** argv) {
     Matrix4f pose;
     pose << 1, 0, 0, 0,
             0, 1, 0, 0,
-            0, 0, 1, 0,
+            0, 0, 1, 0.5,
             0, 0, 0, 1;
     Cube cube1 = Cube(1, 1, 1);
     cube1.translate(pose(0, 3), pose(1, 3), pose(2, 3));
@@ -115,7 +115,7 @@ int main(int argc, char** argv) {
     id = "cube2";
     pose << 1, 0, 0, 0,
             0, 1, 0, 0.25,
-            0, 0, 1, 1,
+            0, 0, 1, 1.5,
             0, 0, 0, 1;
     Cube cube2 = Cube(1, 1, 1);
     cube2.translate(pose(0, 3), pose(1, 3), pose(2, 3));
