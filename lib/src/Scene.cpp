@@ -284,6 +284,8 @@ Scene::~Scene(){
 /// @param dt time step
 void Scene::step_simulation(float dt)
 {
+    assert(dt > 0);
+
     //Clear the list of contacted objects and contact points
     gContacts.clear();
     gContactedObjects.clear(); 
@@ -298,6 +300,12 @@ void Scene::step_simulation(float dt)
 /// @return list of objects in contact with the target object
 set<string> Scene::get_contacted_objects(string target_object)
 {
+    //If there are no contacts, step the simulation by a small amount
+    // to make sure that the collision detection is performed.
+    if(gContacts.size() == 0){
+        this->step_simulation(1/1000.0f);
+    }
+
     set<string> contacted_objects;
     for (int i = 0; i < gContactedObjects.size(); i++)
     {
@@ -319,6 +327,12 @@ set<string> Scene::get_contacted_objects(string target_object)
 /// @return Nx3 matrix representing the contact points between the two objects
 MatrixX3f Scene::get_contact_points(string id1, string id2)
 {
+    //If there are no contacts, step the simulation by a small amount
+    // to make sure that the collision detection is performed.
+    if(gContacts.size() == 0){
+        this->step_simulation(1/1000.0f);
+    }
+
     //Iterate over gContacts and find the contact points between the two objects
     vector<Vector3f> contact_points;
     for (int i = 0; i < gContacts.size(); i++)
@@ -481,16 +495,7 @@ PxShape* createVoxelShape(GridCell* cell)
 /// @param mass mass of the object (default: 1)
 /// @param com 3x1 vector representing the center of mass of the object (default: [0, 0, 0])
 /// @param material_name name of the material of the object (default: wood)
-void Scene::add_object(
-    string id, 
-    Matrix4f pose, 
-    MatrixX3f vertices, 
-    MatrixX3i triangles,
-    bool is_fixed,
-    float mass,
-    Vector3f com,
-    string material_name
-)
+void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i triangles, bool is_fixed, float mass, Vector3f com, string material_name)
 {
     //Create an object instance and add it to the scene
     // When adding an element to the vector, the vector may reallocate memory and move the elements which will change their addresses.

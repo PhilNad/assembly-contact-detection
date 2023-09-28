@@ -118,16 +118,10 @@ for i in range(len(voxel_positions)):
 o3d.visualization.draw([tm]+voxels)
 '''
 
-start_time = time.time()
-physxScene.step_simulation(1/60)
-print("Simulation step in: ", time.time() - start_time)
 #print(physxScene.get_contacted_objects("cube1"))
 #print(physxScene.get_contacted_objects("cone"))
-
 #physxScene.merge_similar_contact_points()
-start_time = time.time()
 contact_points = physxScene.get_contact_points("cube1", "cone")
-print("Contact points processed in: ", time.time() - start_time)
 
 contact_point_cloud = o3d.geometry.PointCloud()
 contact_point_cloud.points = o3d.utility.Vector3dVector(contact_points)

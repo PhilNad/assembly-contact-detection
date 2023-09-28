@@ -27,25 +27,6 @@ class Cube{
             vertices.row(7) <<  hex, -hey,  hez;
 
             triangles = MatrixXi::Zero(12, 3);
-            // //Top
-            // triangles.row(0) << 4, 6, 7;
-            // triangles.row(1) << 4, 6, 5;
-            // //Bottom
-            // triangles.row(2) << 0, 2, 3;
-            // triangles.row(3) << 0, 2, 1;
-            // //Side X+
-            // triangles.row(4) << 7, 2, 3;
-            // triangles.row(5) << 7, 2, 6;
-            // //Side X-
-            // triangles.row(6) << 4, 1, 0;
-            // triangles.row(7) << 4, 1, 5;
-            // //Side Y+
-            // triangles.row(8) << 5, 2, 1;
-            // triangles.row(9) << 5, 2, 6;
-            // //Side Y-
-            // triangles.row(10) << 4, 3, 0;
-            // triangles.row(11) << 4, 3, 7;
-
             //Top
             triangles.row(0) << 7, 6, 4;
             triangles.row(1) << 4, 6, 5;
@@ -64,19 +45,6 @@ class Cube{
             //Side Y-
             triangles.row(10) << 3, 4, 0;
             triangles.row(11) << 4, 3, 7;
-
-            // triangles.row(0) << 7, 4, 0;
-            // triangles.row(1) << 1, 5, 6;
-            // triangles.row(2) << 2, 6, 7;
-            // triangles.row(3) << 6, 5, 4;
-            // triangles.row(4) << 4, 5, 1;
-            // triangles.row(5) << 3, 0, 1;
-            // triangles.row(6) << 3, 7, 0;
-            // triangles.row(7) << 2, 1, 6;
-            // triangles.row(8) << 3, 2, 7;
-            // triangles.row(9) << 7, 6, 4;
-            // triangles.row(10) << 0, 4, 1;
-            // triangles.row(11) << 2, 3, 1;
         }
         ~Cube(){}
         void translate(float x, float y, float z){
@@ -105,11 +73,7 @@ int main(int argc, char** argv) {
             0, 0, 0, 1;
     Cube cube1 = Cube(1, 1, 1);
     cube1.translate(pose(0, 3), pose(1, 3), pose(2, 3));
-    bool is_fixed = false;
-    float mass = 1.0f;
-    Vector3f com = Vector3f::Zero();
-    string material_name = "wood";
-    scene.add_object(id, pose, cube1.vertices, cube1.triangles, is_fixed, mass, com, material_name);
+    scene.add_object(id, pose, cube1.vertices, cube1.triangles);
 
     // Add another cube to the scene
     id = "cube2";
@@ -119,18 +83,10 @@ int main(int argc, char** argv) {
             0, 0, 0, 1;
     Cube cube2 = Cube(1, 1, 1);
     cube2.translate(pose(0, 3), pose(1, 3), pose(2, 3));
-    is_fixed = false;
-    mass = 1.0f;
-    com = Vector3f::Zero();
-    material_name = "wood";
-    scene.add_object(id, pose, cube2.vertices, cube2.triangles, is_fixed, mass, com, material_name);
-
-    // Step the simulation
-    float dt = 0.01f;
-    scene.step_simulation(dt);
+    scene.add_object(id, pose, cube2.vertices, cube2.triangles);
 
     // Get the list of objects in contact with the cube
-    set<string> contacted_objects = scene.get_contacted_objects(id);
+    set<string> contacted_objects = scene.get_contacted_objects("cube2");
     cout << "Contacted objects: ";
     for(auto it = contacted_objects.begin(); it != contacted_objects.end(); ++it){
         cout << *it << " ";
@@ -139,11 +95,10 @@ int main(int argc, char** argv) {
 
     // Get the contact points between the two objects
     MatrixX3f contact_points = scene.get_contact_points("cube1", "cube2");
-    cout << "Contact points: ";
+    cout << "Found " << contact_points.rows() << " contact points." << endl;
     for (int i = 0; i < contact_points.rows(); i++) {
         //cout << contact_points.row(i) << endl;
     }
-    cout << endl;
 
     return 0;
 }
