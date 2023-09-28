@@ -1,4 +1,4 @@
-# Assembly Contact Dection with PhysX
+# Assembly Contact Detection with PhysX
 This library is a wrapper around the PhysX library to provide a simple interface for contact detection between rigid bodies. For now, only contact detection is supported, but in the future, this library could be extended to produce static scenes through dynamics simulation.
 
 This library grew from the need for a fast collision detection algorithm that could work with non-convex objects. Building atop NVIDIA'a PhysX library enables this library to be fast and accurate, even when running on the CPU (although GPU support is obviously possible). This comes at the cost of several headaches when trying to use the library, as [the documentation](https://nvidia-omniverse.github.io/PhysX/physx/5.3.0/docs/MigrationTo53.html) is incomplete.

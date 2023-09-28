@@ -10,22 +10,9 @@ add_library(${PROJECT_NAME} ${SRC_LIB_FILES})
 
 ### Start of PhysX stuff
 set(PHYSX_ROOT_DIR ${CMAKE_SOURCE_DIR}/physx)
-set(PHYSX_LIB_PATH ${PHYSX_ROOT_DIR}/bin/linux.clang/checked)
-include_directories(${PHYSX_ROOT_DIR}/include ${CMAKE_SOURCE_DIR}/lib/src)
+set(PHYSX_BIN_PATH ${PHYSX_ROOT_DIR}/bin/linux.clang)
 
-set(PHYSX_LIBRARIES
-    ${PHYSX_LIB_PATH}/libPhysXExtensions_static_64.a 
-    ${PHYSX_LIB_PATH}/libPhysX_static_64.a
-    #${PHYSX_LIB_PATH}/libPhysXPvdSDK_static_64.a
-    #${PHYSX_LIB_PATH}/libPhysXVehicle_static_64.a
-    #${PHYSX_LIB_PATH}/libPhysXVehicle2_static_64.a
-    #${PHYSX_LIB_PATH}/libPhysXCharacterKinematic_static_64.a
-    ${PHYSX_LIB_PATH}/libPhysXCooking_static_64.a
-    ${PHYSX_LIB_PATH}/libPhysXCommon_static_64.a
-    ${PHYSX_LIB_PATH}/libPhysXFoundation_static_64.a
-    #${PHYSX_LIB_PATH}/libPhysXGpu_64.so
-    #${PHYSX_LIB_PATH}/libPVDRuntime_64.so
-)
+include_directories(${PHYSX_ROOT_DIR}/include ${CMAKE_SOURCE_DIR}/lib/src)
 
 #Use static libraries
 add_compile_definitions(PX_PHYSX_STATIC_LIB)
@@ -56,4 +43,18 @@ set(MISC_LIBRARIES
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
-target_link_libraries(${PROJECT_NAME} ${MISC_LIBRARIES} ${PHYSX_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${MISC_LIBRARIES})
+
+#Debug or Release libraries are linked depending on the build type
+target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXExtensions_static_64.a optimized ${PHYSX_BIN_PATH}/debug/libPhysXExtensions_static_64.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysX_static_64.a optimized ${PHYSX_BIN_PATH}/debug/libPhysX_static_64.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXPvdSDK_static_64.a optimized ${PHYSX_BIN_PATH}/debug/libPhysXPvdSDK_static_64.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXCooking_static_64.a optimized ${PHYSX_BIN_PATH}/debug/libPhysXCooking_static_64.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXCommon_static_64.a optimized ${PHYSX_BIN_PATH}/debug/libPhysXCommon_static_64.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXFoundation_static_64.a optimized ${PHYSX_BIN_PATH}/debug/libPhysXFoundation_static_64.a)
+
+#This is needed only if you are running on the GPU
+#target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXGpu_64.so optimized ${PHYSX_BIN_PATH}/debug/libPhysXGpu_64.so)
+
+#This is needed only if you are using the PhysX Visual Debugger
+#target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPVDRuntime_64.so optimized ${PHYSX_BIN_PATH}/debug/libPVDRuntime_64.so)
