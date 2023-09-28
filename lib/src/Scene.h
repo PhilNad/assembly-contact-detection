@@ -20,7 +20,10 @@ class Scene
     private:
         PxSimulationEventCallback* gContactReportCallback = nullptr;
         vector<shared_ptr<Object>> object_ptrs;
-        void shapesFromTetMesh(PxArray<PxVec3>* /*tetMeshVertices*/, PxArray<PxU32>* /*tetMeshIndices*/, PxArray<PxShape>* /*outShapes*/);
+        PxSimpleTriangleMesh remesh_surface_trimesh(MatrixX3f in_vertices, MatrixX3i in_triangles);
+        bool create_tetra_mesh(PxSimpleTriangleMesh& triSurfaceMesh, PxArray<PxVec3>& tetMeshVertices, PxArray<PxU32>& tetMeshIndices);
+        bool create_tetra_convex_set(PxArray<PxVec3> tetVertices, PxArray<PxU32> tetIndices, PxArray<PxConvexMeshDesc>& convexMeshDescs);
+        bool validate_mesh(PxSimpleTriangleMesh& surfaceMesh);
         void startupPhysics();
         void cleanupPhysics();
     public:

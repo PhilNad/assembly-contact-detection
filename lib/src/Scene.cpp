@@ -436,7 +436,7 @@ void get_triangles_from_trimesh(PxTriangleMesh* triMesh, PxArray<PxVec3>& triVer
 /// @brief Check the triangle mesh for any common issues that the tetrahedron meshing algorithm cannot handle.
 /// @param surfaceMesh Description of the triangle mesh.
 /// @return True if the mesh is valid (even if small problems are detected), false otherwise.
-bool validateMesh(PxSimpleTriangleMesh& surfaceMesh){
+bool Scene::validate_mesh(PxSimpleTriangleMesh& surfaceMesh){
      /*
     NOTE: It seems that a proper triangle mesh requires that the cross product between
     the two edges defined by the triangle vertices always points in the same direction.
@@ -490,7 +490,8 @@ bool validateMesh(PxSimpleTriangleMesh& surfaceMesh){
 /// @param tetVertices Vertices of the tetrahedral mesh.
 /// @param tetIndices For each tetrahedron, the indices of the four vertices.
 /// @param convexMeshDescs Output array of convex mesh descriptions.
-void createThetrahedronSet(PxArray<PxVec3> tetVertices, PxArray<PxU32> tetIndices, PxArray<PxConvexMeshDesc>& convexMeshDescs){
+/// @return True if the convex mesh descriptions were successfully created, false otherwise.
+bool Scene::create_tetra_convex_set(PxArray<PxVec3> tetVertices, PxArray<PxU32> tetIndices, PxArray<PxConvexMeshDesc>& convexMeshDescs){
     //Since a tetrahedron is convex, the average of its vertices will be located inside the tetrahedron.
     // This provides a way to know the inside/outside of each face of the tetrahedron by computing
     // the vector starting at the center/average and ending at the face center. This vector must
@@ -636,12 +637,13 @@ void createThetrahedronSet(PxArray<PxVec3> tetVertices, PxArray<PxU32> tetIndice
         //     cout << "    " << indexBuffer[i*3] << ", " << indexBuffer[i*3+1] << ", " << indexBuffer[i*3+2] << endl;
         // }
 
-        if(!convexDesc.isValid())
-            throw runtime_error("Invalid convex mesh description");
+        if(convexDesc.isValid() == false)
+            return false;
 
         //Add the convex mesh description to the list of convex mesh descriptions
         convexMeshDescs.pushBack(convexDesc);
     }
+    return true;
 }
 
 /// @brief Create a shape representing a tetrahedron as described in convexMeshDesc
@@ -715,6 +717,60 @@ PxShape* createVoxelShape(GridCell* cell)
     return shape;
 }
 
+/// @brief Redo the meshing of the surface mesh to make sure it is adequate for further processing.
+/// @param in_vertices Nx3 matrix representing the vertices of the surface mesh.
+/// @param in_triangles Mx3 matrix representing the triangles of the surface mesh.
+/// @return Simplified surface mesh.
+PxSimpleTriangleMesh Scene::remesh_surface_trimesh(MatrixX3f in_vertices, MatrixX3i in_triangles)
+{
+    //Perform remeshing to make sure the triangle mesh is adequate for further processing.
+    PxArray<PxVec3> triVerts, remeshVerts, simplifiedVerts;
+    PxArray<PxU32> triIndices, remeshIndices, simplifiedIndices;
+
+    for(int i = 0; i < in_vertices.rows(); i++){
+        triVerts.pushBack(PxVec3(in_vertices(i, 0), in_vertices(i, 1), in_vertices(i, 2)));
+    }
+
+    for(int i = 0; i < in_triangles.rows(); i++){
+        triIndices.pushBack(in_triangles(i, 0));
+        triIndices.pushBack(in_triangles(i, 1));
+        triIndices.pushBack(in_triangles(i, 2));
+    }
+
+    PxTetMaker::remeshTriangleMesh(triVerts, triIndices, PxU32(10), remeshVerts, remeshIndices);
+    
+    //Remeshing creates a lot of vertices and triangles. We can simplify the mesh to reduce the number of vertices and triangles.
+    // It can also alleviate the problem of eCONTAINS_ACUTE_ANGLED_TRIANGLES.
+    PxTetMaker::simplifyTriangleMesh(remeshVerts, remeshIndices, 100, 0, simplifiedVerts, simplifiedIndices);
+
+    PxSimpleTriangleMesh newSurfaceMesh;
+	newSurfaceMesh.points.count     = simplifiedVerts.size();
+	newSurfaceMesh.points.data      = simplifiedVerts.begin();
+	newSurfaceMesh.triangles.count  = simplifiedIndices.size() / 3;
+	newSurfaceMesh.triangles.data   = simplifiedIndices.begin();
+
+    return newSurfaceMesh;
+}
+
+/// @brief Perform the tetrahedralization of the surface mesh.
+/// @param triSurfaceMesh Input triangular surface mesh.
+/// @param tetMeshVertices Output array of 3D vertices of the tetrahedral mesh.
+/// @param tetMeshIndices  Output array of indices of the tetrahedral mesh, with each tetrahedron being described by four indices.
+/// @return True if the tetrahedralization was successful, false otherwise.
+bool Scene::create_tetra_mesh(PxSimpleTriangleMesh& triSurfaceMesh, PxArray<PxVec3>& tetMeshVertices, PxArray<PxU32>& tetMeshIndices)
+{
+    //Verify that the mesh is valid for tetrahedralization
+    bool is_valid = validate_mesh(triSurfaceMesh);
+
+    if(is_valid){
+        //Create a tetrahedron mesh from the surface mesh
+        bool success = PxTetMaker::createConformingTetrahedronMesh(triSurfaceMesh, tetMeshVertices, tetMeshIndices);
+        return success;
+    }
+
+    return false;
+}
+
 /// @brief Add an object to the scene
 /// @param id unique identifier for the object
 /// @param pose 4x4 matrix representing the pose of the object
@@ -742,43 +798,8 @@ void Scene::add_object(
     shared_ptr<Object> obj = make_shared<Object>(id, pose, vertices, triangles, is_fixed, mass, com, material_name);
     object_ptrs.push_back(obj);
 
-    // //Perform remeshing to make sure the triangle mesh is adequate for further processing.
-    // PxArray<PxVec3> triVerts, remeshVerts, simplifiedVerts;
-    // PxArray<PxU32> triIndices, remeshIndices, simplifiedIndices;
-    // for(int i = 0; i < vertices.rows(); i++){
-    //     triVerts.pushBack(PxVec3(vertices(i, 0), vertices(i, 1), vertices(i, 2)));
-    // }
-    // for(int i = 0; i < triangles.rows(); i++){
-    //     triIndices.pushBack(triangles(i, 0));
-    //     triIndices.pushBack(triangles(i, 1));
-    //     triIndices.pushBack(triangles(i, 2));
-    // }
-    // PxTetMaker::remeshTriangleMesh(triVerts, triIndices, PxU32(10), remeshVerts, remeshIndices);
-    // //Remeshing creates a lot of vertices and triangles. We can simplify the mesh to reduce the number of vertices and triangles.
-    // // It can also alleviate the problem of eCONTAINS_ACUTE_ANGLED_TRIANGLES.
-    // PxTetMaker::simplifyTriangleMesh(remeshVerts, remeshIndices, 100, 0, simplifiedVerts, simplifiedIndices);
-
-    // PxSimpleTriangleMesh newSurfaceMesh;
-	// newSurfaceMesh.points.count = simplifiedVerts.size();
-	// newSurfaceMesh.points.data = simplifiedVerts.begin();
-	// newSurfaceMesh.triangles.count = simplifiedIndices.size() / 3;
-	// newSurfaceMesh.triangles.data = simplifiedIndices.begin();
-
-    // PxArray<PxVec3> tetMeshVertices;
-    // PxArray<PxU32> tetMeshIndices;
-   
-    // bool isValid = validateMesh(newSurfaceMesh);
-
-    // //Create a tetrahedron mesh from the surface mesh
-    // bool success = PxTetMaker::createConformingTetrahedronMesh(newSurfaceMesh, tetMeshVertices, tetMeshIndices);
-    // //For each tetrahedron, create a convex mesh.
-    // PxArray<PxConvexMeshDesc> convexMeshDescs;
-    // createThetrahedronSet(tetMeshVertices, tetMeshIndices, convexMeshDescs);
     
-    // //Record the triangle mesh and tetrahedron mesh in the object
-    // obj->set_tri_mesh(newSurfaceMesh);
-    // obj->set_tetra_mesh(tetMeshVertices, tetMeshIndices);
-
+    //Record the triangle mesh in the object
     obj->set_tri_mesh(vertices, triangles);
 
     //Create a occupancy grid
@@ -792,19 +813,6 @@ void Scene::add_object(
     PxTolerancesScale scale;
     PxCookingParams params(scale);
     PxArray<PxShape*> convexShapes;
-
-    /* //Create a shape from each tetrahedron mesh description.
-    for(int i = 0; i < convexMeshDescs.size(); i++){
-        PxConvexMeshDesc convexMeshDesc = convexMeshDescs[i];
-        PxShape* convexShape = createTetrahedronShape(params, convexMeshDesc);
-        //Assign a pointer to the object such that it can be retrieved in the contact report callback.
-        convexShape->userData = obj.get();
-        //And also set the name of the shape as the object id.
-        convexShape->setName(obj->id.c_str());
-        convexShapes.pushBack(convexShape);
-        //Assign the maximal distance at which a contact can be made between the object and another object.
-        convexShape->setContactOffset(obj->max_separation);
-    } */
 
     //Create a shape from each voxel in the occupancy grid.
     unordered_map<uint32_t, GridCell>* cells = grid->get_grid_cells();
