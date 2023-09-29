@@ -23,7 +23,7 @@ ln -s /home/phil/PhysX/physx physx
 ```
 3. Navigate to the `physx/compiler/linux-release` directory and run 
 ```bash
-make PhysXPvdSDk PhysXExtensions
+make PhysXPvdSDk PhysXExtensions PhysXCooking
 ``` 
 that will trigger the compilation of the PhysX libraries. Note that when developing the library, you should be using the `checked` version of the libraries, which can be compiled by navigating to the `physx/compiler/linux-checked` directory instead.
 

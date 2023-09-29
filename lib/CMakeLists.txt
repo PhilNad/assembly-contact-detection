@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.7)
 
-find_package (Eigen3 3.4 REQUIRED)
+find_package (Eigen3 3.4 REQUIRED NO_MODULE)
 
 SET(PROJECT_NAME "assembly-cd-lib")
 project(${PROJECT_NAME} VERSION 0.1.0 LANGUAGES C CXX)
@@ -46,15 +46,15 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 target_link_libraries(${PROJECT_NAME} PRIVATE ${MISC_LIBRARIES})
 
 #Debug or Release libraries are linked depending on the build type
-target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXExtensions_static_64.a optimized ${PHYSX_BIN_PATH}/debug/libPhysXExtensions_static_64.a)
-target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysX_static_64.a optimized ${PHYSX_BIN_PATH}/debug/libPhysX_static_64.a)
-target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXPvdSDK_static_64.a optimized ${PHYSX_BIN_PATH}/debug/libPhysXPvdSDK_static_64.a)
-target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXCooking_static_64.a optimized ${PHYSX_BIN_PATH}/debug/libPhysXCooking_static_64.a)
-target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXCommon_static_64.a optimized ${PHYSX_BIN_PATH}/debug/libPhysXCommon_static_64.a)
-target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXFoundation_static_64.a optimized ${PHYSX_BIN_PATH}/debug/libPhysXFoundation_static_64.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXExtensions_static_64.a optimized ${PHYSX_BIN_PATH}/release/libPhysXExtensions_static_64.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysX_static_64.a optimized ${PHYSX_BIN_PATH}/release/libPhysX_static_64.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXPvdSDK_static_64.a optimized ${PHYSX_BIN_PATH}/release/libPhysXPvdSDK_static_64.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXCooking_static_64.a optimized ${PHYSX_BIN_PATH}/release/libPhysXCooking_static_64.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXCommon_static_64.a optimized ${PHYSX_BIN_PATH}/release/libPhysXCommon_static_64.a)
+target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXFoundation_static_64.a optimized ${PHYSX_BIN_PATH}/release/libPhysXFoundation_static_64.a)
 
 #This is needed only if you are running on the GPU
-#target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXGpu_64.so optimized ${PHYSX_BIN_PATH}/debug/libPhysXGpu_64.so)
+#target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPhysXGpu_64.so optimized ${PHYSX_BIN_PATH}/release/libPhysXGpu_64.so)
 
 #This is needed only if you are using the PhysX Visual Debugger
-#target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPVDRuntime_64.so optimized ${PHYSX_BIN_PATH}/debug/libPVDRuntime_64.so)
+#target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPVDRuntime_64.so optimized ${PHYSX_BIN_PATH}/release/libPVDRuntime_64.so)
