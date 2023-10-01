@@ -34,6 +34,7 @@ class Scene
             Matrix4f pose, 
             MatrixX3f vertices, 
             MatrixX3i triangles,
+            int resolution = 15,
             bool is_fixed = false,
             float mass = 1,
             Vector3f com = Vector3f::Zero(),

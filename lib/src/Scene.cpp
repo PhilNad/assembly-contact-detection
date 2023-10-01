@@ -203,18 +203,64 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 
                         //cout << "pos_dist: " << pos_dist << " and normal_dist: " << normal_dist << endl;
 
-                        //Only add contacts where the two surface points are fairly close and the normals are fairly aligned
-                        if(pos_dist < 2*max(gridCell0->half_extents[0], gridCell1->half_extents[0]) && normal_dist < 0.25){
-                            
-                            //Compute the distance between this contact and the previous one from this pair of objects
-                            if(j > 0 && contact_added){
-                                Contact previous_contact = gContacts.back();
-                                Vector3f prev_pos = previous_contact.get_position();
-                                float prev_pos_dist = (prev_pos - pos).norm();
-                                //If the distance is too small, we consider that its the same point and we don't add it
-                                if(prev_pos_dist < position_threshold){
-                                    continue;
+                        bool normals_aligned = (normal_dist < 0.25);
+                        bool close_enough = (pos_dist < 2*max(gridCell0->half_extents[0], gridCell1->half_extents[0]));
+                        //If the normals are aligned, then the contact is probably surface-to-surface
+                        //If the normals are not aligned, then the contact is probably surface-to-edge 
+                        if(close_enough){
+                            //Deals with surface-to-surface contact
+                            if(normals_aligned){
+                                //Compute the distance between this contact and the previous one from this pair of objects
+                                if(j > 0 && contact_added){
+                                    Contact previous_contact = gContacts.back();
+                                    Vector3f prev_pos = previous_contact.get_position();
+                                    float prev_pos_dist = (prev_pos - pos).norm();
+                                    //If the distance is too small, we consider that its the same point and we don't add it
+                                    if(prev_pos_dist < position_threshold){
+                                        continue;
+                                    }
                                 }
+                            }else{
+                                //If the contact is surface-to-edge, we find the line that is the intersection of the two planes
+                                // for which we have the normal and a point (the OrientedPoint). We then project the surface points
+                                // onto this line and compute the average of the projections.
+                                
+                                //The line is orthogonal to both normals
+                                Vector3f line = op0.normal.cross(op1.normal);
+                                line.normalize();
+
+                                //Distance from the origin that the surface point is along the surface normal
+                                float d0 = op0.position.dot(op0.normal);
+                                float d1 = op1.position.dot(op1.normal);
+                                
+                                //Find a point on the line, which will be its origin.
+                                // See: https://math.stackexchange.com/a/4113687
+                                Vector3f line_origin = Vector3f::Zero();
+                                if(abs(line[0]) > abs(line[1]) && abs(line[0]) > abs(line[2])){
+                                    line_origin[1] = (d0*op1.normal[2] - d1*op0.normal[2]) / (op0.normal[1]*op1.normal[2] - op1.normal[1]*op0.normal[2]);
+                                    line_origin[2] = (d1*op0.normal[1] - d0*op1.normal[1]) / (op0.normal[1]*op1.normal[2] - op1.normal[1]*op0.normal[2]);
+                                }else if(abs(line[1]) > abs(line[0]) && abs(line[1]) > abs(line[2])){
+                                    line_origin[0] = (d0*op1.normal[2] - d1*op0.normal[2]) / (op0.normal[0]*op1.normal[2] - op1.normal[0]*op0.normal[2]);
+                                    line_origin[2] = (d1*op0.normal[0] - d0*op1.normal[0]) / (op0.normal[0]*op1.normal[2] - op1.normal[0]*op0.normal[2]);
+                                }else{
+                                    line_origin[0] = (d0*op1.normal[1] - d1*op0.normal[1]) / (op0.normal[0]*op1.normal[1] - op1.normal[0]*op0.normal[1]);
+                                    line_origin[1] = (d1*op0.normal[0] - d0*op1.normal[0]) / (op0.normal[0]*op1.normal[1] - op1.normal[0]*op0.normal[1]);
+                                }
+
+                                //Express the surface points relative to the line's origin
+                                Vector3f op0_in_line = op0.position - line_origin;
+                                Vector3f op1_in_line = op1.position - line_origin;
+
+                                //Project the surface points onto the line
+                                float op0_proj = op0_in_line.dot(line);
+                                float op1_proj = op1_in_line.dot(line);
+
+                                //Compute the average of the projections
+                                float avg_proj = (op0_proj + op1_proj) / 2;
+
+                                //Express the average of the projections in the original frame.
+                                // This is the position of the contact point on the line intersection both planes.
+                                pos = line_origin + avg_proj*line;
                             }
                             //Add a new contact point to the list
                             Contact contact(obj0, obj1, pos, normal, pos_dist);
@@ -491,11 +537,12 @@ PxShape* createVoxelShape(GridCell* cell)
 /// @param pose 4x4 matrix representing the pose of the object
 /// @param vertices Nx3 matrix representing the vertices of the object
 /// @param triangles Mx3 matrix representing the triangles of the object
+/// @param resolution resolution of the occupancy grid (default: 15)
 /// @param is_fixed boolean representing whether the object is fixed in space (default: false)
 /// @param mass mass of the object (default: 1)
 /// @param com 3x1 vector representing the center of mass of the object (default: [0, 0, 0])
 /// @param material_name name of the material of the object (default: wood)
-void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i triangles, bool is_fixed, float mass, Vector3f com, string material_name)
+void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i triangles, int resolution, bool is_fixed, float mass, Vector3f com, string material_name)
 {
     //Create an object instance and add it to the scene
     // When adding an element to the vector, the vector may reallocate memory and move the elements which will change their addresses.
@@ -510,7 +557,7 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
 
     //Create a occupancy grid
     auto t1 = chrono::high_resolution_clock::now();
-    shared_ptr<OccupancyGrid> grid = obj->create_occupancy_grid(15, OccupancyGrid::sampling_method::random);
+    shared_ptr<OccupancyGrid> grid = obj->create_occupancy_grid(resolution, OccupancyGrid::sampling_method::random);
     auto t2 = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
     cout << "Occupancy grid created in " << duration << " ms" << endl;

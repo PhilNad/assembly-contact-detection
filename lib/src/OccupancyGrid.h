@@ -13,6 +13,15 @@ using namespace std;
 using namespace Eigen;
 using namespace physx;
 
+class Triangle
+{
+        Vector3f vertex_0;
+        Vector3f vertex_1;
+        Vector3f vertex_2;
+    public:
+        Triangle(Vector3f vertex_0, Vector3f vertex_1, Vector3f vertex_2) : vertex_0(vertex_0), vertex_1(vertex_1), vertex_2(vertex_2) {};
+};
+
 struct OrientedPoint
 {
     Vector3f position;
@@ -24,9 +33,10 @@ class GridCell
     public:
         uint32_t id;
         vector<shared_ptr<OrientedPoint>> surface_points;
+        shared_ptr<Triangle> triangle;
         Vector3f half_extents;
         Vector3f centre;
-        GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const Vector3f& cell_size, const Vector3f& cell_centre);
+        GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const Vector3f& cell_size, const Vector3f& cell_centre, shared_ptr<Triangle> triangle);
         void additional_point(shared_ptr<OrientedPoint> surface_point);
         OrientedPoint weighted_average(const Vector3f& query_point);
 };

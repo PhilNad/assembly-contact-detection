@@ -64,7 +64,8 @@ start_time = time.time()
 physxScene.add_object("cube1", 
                         np.identity(4), 
                         np.asarray(cube1.vertices), 
-                        np.asarray(cube1.triangles), 
+                        np.asarray(cube1.triangles),
+                        30, 
                         False, 
                         1.0, 
                         np.array([0, 0, 0]), #CoM is expressed wrt local frame 
@@ -76,6 +77,7 @@ physxScene.add_object("cone",
                         np.identity(4),
                         np.asarray(cone.vertices),
                         np.asarray(cone.triangles),
+                        30,
                         False,
                         1.0,
                         np.array([0, 0, 0]), #CoM is expressed wrt local frame 

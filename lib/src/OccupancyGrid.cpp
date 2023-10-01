@@ -5,12 +5,15 @@
 /// @param surface_point Oriented point (position and normal) that was sampled on the surface.
 /// @param cell_size Size of the cell along each dimension.
 /// @param cell_centre Position of the centre of the cuboid that represents the cell.
-GridCell::GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const Vector3f& cell_size, const Vector3f& cell_centre)
+GridCell::GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const Vector3f& cell_size, const Vector3f& cell_centre, shared_ptr<Triangle> triangle)
 {
     this->id = id;
     //NOTE: The position does not correspond to the centre of the cell
-    // Intead, it is the position of the point that was sampled in the triangle
+    // Instead, it is the position of the point that was sampled in the triangle
     this->surface_points.push_back(surface_point);
+
+    //Record the triangle on which the point was sampled
+    this->triangle = triangle;
 
     //Record half-extents
     this->half_extents = {cell_size[0]/2, cell_size[1]/2, cell_size[2]/2};
@@ -483,6 +486,9 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
         Vector3f v1 = vertices.row(triangles(i, 1));
         Vector3f v2 = vertices.row(triangles(i, 2));
 
+        //Record the triangle on which the point was sampled
+        shared_ptr<Triangle> triangle = make_shared<Triangle>(v0, v1, v2);
+
         // Get triangle normal assuming that the indices are
         // ordered with the PhysX convention.
         Vector3f normal = (v1 - v0).cross(v2 - v0).normalized();
@@ -515,7 +521,7 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
                     //Get the centre of the cell
                     Vector3f cell_centre = this->cell_centre(cell_idx);
                     //Create the grid cell
-                    GridCell grid_cell = GridCell(cell_idx, surface_point, this->cell_size, cell_centre);
+                    GridCell grid_cell = GridCell(cell_idx, surface_point, this->cell_size, cell_centre, triangle);
                     //Add the grid cell to the list of grid cells
                     this->grid_cells.emplace(cell_idx, grid_cell);
                     //cout << "Index of cell containing point " << sampled_points[j].transpose() << " is " << cell_idx << endl;
