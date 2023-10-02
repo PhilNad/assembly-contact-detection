@@ -471,7 +471,7 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
     this->resolution = resolution;
 
     // Get grid cell size
-    this->cell_size = {this->bb_extents[0] /(resolution-1), this->bb_extents[1]/(resolution-1), this->bb_extents[2] /(resolution-1)};
+    this->cell_size = {this->bb_extents[0]/(resolution-1), this->bb_extents[1]/(resolution-1), this->bb_extents[2]/(resolution-1)};
 
     // Get grid origin, slightly greater than the extent such the the mesh is inside the grid
     this->bb_origin = {min_x - this->cell_size[0]/2, min_y - this->cell_size[1]/2, min_z - this->cell_size[2]/2};
@@ -527,7 +527,7 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
                     //cout << "Index of cell containing point " << sampled_points[j].transpose() << " is " << cell_idx << endl;
                 }else{
                     //Add the point to the existing grid cell
-                    this->grid_cells.at(cell_idx).additional_point(surface_point);
+                    //this->grid_cells.at(cell_idx).additional_point(surface_point);
                 }
             }
         }

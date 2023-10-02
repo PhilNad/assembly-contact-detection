@@ -178,17 +178,15 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                     bool contact_added = false;
                     //cout << "Contact point " << j << endl;
                     //Contact point data
-                    PxVec3 pos = contactPoints[j].position;
-                    PxReal sep = contactPoints[j].separation;
+                    PxVec3 cp_pos = contactPoints[j].position;
+                    PxReal cp_sep = contactPoints[j].separation;
 
                     //Create a contact instance and add it to the list of contact points
-                    if(abs(sep) < min(obj0->max_separation, obj1->max_separation)){
+                    if(abs(cp_sep) < min(obj0->max_separation, obj1->max_separation)){
                         Vector3f query_point = Vector3f(contactPoints[j].position.x, contactPoints[j].position.y, contactPoints[j].position.z);
                         //Get the weighted average of the surface points of the two grid cells
                         OrientedPoint op0 = gridCell0->weighted_average(query_point);
                         OrientedPoint op1 = gridCell1->weighted_average(query_point);
-                        //cout << "Object 1 Point Normal: (" << op0.normal[0] << ", " << op0.normal[1] << ", " << op0.normal[2] << ")" << endl;
-                        //cout << "Object 2 Point Normal: (" << op1.normal[0] << ", " << op1.normal[1] << ", " << op1.normal[2] << ")" << endl;
                         
                         //Compute the average of the two oriented points by first aligning the normal in the same half-space
                         Vector3f pos = (op0.position + op1.position) / 2;
@@ -196,71 +194,31 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                             op1.normal = -op1.normal;
                         }
                         Vector3f normal = (op0.normal + op1.normal) / 2;
+                        normal.normalize();
 
-                        //Distance between the two oriented points
+                        //Distance between the two oriented points along the normal
                         float pos_dist = (op0.position - op1.position).norm();
                         float normal_dist = 1-op0.normal.dot(op1.normal);
 
-                        //cout << "pos_dist: " << pos_dist << " and normal_dist: " << normal_dist << endl;
-
                         bool normals_aligned = (normal_dist < 0.25);
-                        bool close_enough = (pos_dist < 2*max(gridCell0->half_extents[0], gridCell1->half_extents[0]));
+                        bool close_enough = (pos_dist < gridCell0->half_extents.maxCoeff() + gridCell1->half_extents.maxCoeff());
                         //If the normals are aligned, then the contact is probably surface-to-surface
                         //If the normals are not aligned, then the contact is probably surface-to-edge 
-                        if(close_enough){
-                            //Deals with surface-to-surface contact
-                            if(normals_aligned){
-                                //Compute the distance between this contact and the previous one from this pair of objects
-                                if(j > 0 && contact_added){
-                                    Contact previous_contact = gContacts.back();
-                                    Vector3f prev_pos = previous_contact.get_position();
-                                    float prev_pos_dist = (prev_pos - pos).norm();
-                                    //If the distance is too small, we consider that its the same point and we don't add it
-                                    if(prev_pos_dist < position_threshold){
-                                        continue;
-                                    }
+                        if(close_enough && normals_aligned){
+                            // cout << "Object 1 Point Position: (" << op0.position[0] << ", " << op0.position[1] << ", " << op0.position[2] << ")" << endl;
+                            // cout << "Object 2 Point Position: (" << op1.position[0] << ", " << op1.position[1] << ", " << op1.position[2] << ")" << endl;
+                            // cout << "Object 1 Point Normal: (" << op0.normal[0] << ", " << op0.normal[1] << ", " << op0.normal[2] << ")" << endl;
+                            // cout << "Object 2 Point Normal: (" << op1.normal[0] << ", " << op1.normal[1] << ", " << op1.normal[2] << ")" << endl;
+                            // cout << "pos_dist: " << pos_dist << " and normal_dist: " << normal_dist << endl;
+                            //Compute the distance between this contact and the previous one from this pair of objects
+                            if(j > 0 && contact_added){
+                                Contact previous_contact = gContacts.back();
+                                Vector3f prev_pos = previous_contact.get_position();
+                                float prev_pos_dist = (prev_pos - pos).norm();
+                                //If the distance is too small, we consider that its the same point and we don't add it
+                                if(prev_pos_dist < position_threshold){
+                                    continue;
                                 }
-                            }else{
-                                //If the contact is surface-to-edge, we find the line that is the intersection of the two planes
-                                // for which we have the normal and a point (the OrientedPoint). We then project the surface points
-                                // onto this line and compute the average of the projections.
-                                
-                                //The line is orthogonal to both normals
-                                Vector3f line = op0.normal.cross(op1.normal);
-                                line.normalize();
-
-                                //Distance from the origin that the surface point is along the surface normal
-                                float d0 = op0.position.dot(op0.normal);
-                                float d1 = op1.position.dot(op1.normal);
-                                
-                                //Find a point on the line, which will be its origin.
-                                // See: https://math.stackexchange.com/a/4113687
-                                Vector3f line_origin = Vector3f::Zero();
-                                if(abs(line[0]) > abs(line[1]) && abs(line[0]) > abs(line[2])){
-                                    line_origin[1] = (d0*op1.normal[2] - d1*op0.normal[2]) / (op0.normal[1]*op1.normal[2] - op1.normal[1]*op0.normal[2]);
-                                    line_origin[2] = (d1*op0.normal[1] - d0*op1.normal[1]) / (op0.normal[1]*op1.normal[2] - op1.normal[1]*op0.normal[2]);
-                                }else if(abs(line[1]) > abs(line[0]) && abs(line[1]) > abs(line[2])){
-                                    line_origin[0] = (d0*op1.normal[2] - d1*op0.normal[2]) / (op0.normal[0]*op1.normal[2] - op1.normal[0]*op0.normal[2]);
-                                    line_origin[2] = (d1*op0.normal[0] - d0*op1.normal[0]) / (op0.normal[0]*op1.normal[2] - op1.normal[0]*op0.normal[2]);
-                                }else{
-                                    line_origin[0] = (d0*op1.normal[1] - d1*op0.normal[1]) / (op0.normal[0]*op1.normal[1] - op1.normal[0]*op0.normal[1]);
-                                    line_origin[1] = (d1*op0.normal[0] - d0*op1.normal[0]) / (op0.normal[0]*op1.normal[1] - op1.normal[0]*op0.normal[1]);
-                                }
-
-                                //Express the surface points relative to the line's origin
-                                Vector3f op0_in_line = op0.position - line_origin;
-                                Vector3f op1_in_line = op1.position - line_origin;
-
-                                //Project the surface points onto the line
-                                float op0_proj = op0_in_line.dot(line);
-                                float op1_proj = op1_in_line.dot(line);
-
-                                //Compute the average of the projections
-                                float avg_proj = (op0_proj + op1_proj) / 2;
-
-                                //Express the average of the projections in the original frame.
-                                // This is the position of the contact point on the line intersection both planes.
-                                pos = line_origin + avg_proj*line;
                             }
                             //Add a new contact point to the list
                             Contact contact(obj0, obj1, pos, normal, pos_dist);
@@ -277,7 +235,58 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 			}
 		}
 	}
+
+    /// @brief Computes the line at the intersection of the planes supporting the two oriented points, and finds the
+    ///         point on this line that is closest to both oriented points.
+    /// @param op0 Oriented point 0
+    /// @param op1 Oriented point 1
+    /// @return Position of the intersection point in the world frame
+    Vector3f compute_projected_intersection_point(OrientedPoint op0, OrientedPoint op1)
+    {
+        //If the contact is surface-to-edge, we find the line that is the intersection of the two planes
+        // for which we have the normal and a point (the OrientedPoint). We then project the surface points
+        // onto this line and compute the average of the projections.
+        
+        //The line is orthogonal to both normals
+        Vector3f line = op0.normal.cross(op1.normal);
+        line.normalize();
+
+        //Distance from the origin that the surface point is along the surface normal
+        float d0 = op0.position.dot(op0.normal);
+        float d1 = op1.position.dot(op1.normal);
+        
+        //Find a point on the line, which will be its origin.
+        // See: https://math.stackexchange.com/a/4113687
+        Vector3f line_origin = Vector3f::Zero();
+        if(abs(line[0]) > abs(line[1]) && abs(line[0]) > abs(line[2])){
+            line_origin[1] = (d0*op1.normal[2] - d1*op0.normal[2]) / (op0.normal[1]*op1.normal[2] - op1.normal[1]*op0.normal[2]);
+            line_origin[2] = (d1*op0.normal[1] - d0*op1.normal[1]) / (op0.normal[1]*op1.normal[2] - op1.normal[1]*op0.normal[2]);
+        }else if(abs(line[1]) > abs(line[0]) && abs(line[1]) > abs(line[2])){
+            line_origin[0] = (d0*op1.normal[2] - d1*op0.normal[2]) / (op0.normal[0]*op1.normal[2] - op1.normal[0]*op0.normal[2]);
+            line_origin[2] = (d1*op0.normal[0] - d0*op1.normal[0]) / (op0.normal[0]*op1.normal[2] - op1.normal[0]*op0.normal[2]);
+        }else{
+            line_origin[0] = (d0*op1.normal[1] - d1*op0.normal[1]) / (op0.normal[0]*op1.normal[1] - op1.normal[0]*op0.normal[1]);
+            line_origin[1] = (d1*op0.normal[0] - d0*op1.normal[0]) / (op0.normal[0]*op1.normal[1] - op1.normal[0]*op0.normal[1]);
+        }
+
+        //Express the surface points relative to the line's origin
+        Vector3f op0_in_line = op0.position - line_origin;
+        Vector3f op1_in_line = op1.position - line_origin;
+
+        //Project the surface points onto the line
+        float op0_proj = op0_in_line.dot(line);
+        float op1_proj = op1_in_line.dot(line);
+
+        //Compute the average of the projections
+        float avg_proj = (op0_proj + op1_proj) / 2;
+
+        //Express the average of the projections in the original frame.
+        // This is the position of the contact point on the line intersection both planes.
+        return line_origin + avg_proj*line;
+    }
+
 };
+
 
 /// @brief Initialize the physics engine.
 void Scene::startupPhysics()
@@ -554,6 +563,7 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
     
     //Record the triangle mesh in the object
     obj->set_tri_mesh(vertices, triangles);
+    obj->remesh_surface_trimesh();
 
     //Create a occupancy grid
     auto t1 = chrono::high_resolution_clock::now();
@@ -561,7 +571,6 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
     auto t2 = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
     cout << "Occupancy grid created in " << duration << " ms" << endl;
-    
 
     PxTolerancesScale scale;
     PxCookingParams params(scale);

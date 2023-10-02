@@ -50,7 +50,7 @@ class Object
         void set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh);
         void set_tri_mesh(MatrixX3f& vertices, MatrixX3i& triangles);
         bool validate_mesh(PxSimpleTriangleMesh& surfaceMesh);
-        PxSimpleTriangleMesh remesh_surface_trimesh(MatrixX3f in_vertices, MatrixX3i in_triangles);
+        void remesh_surface_trimesh();
         bool create_tetra_mesh(PxSimpleTriangleMesh& triSurfaceMesh, PxArray<PxVec3>& tetMeshVertices, PxArray<PxU32>& tetMeshIndices);
         bool create_tetra_convex_set(PxArray<PxVec3> tetVertices, PxArray<PxU32> tetIndices, PxArray<PxConvexMeshDesc>& convexMeshDescs);
         shared_ptr<OccupancyGrid> create_occupancy_grid(int resolution, int sampling_method);

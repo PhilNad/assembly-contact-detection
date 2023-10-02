@@ -343,11 +343,10 @@ bool Object::create_tetra_convex_set(PxArray<PxVec3> tetVertices, PxArray<PxU32>
 }
 
 /// @brief Redo the meshing of the surface mesh to make sure it is adequate for further processing.
-/// @param in_vertices Nx3 matrix representing the vertices of the surface mesh.
-/// @param in_triangles Mx3 matrix representing the triangles of the surface mesh.
-/// @return Simplified surface mesh.
-PxSimpleTriangleMesh Object::remesh_surface_trimesh(MatrixX3f in_vertices, MatrixX3i in_triangles)
+void Object::remesh_surface_trimesh()
 {
+    MatrixX3f in_vertices = this->tri_vertices;
+    MatrixX3i in_triangles = this->tri_triangles;
     //Perform remeshing to make sure the triangle mesh is adequate for further processing.
     PxArray<PxVec3> triVerts, remeshVerts, simplifiedVerts;
     PxArray<PxU32> triIndices, remeshIndices, simplifiedIndices;
@@ -368,13 +367,20 @@ PxSimpleTriangleMesh Object::remesh_surface_trimesh(MatrixX3f in_vertices, Matri
     // It can also alleviate the problem of eCONTAINS_ACUTE_ANGLED_TRIANGLES.
     PxTetMaker::simplifyTriangleMesh(remeshVerts, remeshIndices, 100, 0, simplifiedVerts, simplifiedIndices);
 
-    PxSimpleTriangleMesh newSurfaceMesh;
-	newSurfaceMesh.points.count     = simplifiedVerts.size();
-	newSurfaceMesh.points.data      = simplifiedVerts.begin();
-	newSurfaceMesh.triangles.count  = simplifiedIndices.size() / 3;
-	newSurfaceMesh.triangles.data   = simplifiedIndices.begin();
+    //Overwrite the old triangle mesh with the new one
+    this->tri_vertices.resize(simplifiedVerts.size(), 3);
+    for (int i = 0; i < simplifiedVerts.size(); i++) {
+        this->tri_vertices(i, 0) = simplifiedVerts[i].x;
+        this->tri_vertices(i, 1) = simplifiedVerts[i].y;
+        this->tri_vertices(i, 2) = simplifiedVerts[i].z;
+    }
 
-    return newSurfaceMesh;
+    this->tri_triangles.resize(simplifiedIndices.size()/3, 3);
+    for (int i = 0; i < simplifiedIndices.size()/3; i++) {
+        this->tri_triangles(i, 0) = simplifiedIndices[i*3+0];
+        this->tri_triangles(i, 1) = simplifiedIndices[i*3+1];
+        this->tri_triangles(i, 2) = simplifiedIndices[i*3+2];
+    }
 }
 
 /// @brief Perform the tetrahedralization of the surface mesh.
