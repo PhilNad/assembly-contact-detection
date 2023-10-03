@@ -201,7 +201,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                         float normal_dist = 1-op0.normal.dot(op1.normal);
 
                         bool normals_aligned = (normal_dist < 0.25);
-                        bool close_enough = (pos_dist < gridCell0->half_extents.maxCoeff() + gridCell1->half_extents.maxCoeff());
+                        bool close_enough = true; (pos_dist < gridCell0->half_extents.maxCoeff() + gridCell1->half_extents.maxCoeff());
                         //If the normals are aligned, then the contact is probably surface-to-surface
                         //If the normals are not aligned, then the contact is probably surface-to-edge 
                         if(close_enough && normals_aligned){
@@ -210,6 +210,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                             // cout << "Object 1 Point Normal: (" << op0.normal[0] << ", " << op0.normal[1] << ", " << op0.normal[2] << ")" << endl;
                             // cout << "Object 2 Point Normal: (" << op1.normal[0] << ", " << op1.normal[1] << ", " << op1.normal[2] << ")" << endl;
                             // cout << "pos_dist: " << pos_dist << " and normal_dist: " << normal_dist << endl;
+                            // cout << "-----------------------------------" << endl;
                             //Compute the distance between this contact and the previous one from this pair of objects
                             if(j > 0 && contact_added){
                                 Contact previous_contact = gContacts.back();
@@ -235,6 +236,117 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 			}
 		}
 	}
+
+    struct LineSegmentIntersection {
+        Vector2f intersection_point_1 = Vector2f(NAN, NAN);
+        Vector2f intersection_point_2 = Vector2f(NAN, NAN);
+        bool intersects = false;
+    };
+
+    /// @brief Computes the intersection of two line segments.
+    /// @param p1 Start point (2D) of line segment 1.
+    /// @param q1 End point (2D) of line segment 1.
+    /// @param p2 Start point (2D) of line segment 2.
+    /// @param q2 End point (2D) of line segment 2.
+    /// @return LineSegmentIntersection struct containing the intersection points and a boolean indicating if the line segments intersect.
+    LineSegmentIntersection line_segment_intersection(Vector2f p1, Vector2f q1, Vector2f p2, Vector2f q2)
+    {
+        //Each line can be expressed as a parametric equation
+        // r = p + t*(q-p)
+        // where (p, q) are two points on the line and t is a scalar.
+        // The intersection point is the point for which the two parametric equations are equal:
+        //  p1 + s*(q1-p1) = p2 + t*(q2-p2)
+        // which can be rewritten as
+        //  t*(q2-p2) - s*(q1-p1) = p1 - p2
+        // and simplified with
+        //  c = p1 - p2
+        //  d1 = q1 - p1
+        //  d2 = q2 - p2
+        // producing 
+        //  t*d2 - s*d1 = c
+        // whose the solution obtained via Cramer's rule
+        //  s = (d1[0] * c[1] - d1[1] * c[0]) / det
+        //  t = (d2[0] * c[1] - d2[1] * c[0]) / det
+        // with det=(a1*b2 - a2*b1) being the determinant of the system
+        // that will be zero if the lines are parallel.
+        // Relevant: https://stackoverflow.com/a/565282
+        Vector2f d1 = q1 - p1;
+        Vector2f d2 = q2 - p2;
+        Vector2f c  = p1 - p2;
+        //Numerators
+        float num_s = (d1[0] * c[1] - d1[1] * c[0]);
+        float num_t = (d2[0] * c[1] - d2[1] * c[0]);
+        //Denominator / determinant
+        float det = (-d2[0] * d1[1] + d1[0] * d2[1]);
+
+        struct LineSegmentIntersection result;
+
+        //If both the numerator and denominator are zero,
+        // then the lines are collinear.
+        if( abs(det)   < 1e-6 && 
+            abs(num_s) < 1e-6 && 
+            abs(num_t) < 1e-6){
+            //We compute the overlap between the two line segments (possibly zero)
+            float s1 = d1.dot(p2 - p1) / d1.dot(d1);
+            float s2 = s1 + d1.dot(d2) / d1.dot(d1);
+            float s_min = min(s1, s2);
+            float s_max = max(s1, s2);
+            //Line segments do not overlap
+            if(s_max < 0 || s_min > 1){
+                //Lines are collinear but disjoint
+                return result;
+            }
+            //Line segments overlap from s_min to s_max
+            struct LineSegmentIntersection result;
+            result.intersects = true;
+            result.intersection_point_1 = p1 + s_min*d1;
+            result.intersection_point_2 = p1 + s_max*d1;
+            return result;
+        }
+
+        //If the denominator is zero but the numerators are not,
+        // then the lines are parallel and non-intersecting.
+        if(abs(det)   < 1e-6 && 
+          (abs(num_s) > 1e-6 || abs(num_t) > 1e-6)){
+            //Lines are parallel
+            return result;
+        }
+
+        //Otherwise, there is a unique solution given by
+        float s = num_s / det;
+        float t = num_t / det;
+
+        //If the intersection happens when a parameter is between 0 and 1,
+        // then it means that the intersection happens within the line segment.
+        if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
+        {
+            //Return the intersection point
+            result.intersects = true;
+            result.intersection_point_1 = p1 + (s * d1);
+        }
+
+        //The intersection happens outside of the line segment
+        return result;
+    }
+
+    void triangle_overlap_over_AARectangle(GridCell& g1, GridCell& g2){
+        //Triagnles associated with the two gridcells
+        // Note: This should be a list
+        Triangle t1 = *g1.triangle;
+        Triangle t2 = *g2.triangle;
+        //Axis aligned intersection rectangle between the two contacting gridcells
+        AARectangle r1 = g1.gridcell_to_gridcell_intersection(g2);
+        //Project the triangles onto the rectangle.
+        // Since the triangles are projected onto an Axis-Aligned rectangle,
+        // at least one of the world coordinates of the triangle vertices will be zero.
+        // such that we can now work in 2D.
+        Vector2f t1_v0_proj = r1.project_point(t1.vertex_0);
+        Vector2f t1_v1_proj = r1.project_point(t1.vertex_1);
+        Vector2f t1_v2_proj = r1.project_point(t1.vertex_2);
+        Vector2f t2_v0_proj = r1.project_point(t2.vertex_0);
+        Vector2f t2_v1_proj = r1.project_point(t2.vertex_1);
+        Vector2f t2_v2_proj = r1.project_point(t2.vertex_2);
+    }
 
     /// @brief Computes the line at the intersection of the planes supporting the two oriented points, and finds the
     ///         point on this line that is closest to both oriented points.
@@ -563,7 +675,7 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
     
     //Record the triangle mesh in the object
     obj->set_tri_mesh(vertices, triangles);
-    obj->remesh_surface_trimesh();
+    //obj->remesh_surface_trimesh();
 
     //Create a occupancy grid
     auto t1 = chrono::high_resolution_clock::now();

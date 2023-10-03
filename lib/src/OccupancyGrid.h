@@ -15,11 +15,30 @@ using namespace physx;
 
 class Triangle
 {
+    public:
         Vector3f vertex_0;
         Vector3f vertex_1;
         Vector3f vertex_2;
-    public:
         Triangle(Vector3f vertex_0, Vector3f vertex_1, Vector3f vertex_2) : vertex_0(vertex_0), vertex_1(vertex_1), vertex_2(vertex_2) {};
+};
+
+class AARectangle
+{
+    private:
+        Vector3f u;
+        Vector3f v;
+        float EPSILON = 1e-3;
+    public:
+        PxPlane plane;
+        Vector3f centre;
+        Vector3f half_extents;
+        AARectangle(PxPlane plane, Vector3f centre, Vector3f half_extents);
+        Vector2f project_point(const Vector3f& point);
+        Triangle project_triangle(const Triangle& triangle);
+        float get_min_u();
+        float get_max_u();
+        float get_min_v();
+        float get_max_v();
 };
 
 struct OrientedPoint
@@ -39,6 +58,7 @@ class GridCell
         GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const Vector3f& cell_size, const Vector3f& cell_centre, shared_ptr<Triangle> triangle);
         void additional_point(shared_ptr<OrientedPoint> surface_point);
         OrientedPoint weighted_average(const Vector3f& query_point);
+        AARectangle gridcell_to_gridcell_intersection(const GridCell& other);
 };
 
 

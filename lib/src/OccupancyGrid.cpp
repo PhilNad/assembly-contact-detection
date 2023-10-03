@@ -1,5 +1,163 @@
 #include "OccupancyGrid.h"
 
+AARectangle::AARectangle(PxPlane plane, Vector3f centre, Vector3f half_extents)
+: plane(plane), centre(centre), half_extents(half_extents)
+{
+    //The absolute value of the normal to the plane (plane.d) is either [0,0,1], [0,1,0], or [1,0,0]
+    // We can choose orthogonal u and v vectors accordingly
+    if(abs(abs(plane.n[0]) - 1) < this->EPSILON){
+        //Normal is [1,0,0]
+        this->u << 0, 0, 1;
+        this->v << 0, 1, 0;
+    }else 
+    if(abs(abs(plane.n[1]) - 1) < this->EPSILON){
+        //Normal is [0,1,0]
+        this->u << 1, 0, 0;
+        this->v << 0, 0, 1;
+    }else
+    if(abs(abs(plane.n[2]) - 1) < this->EPSILON){
+        //Normal is [0,0,1]
+        this->u << 1, 0, 0;
+        this->v << 0, 1, 0;
+    }else{
+        //If the rectangle is Axis Aligned, this should never be reached
+        // unless the PxPlane was wrongly defined.
+        throw runtime_error("Invalid plane normal.");
+    }
+}
+
+/// @brief Project a point onto the plane of the AARectangle.
+/// @param point The point to project.
+/// @return The coordinates of the projected point in the rectangle's local frame.
+Vector2f AARectangle::project_point(const Vector3f& point)
+{
+    //Compute the vector from the rectangle centre to the point
+    Vector3f point_vector = point - this->centre;
+    //Project the point vector onto the u and v axes
+    float u = point_vector.dot(this->u);
+    float v = point_vector.dot(this->v);
+    //Return the coordinates of the projected point
+    return Vector2f(u, v);
+}
+
+/// @brief Project a triangle onto the the plane of a AARectangle.
+/// @param triangle The triangle to project.
+/// @return The projected triangle.
+Triangle AARectangle::project_triangle(const Triangle& triangle)
+{
+    //Project the vertices of the triangle onto the rectangle
+    Vector2f vertex_0 = this->project_point(triangle.vertex_0);
+    Vector2f vertex_1 = this->project_point(triangle.vertex_1);
+    Vector2f vertex_2 = this->project_point(triangle.vertex_2);
+    //Create a new triangle
+    Triangle projected_triangle(vertex_0, vertex_1, vertex_2);
+    return projected_triangle;
+}
+
+/// @brief Get the minimal boundary of the rectangle along the u axis.
+/// @return The minimal boundary of the rectangle along the u axis.
+float AARectangle::get_min_u()
+{
+    //There are three possible cases:
+    // 1. The normal is [1,0,0], in which case the minimal boundary is the one with the smallest x coordinate
+    // 2. The normal is [0,1,0], in which case the minimal boundary is the one with the smallest y coordinate
+    // 3. The normal is [0,0,1], in which case the minimal boundary is the one with the smallest z coordinate
+    if(abs(abs(this->plane.n[0]) - 1) < this->EPSILON){
+        //Normal is [1,0,0]
+        return this->centre[0] - this->half_extents[0];
+    }else
+    if(abs(abs(this->plane.n[1]) - 1) < this->EPSILON){
+        //Normal is [0,1,0]
+        return this->centre[1] - this->half_extents[1];
+    }else
+    if(abs(abs(this->plane.n[2]) - 1) < this->EPSILON){
+        //Normal is [0,0,1]
+        return this->centre[2] - this->half_extents[2];
+    }else{
+        //If the rectangle is Axis Aligned, this should never be reached
+        // unless the PxPlane was wrongly defined.
+        throw runtime_error("Invalid plane normal.");
+    }
+}
+
+/// @brief Get the maximal boundary of the rectangle along the u axis.
+/// @return The maximal boundary of the rectangle along the u axis.
+float AARectangle::get_max_u()
+{
+    //There are three possible cases:
+    // 1. The normal is [1,0,0], in which case the maximal boundary is the one with the largest x coordinate
+    // 2. The normal is [0,1,0], in which case the maximal boundary is the one with the largest y coordinate
+    // 3. The normal is [0,0,1], in which case the maximal boundary is the one with the largest z coordinate
+    if(abs(abs(this->plane.n[0]) - 1) < this->EPSILON){
+        //Normal is [1,0,0]
+        return this->centre[0] + this->half_extents[0];
+    }else
+    if(abs(abs(this->plane.n[1]) - 1) < this->EPSILON){
+        //Normal is [0,1,0]
+        return this->centre[1] + this->half_extents[1];
+    }else
+    if(abs(abs(this->plane.n[2]) - 1) < this->EPSILON){
+        //Normal is [0,0,1]
+        return this->centre[2] + this->half_extents[2];
+    }else{
+        //If the rectangle is Axis Aligned, this should never be reached
+        // unless the PxPlane was wrongly defined.
+        throw runtime_error("Invalid plane normal.");
+    }
+}
+
+/// @brief Get the minimal boundary of the rectangle along the v axis.
+/// @return The minimal boundary of the rectangle along the v axis.
+float AARectangle::get_min_v()
+{
+    //There are three possible cases:
+    // 1. The normal is [1,0,0], in which case the minimal boundary is the one with the smallest y coordinate
+    // 2. The normal is [0,1,0], in which case the minimal boundary is the one with the smallest z coordinate
+    // 3. The normal is [0,0,1], in which case the minimal boundary is the one with the smallest x coordinate
+    if(abs(abs(this->plane.n[0]) - 1) < this->EPSILON){
+        //Normal is [1,0,0]
+        return this->centre[1] - this->half_extents[1];
+    }else
+    if(abs(abs(this->plane.n[1]) - 1) < this->EPSILON){
+        //Normal is [0,1,0]
+        return this->centre[2] - this->half_extents[2];
+    }else
+    if(abs(abs(this->plane.n[2]) - 1) < this->EPSILON){
+        //Normal is [0,0,1]
+        return this->centre[0] - this->half_extents[0];
+    }else{
+        //If the rectangle is Axis Aligned, this should never be reached
+        // unless the PxPlane was wrongly defined.
+        throw runtime_error("Invalid plane normal.");
+    }
+}
+
+/// @brief Get the maximal boundary of the rectangle along the v axis.
+/// @return The maximal boundary of the rectangle along the v axis.
+float AARectangle::get_max_v()
+{
+    //There are three possible cases:
+    // 1. The normal is [1,0,0], in which case the maximal boundary is the one with the largest y coordinate
+    // 2. The normal is [0,1,0], in which case the maximal boundary is the one with the largest z coordinate
+    // 3. The normal is [0,0,1], in which case the maximal boundary is the one with the largest x coordinate
+    if(abs(abs(this->plane.n[0]) - 1) < this->EPSILON){
+        //Normal is [1,0,0]
+        return this->centre[1] + this->half_extents[1];
+    }else
+    if(abs(abs(this->plane.n[1]) - 1) < this->EPSILON){
+        //Normal is [0,1,0]
+        return this->centre[2] + this->half_extents[2];
+    }else
+    if(abs(abs(this->plane.n[2]) - 1) < this->EPSILON){
+        //Normal is [0,0,1]
+        return this->centre[0] + this->half_extents[0];
+    }else{
+        //If the rectangle is Axis Aligned, this should never be reached
+        // unless the PxPlane was wrongly defined.
+        throw runtime_error("Invalid plane normal.");
+    }
+}
+
 /// @brief Build a grid cell that contains all necessary information for collision detection.
 /// @param id The index of the cell in the grid.
 /// @param surface_point Oriented point (position and normal) that was sampled on the surface.
@@ -63,6 +221,59 @@ OrientedPoint GridCell::weighted_average(const Vector3f& query_point){
     weighted_average.normal   = normal_average;
 
     return weighted_average;
+}
+
+/// @brief Determine the intersection rectangle between two grid cells assumed to be in contact.
+/// @param other GridCell different from the current one that is in contact with it.
+/// @return Axis Aligned Rectangle that represents the intersection between the two grid cells.
+AARectangle GridCell::gridcell_to_gridcell_intersection(const GridCell& other)
+{
+    //Compute the vector between the centres of the two cells
+    Vector3f centres_vector = other.centre - this->centre;
+
+    //Get the maximal coefficient of the centres vector
+    float max_coeff = centres_vector.maxCoeff();
+    //The maximal coefficient indicates the normal of the intersection plane
+    if(max_coeff == centres_vector[1]){
+        //Normal is [0,1,0], Plane is X-Z
+        PxPlane plane(0, 1, 0, this->centre[1]);
+        //Axes aligned bounds of the intersection rectangle
+        float u_min = max(this->centre[0] - this->half_extents[0], other.centre[0] - other.half_extents[0]);
+        float u_max = min(this->centre[0] + this->half_extents[0], other.centre[0] + other.half_extents[0]);
+        float v_min = max(this->centre[2] - this->half_extents[2], other.centre[2] - other.half_extents[2]);
+        float v_max = min(this->centre[2] + this->half_extents[2], other.centre[2] + other.half_extents[2]);
+        Vector3f centre = Vector3f((u_min + u_max)/2, this->centre[1], (v_min + v_max)/2);
+        //We set the half-extent along the normal to be zero
+        Vector3f half_extents = Vector3f((u_max - u_min)/2, 0, (v_max - v_min)/2);
+        AARectangle intersection_rectangle(plane, centre, half_extents);
+        return intersection_rectangle;
+    }else if(max_coeff == centres_vector[2]){
+        //Normal is [0,0,1], Plane is X-Y
+        PxPlane plane(0, 0, 1, this->centre[2]);
+        //Axes aligned bounds of the intersection rectangle
+        float u_min = max(this->centre[0] - this->half_extents[0], other.centre[0] - other.half_extents[0]);
+        float u_max = min(this->centre[0] + this->half_extents[0], other.centre[0] + other.half_extents[0]);
+        float v_min = max(this->centre[1] - this->half_extents[1], other.centre[1] - other.half_extents[1]);
+        float v_max = min(this->centre[1] + this->half_extents[1], other.centre[1] + other.half_extents[1]);
+        Vector3f centre = Vector3f((u_min + u_max)/2, (v_min + v_max)/2, this->centre[2]);
+        //We set the half-extent along the normal to be zero
+        Vector3f half_extents = Vector3f((u_max - u_min)/2, (v_max - v_min)/2, 0);
+        AARectangle intersection_rectangle(plane, centre, half_extents);
+        return intersection_rectangle;
+    }else{
+        //Normal is [1,0,0], Plane is Y-Z
+        PxPlane plane(1, 0, 0, this->centre[0]);
+        //Axes aligned bounds of the intersection rectangle
+        float u_min = max(this->centre[1] - this->half_extents[1], other.centre[1] - other.half_extents[1]);
+        float u_max = min(this->centre[1] + this->half_extents[1], other.centre[1] + other.half_extents[1]);
+        float v_min = max(this->centre[2] - this->half_extents[2], other.centre[2] - other.half_extents[2]);
+        float v_max = min(this->centre[2] + this->half_extents[2], other.centre[2] + other.half_extents[2]);
+        Vector3f centre = Vector3f(this->centre[0], (u_min + u_max)/2, (v_min + v_max)/2);
+        //We set the half-extent along the normal to be zero
+        Vector3f half_extents = Vector3f(0, (u_max - u_min)/2, (v_max - v_min)/2);
+        AARectangle intersection_rectangle(plane, centre, half_extents);
+        return intersection_rectangle;
+    }
 }
 
 /// @brief Determines whether a given point is inside a triangle defined by three vertices.
