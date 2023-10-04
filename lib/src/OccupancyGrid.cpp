@@ -1,5 +1,107 @@
 #include "OccupancyGrid.h"
 
+template <>
+void Triangle<Vector2f>::compute_signed_area()
+{
+    //Compute vertices relative to first vertex
+    Vector2f v1r, v2r;
+    v1r = vertex_1 - vertex_0;
+    v2r = vertex_2 - vertex_0;
+
+    //Compute signed area
+    this->signed_area = (v1r[0]*v2r[1] - v1r[1]*v2r[0])/2; 
+}
+
+template <>
+void Triangle<Vector3f>::compute_signed_area()
+{
+    //Compute vertices relative to first vertex
+    Vector3f v1r, v2r;
+    v1r = vertex_1 - vertex_0;
+    v2r = vertex_2 - vertex_0;
+
+    //Compute signed area
+    this->signed_area = v1r.cross(v2r).norm()/2; 
+}
+
+template <typename T>
+Triangle<T>::Triangle(T vertex_0, T vertex_1, T vertex_2) : vertex_0(vertex_0), vertex_1(vertex_1), vertex_2(vertex_2)
+{
+    //Compute the signed area of the triangle
+    this->compute_signed_area();
+
+    //If the signed area is negative, we swap the vertices
+    // As a result, the vertices should be ordered counter-clockwise
+    if(this->signed_area < 0){
+        T temp = this->vertex_1;
+        this->vertex_1 = this->vertex_2;
+        this->vertex_2 = temp;
+        this->signed_area = -this->signed_area;
+    }
+}
+
+/// @brief Determines whether a given point is inside a triangle defined by three vertices.
+/// @param point The point to check.
+/// @param boundary_included If true, points on the triangle edges are considered to be inside the triangle.
+/// @return True if the point is inside the triangle, false otherwise.
+/// @note See: https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Barycentric_coordinates_on_triangles
+/// @note See: Real-Time Collision Detection page 52.
+template <typename T>
+bool Triangle<T>::contains(const T& point, bool boundary_included)
+{
+    //Tolerance such that points directly on the triangle edge are considered to be inside the triangle
+    float tol = 1e-6;
+    if(boundary_included == false){
+        tol = 0;
+    }
+
+    //Some computations can be performed only once and reused if the function is called multiple times for the same triangle
+    if(pt_in_tri_cache.active == false){
+        pt_in_tri_cache.v0r = vertex_1 - vertex_0;
+        pt_in_tri_cache.v1r = vertex_2 - vertex_0;
+        pt_in_tri_cache.d00 = pt_in_tri_cache.v0r.dot(pt_in_tri_cache.v0r);
+        pt_in_tri_cache.d01 = pt_in_tri_cache.v0r.dot(pt_in_tri_cache.v1r);
+        pt_in_tri_cache.d11 = pt_in_tri_cache.v1r.dot(pt_in_tri_cache.v1r);
+        pt_in_tri_cache.inv_denom = 1/(2*this->signed_area);
+        pt_in_tri_cache.active = true;
+    }
+
+    //Express points relative to first vertex
+    T v0r, v1r, v2r;
+    v0r = pt_in_tri_cache.v0r;
+    v1r = pt_in_tri_cache.v1r;
+    v2r = point - vertex_0;
+
+    //Compute dot products
+    float d00, d01, d11, d20, d21;
+    d00 = pt_in_tri_cache.d00;
+    d01 = pt_in_tri_cache.d01;
+    d11 = pt_in_tri_cache.d11;
+    d20 = v2r.dot(v0r);
+    d21 = v2r.dot(v1r);
+
+    //The denominator is equal to two times the triangle area
+    // as it results from the cross product of two vectors
+    // whose magnitude is equal to the area of the parallelogram they form.
+    float inv_denom;
+    inv_denom = pt_in_tri_cache.inv_denom;
+
+    //Barycentric weights that each describe the area of a sub-triangle over the area of the triangle
+    // so they must be between 0 and 1. The weights also describe how much each vertex attracts the point.
+    float alpha = (d11 * d20 - d01 * d21) * inv_denom;
+    float beta  = (d00 * d21 - d01 * d20) * inv_denom;
+    float gamma = 1.0f - alpha - beta;
+    //cout << "alpha = " << alpha << ", beta = " << beta << ", gamma = " << gamma << endl;
+
+    //Check if point is inside triangle
+    return ((0 < alpha+tol) && (alpha-tol < 1) &&
+            (0 < beta+tol)  && (beta-tol  < 1) &&
+            (0 < gamma+tol) && (gamma-tol < 1));
+}
+//Template instanciations
+template bool Triangle<Vector2f>::contains(const Vector2f& point, bool boundary_included);
+template bool Triangle<Vector3f>::contains(const Vector3f& point, bool boundary_included);
+
 AARectangle::AARectangle(PxPlane plane, Vector3f centre, Vector3f half_extents)
 : plane(plane), centre(centre), half_extents(half_extents)
 {
@@ -40,17 +142,64 @@ Vector2f AARectangle::project_point(const Vector3f& point)
     return Vector2f(u, v);
 }
 
+/// @brief Unproject a point from the plane of the AARectangle to the world frame.
+/// @param point 2D coordinates of the point in the rectangle's local frame.
+/// @return 3D coordinates of the unprojected point in the world frame.
+Vector3f AARectangle::unproject_point(const Vector2f& point)
+{
+    //Compute the point vector in the rectangle's local frame
+    Vector3f point_vector = point[0]*this->u + point[1]*this->v;
+    //Return the coordinates of the unprojected point
+    return point_vector + this->centre;
+}
+
+/// @brief Check if the rectangle contains a given 2D point expressed in the rectangle's local frame.
+/// @param point 2D coordinates of the point in the rectangle's local frame.
+/// @return True if the point is inside the rectangle, false otherwise.
+bool AARectangle::contains(const Vector2f& point)
+{
+    //Check if the point is inside the rectangle
+    return (abs(point[0]) <= this->half_extents[0] && abs(point[1]) <= this->half_extents[1]);
+}
+
+/// @brief Check if the rectangle contains a given 3D point expressed in the world frame.
+/// @param point 3D coordinates of the point in the world frame.
+/// @return True if the point is inside the rectangle, false otherwise.
+bool AARectangle::contains(const Vector3f& point)
+{
+    //Project the point onto the rectangle
+    Vector2f projected_point = this->project_point(point);
+    //Check if the projected point is inside the rectangle
+    return this->contains(projected_point);
+}
+
+/// @brief Project a point onto the plane of the AARectangle and clamp it to the rectangle boundaries.
+/// @param point 2D coordinates of the point in the rectangle's local frame.
+/// @return 2D coordinates of the clamped point in the rectangle's local frame.
+Vector2f AARectangle::inside_or_on(const Vector2f& point)
+{
+    //Check if the point is inside the rectangle
+    if(this->contains(point)){
+        return point;
+    }
+    //If the point is not inside the rectangle, we clamp the point to the rectangle boundaries
+    float u = min(max(point[0], -this->half_extents[0]), this->half_extents[0]);
+    float v = min(max(point[1], -this->half_extents[1]), this->half_extents[1]);
+    //Return the coordinates of the clamped point
+    return Vector2f(u, v);
+}
+
 /// @brief Project a triangle onto the the plane of a AARectangle.
 /// @param triangle The triangle to project.
 /// @return The projected triangle.
-Triangle AARectangle::project_triangle(const Triangle& triangle)
+Triangle<Vector2f> AARectangle::project_triangle(const Triangle<Vector3f>& triangle)
 {
     //Project the vertices of the triangle onto the rectangle
     Vector2f vertex_0 = this->project_point(triangle.vertex_0);
     Vector2f vertex_1 = this->project_point(triangle.vertex_1);
     Vector2f vertex_2 = this->project_point(triangle.vertex_2);
     //Create a new triangle
-    Triangle projected_triangle(vertex_0, vertex_1, vertex_2);
+    Triangle<Vector2f> projected_triangle(vertex_0, vertex_1, vertex_2);
     return projected_triangle;
 }
 
@@ -163,7 +312,7 @@ float AARectangle::get_max_v()
 /// @param surface_point Oriented point (position and normal) that was sampled on the surface.
 /// @param cell_size Size of the cell along each dimension.
 /// @param cell_centre Position of the centre of the cuboid that represents the cell.
-GridCell::GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const Vector3f& cell_size, const Vector3f& cell_centre, shared_ptr<Triangle> triangle)
+GridCell::GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const Vector3f& cell_size, const Vector3f& cell_centre, shared_ptr<Triangle<Vector3f>> triangle)
 {
     this->id = id;
     //NOTE: The position does not correspond to the centre of the cell
@@ -171,7 +320,7 @@ GridCell::GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const V
     this->surface_points.push_back(surface_point);
 
     //Record the triangle on which the point was sampled
-    this->triangle = triangle;
+    this->triangles.push_back(triangle);
 
     //Record half-extents
     this->half_extents = {cell_size[0]/2, cell_size[1]/2, cell_size[2]/2};
@@ -184,6 +333,19 @@ GridCell::GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const V
 /// @param surface_point Oriented point (position and normal) that was sampled on the surface.
 void GridCell::additional_point(shared_ptr<OrientedPoint> surface_point){
     this->surface_points.push_back(surface_point);
+}
+
+/// @brief Add information about a triangle to the grid cell.
+/// @param triangle Triangle on which a surface point was sampled.
+void GridCell::additional_triangle(shared_ptr<Triangle<Vector3f>> triangle){
+    //Check if the triangle is already recorded
+    for (int i = 0; i < this->triangles.size(); i++){
+        if(this->triangles[i].get() == triangle.get()){
+            return;
+        }
+    }
+    //If the triangle is not recorded, we add it to the list
+    this->triangles.push_back(triangle);
 }
 
 /// @brief Compute the weighted average of the surface points positions and normals based on their distance to the query point.
@@ -242,7 +404,7 @@ AARectangle GridCell::gridcell_to_gridcell_intersection(const GridCell& other)
         float u_max = min(this->centre[0] + this->half_extents[0], other.centre[0] + other.half_extents[0]);
         float v_min = max(this->centre[2] - this->half_extents[2], other.centre[2] - other.half_extents[2]);
         float v_max = min(this->centre[2] + this->half_extents[2], other.centre[2] + other.half_extents[2]);
-        Vector3f centre = Vector3f((u_min + u_max)/2, this->centre[1], (v_min + v_max)/2);
+        Vector3f centre = Vector3f((u_min + u_max)/2, (this->centre[1] + other.centre[1])/2, (v_min + v_max)/2);
         //We set the half-extent along the normal to be zero
         Vector3f half_extents = Vector3f((u_max - u_min)/2, 0, (v_max - v_min)/2);
         AARectangle intersection_rectangle(plane, centre, half_extents);
@@ -255,7 +417,7 @@ AARectangle GridCell::gridcell_to_gridcell_intersection(const GridCell& other)
         float u_max = min(this->centre[0] + this->half_extents[0], other.centre[0] + other.half_extents[0]);
         float v_min = max(this->centre[1] - this->half_extents[1], other.centre[1] - other.half_extents[1]);
         float v_max = min(this->centre[1] + this->half_extents[1], other.centre[1] + other.half_extents[1]);
-        Vector3f centre = Vector3f((u_min + u_max)/2, (v_min + v_max)/2, this->centre[2]);
+        Vector3f centre = Vector3f((u_min + u_max)/2, (v_min + v_max)/2, (this->centre[2]+other.centre[2])/2);
         //We set the half-extent along the normal to be zero
         Vector3f half_extents = Vector3f((u_max - u_min)/2, (v_max - v_min)/2, 0);
         AARectangle intersection_rectangle(plane, centre, half_extents);
@@ -268,7 +430,7 @@ AARectangle GridCell::gridcell_to_gridcell_intersection(const GridCell& other)
         float u_max = min(this->centre[1] + this->half_extents[1], other.centre[1] + other.half_extents[1]);
         float v_min = max(this->centre[2] - this->half_extents[2], other.centre[2] - other.half_extents[2]);
         float v_max = min(this->centre[2] + this->half_extents[2], other.centre[2] + other.half_extents[2]);
-        Vector3f centre = Vector3f(this->centre[0], (u_min + u_max)/2, (v_min + v_max)/2);
+        Vector3f centre = Vector3f((this->centre[0] + other.centre[0])/2, (u_min + u_max)/2, (v_min + v_max)/2);
         //We set the half-extent along the normal to be zero
         Vector3f half_extents = Vector3f(0, (u_max - u_min)/2, (v_max - v_min)/2);
         AARectangle intersection_rectangle(plane, centre, half_extents);
@@ -284,9 +446,12 @@ AARectangle GridCell::gridcell_to_gridcell_intersection(const GridCell& other)
 /// @param cache Cache for computations that can be reused if the function is called multiple times for the same triangle.
 /// @return True if the point is inside the triangle, false otherwise.
 /// @note See: https://en.wikipedia.org/wiki/Barycentric_coordinate_system#Barycentric_coordinates_on_triangles
-/// @note See: Real-Time Collision Detection page 137.
+/// @note See: Real-Time Collision Detection page 52.
+/// @note DEPRECATED: Use Triangle::contains() instead.
 bool OccupancyGrid::point_inside_triangle(const Vector3f& p, const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, point_inside_triangle_computations_cache& cache)
 {
+    throw runtime_error("This method is deprecated. Use Triangle::contains() instead.");
+
     //Tolerance such that points directly on the triangle edge are considered to be inside the triangle
     float tol = 1e-6;
 
@@ -353,6 +518,8 @@ bool OccupancyGrid::point_inside_triangle(const Vector3f& p, const Vector3f& v0,
 /// @note This method is much faster than sample_uniform_points_in_triangle(), but the points are not uniformly distributed.
 vector<Vector3f> OccupancyGrid::sample_random_points_in_triangle(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, float density)
 {
+    //TODO: Move this method to the Triangle class.
+
     //Make sure that each edge of the triangle is non-zero
     assert((v1 - v0).norm() > 0);
     assert((v2 - v0).norm() > 0);
@@ -394,6 +561,8 @@ vector<Vector3f> OccupancyGrid::sample_random_points_in_triangle(const Vector3f&
 /// @return Vector of points uniformly distributed in the triangle.
 vector<Vector3f> OccupancyGrid::sample_uniform_points_in_triangle(const Vector3f& v0, const Vector3f& v1, const Vector3f& v2, float density)
 {
+    //TODO: Move this method to the Triangle class.
+
     //Make sure that each edge of the triangle is non-zero
     assert((v1 - v0).norm() > 0);
     assert((v2 - v0).norm() > 0);
@@ -698,7 +867,7 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
         Vector3f v2 = vertices.row(triangles(i, 2));
 
         //Record the triangle on which the point was sampled
-        shared_ptr<Triangle> triangle = make_shared<Triangle>(v0, v1, v2);
+        shared_ptr<Triangle<Vector3f>> triangle = make_shared<Triangle<Vector3f>>(v0, v1, v2);
 
         // Get triangle normal assuming that the indices are
         // ordered with the PhysX convention.
@@ -739,6 +908,7 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
                 }else{
                     //Add the point to the existing grid cell
                     //this->grid_cells.at(cell_idx).additional_point(surface_point);
+                    //this->grid_cells.at(cell_idx).additional_triangle(triangle);
                 }
             }
         }

@@ -60,6 +60,121 @@ class Cube{
 };
 
 
+void test_line_segments_intersection()
+{
+    LineSegmentIntersection result;
+    Vector2f p1, q1, p2, q2;
+
+    cout << "Non-collinear and intersecting" << endl;
+    p1 << 0.5, 0; q1 << 0.5, 1;
+    p2 << 0, 0.5; q2 << 1, 0.5;
+    result = line_segment_intersection(p1, q1, p2, q2);
+    cout << "Line 1: (" << p1.transpose() << "), (" << q1.transpose() << ") Line 2: (" << p2.transpose() << "), (" << q2.transpose() << ")" << endl;
+    cout << "Intersection: " << result.nb_intersections << endl;
+    cout << "Intersection point 1: " << result.intersection_point_1.transpose() << endl;
+    cout << "Intersection point 2: " << result.intersection_point_2.transpose() << endl;
+    cout << "---" << endl;
+
+    cout << "Collinear and overlapping" << endl;
+    p1 << 0, 0.5; q1 << 0, 1;
+    p2 << 0, 0;   q2 << 0, 1;
+    result = line_segment_intersection(p1, q1, p2, q2);
+    cout << "Line 1: (" << p1.transpose() << "), (" << q1.transpose() << ") Line 2: (" << p2.transpose() << "), (" << q2.transpose() << ")" << endl;
+    cout << "Intersection: " << result.nb_intersections << endl;
+    cout << "Intersection point 1: " << result.intersection_point_1.transpose() << endl;
+    cout << "Intersection point 2: " << result.intersection_point_2.transpose() << endl;
+    cout << "---" << endl;
+
+    cout << "Collinear and disjoint" << endl;
+    p1 << 0, 1; q1 << 0, 0.75;
+    p2 << 0, 0; q2 << 0, 0.5;
+    result = line_segment_intersection(p1, q1, p2, q2);
+    cout << "Line 1: (" << p1.transpose() << "), (" << q1.transpose() << ") Line 2: (" << p2.transpose() << "), (" << q2.transpose() << ")" << endl;
+    cout << "Intersection: " << result.nb_intersections << endl;
+    cout << "Intersection point 1: " << result.intersection_point_1.transpose() << endl;
+    cout << "Intersection point 2: " << result.intersection_point_2.transpose() << endl;
+    cout << "---" << endl;
+
+    cout << "Non-collinear and Non-intersecting" << endl;
+    p1 << 0, 0; q1 << 0, 0.5;
+    p2 << 1, 0; q2 << 1, 1;
+    result = line_segment_intersection(p1, q1, p2, q2);
+    cout << "Line 1: (" << p1.transpose() << "), (" << q1.transpose() << ") Line 2: (" << p2.transpose() << "), (" << q2.transpose() << ")" << endl;
+    cout << "Intersection: " << result.nb_intersections << endl;
+    cout << "Intersection point 1: " << result.intersection_point_1.transpose() << endl;
+    cout << "Intersection point 2: " << result.intersection_point_2.transpose() << endl;
+    cout << "---" << endl;
+}
+
+void test_segment_triangle_intersection()
+{
+    Triangle<Vector2f> triangle(Vector2f(0, 0), Vector2f(1, 0), Vector2f(0, 1));
+    /*
+        (0,1)
+        | \
+        |   \
+        |    \
+        |_____\
+     (0,0)   (1,0)
+    */
+    Vector2f p1, q1;
+    vector<Vector2f> intersections;
+
+    cout << "Non-collinear and intersecting at one end of the segment" << endl;
+    p1 << 0.5, 0.5; q1 << 0.5, 1.5;
+    cout << "Line: (" << p1.transpose() << "), (" << q1.transpose() << ")" << endl;
+    intersections = edge_triangle_intersection(p1, q1, triangle);
+    for(int i = 0; i < intersections.size(); i++){
+        cout << intersections[i].transpose() << endl;
+    }
+    cout << "---" << endl;
+
+    cout << "Non-collinear and intersecting two sides (going in and out)" << endl;
+    p1 << -0.25, 0.5; q1 << 0.75, 0.5;
+    cout << "Line: (" << p1.transpose() << "), (" << q1.transpose() << ")" << endl;
+    intersections = edge_triangle_intersection(p1, q1, triangle);
+    for(int i = 0; i < intersections.size(); i++){
+        cout << intersections[i].transpose() << endl;
+    }
+    cout << "---" << endl;
+
+    cout << "Non-collinear and intersecting one side (going in)" << endl;
+    p1 << -0.25, 0.5; q1 << 0.25, 0.5;
+    cout << "Line: (" << p1.transpose() << "), (" << q1.transpose() << ")" << endl;
+    intersections = edge_triangle_intersection(p1, q1, triangle);
+    for(int i = 0; i < intersections.size(); i++){
+        cout << intersections[i].transpose() << endl;
+    }
+    cout << "---" << endl;
+
+    cout << "Collinear and overlapping" << endl;
+    p1 << 0, 0; q1 << 0, 1;
+    cout << "Line: (" << p1.transpose() << "), (" << q1.transpose() << ")" << endl;
+    intersections = edge_triangle_intersection(p1, q1, triangle);
+    for(int i = 0; i < intersections.size(); i++){
+        cout << intersections[i].transpose() << endl;
+    }
+    cout << "---" << endl;
+    
+    cout << "Inside triangle" << endl;
+    p1 << 0.25, 0.5; q1 << 0.5, 0.25;
+    cout << "Line: (" << p1.transpose() << "), (" << q1.transpose() << ")" << endl;
+    intersections = edge_triangle_intersection(p1, q1, triangle);
+    for(int i = 0; i < intersections.size(); i++){
+        cout << intersections[i].transpose() << endl;
+    }
+    cout << "---" << endl;
+
+    cout << "Outside triangle" << endl;
+    p1 << 0.25, 1; q1 << 0.75, 0.5;
+    cout << "Line: (" << p1.transpose() << "), (" << q1.transpose() << ")" << endl;
+    intersections = edge_triangle_intersection(p1, q1, triangle);
+    for(int i = 0; i < intersections.size(); i++){
+        cout << intersections[i].transpose() << endl;
+    }
+    cout << "---" << endl;
+}
+
 int main(int argc, char** argv) {
     // Initialize the scene
     Scene scene;

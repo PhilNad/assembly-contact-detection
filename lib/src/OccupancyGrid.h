@@ -13,13 +13,28 @@ using namespace std;
 using namespace Eigen;
 using namespace physx;
 
+template <typename T>
 class Triangle
 {
+    private:
+        struct point_inside_triangle_computations_cache {
+            bool active = false;
+            T v0r;
+            T v1r;
+            float d00;
+            float d01;
+            float d11;
+            float inv_denom;
+        };
+        point_inside_triangle_computations_cache pt_in_tri_cache;
+        void compute_signed_area();
     public:
-        Vector3f vertex_0;
-        Vector3f vertex_1;
-        Vector3f vertex_2;
-        Triangle(Vector3f vertex_0, Vector3f vertex_1, Vector3f vertex_2) : vertex_0(vertex_0), vertex_1(vertex_1), vertex_2(vertex_2) {};
+        T vertex_0;
+        T vertex_1;
+        T vertex_2;
+        float signed_area = 0;
+        Triangle(T vertex_0, T vertex_1, T vertex_2);
+        bool contains(const T& point, bool boundary_included);
 };
 
 class AARectangle
@@ -34,7 +49,11 @@ class AARectangle
         Vector3f half_extents;
         AARectangle(PxPlane plane, Vector3f centre, Vector3f half_extents);
         Vector2f project_point(const Vector3f& point);
-        Triangle project_triangle(const Triangle& triangle);
+        Vector3f unproject_point(const Vector2f& point);
+        Triangle<Vector2f> project_triangle(const Triangle<Vector3f>& triangle);
+        bool contains(const Vector3f& point);
+        bool contains(const Vector2f& point);
+        Vector2f inside_or_on(const Vector2f& point);
         float get_min_u();
         float get_max_u();
         float get_min_v();
@@ -52,11 +71,12 @@ class GridCell
     public:
         uint32_t id;
         vector<shared_ptr<OrientedPoint>> surface_points;
-        shared_ptr<Triangle> triangle;
+        vector<shared_ptr<Triangle<Vector3f>>> triangles;
         Vector3f half_extents;
         Vector3f centre;
-        GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const Vector3f& cell_size, const Vector3f& cell_centre, shared_ptr<Triangle> triangle);
+        GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const Vector3f& cell_size, const Vector3f& cell_centre, shared_ptr<Triangle<Vector3f>> triangle);
         void additional_point(shared_ptr<OrientedPoint> surface_point);
+        void additional_triangle(shared_ptr<Triangle<Vector3f>> triangle);
         OrientedPoint weighted_average(const Vector3f& query_point);
         AARectangle gridcell_to_gridcell_intersection(const GridCell& other);
 };

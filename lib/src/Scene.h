@@ -15,6 +15,14 @@ class Scene;
 using namespace std;
 using namespace Eigen;
 
+struct LineSegmentIntersection {
+    Vector2f intersection_point_1 = Vector2f(NAN, NAN);
+    Vector2f intersection_point_2 = Vector2f(NAN, NAN);
+    int nb_intersections = 0;
+};
+LineSegmentIntersection line_segment_intersection(Vector2f p1, Vector2f q1, Vector2f p2, Vector2f q2, bool closed_segments = true);
+vector<Vector2f> edge_triangle_intersection(const Vector2f& edge_p0, const Vector2f& edge_p1, Triangle<Vector2f>& triangle);
+
 class Scene
 {
     private:

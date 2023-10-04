@@ -200,6 +200,16 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                         float pos_dist = (op0.position - op1.position).norm();
                         float normal_dist = 1-op0.normal.dot(op1.normal);
 
+                        vector<Vector3f> intersections = all_triangles_overlap_over_AARectangle(*gridCell0, *gridCell1);
+                        for(int i = 0; i < intersections.size(); i++){
+                            Vector3f p = intersections[i];
+                            //Add a new contact point to the list
+                            Contact contact(obj0, obj1, p, normal, pos_dist);
+                            gContacts.push_back(contact);
+                            contact_added = true;
+                        }
+                        continue;
+
                         bool normals_aligned = (normal_dist < 0.25);
                         bool close_enough = true; (pos_dist < gridCell0->half_extents.maxCoeff() + gridCell1->half_extents.maxCoeff());
                         //If the normals are aligned, then the contact is probably surface-to-surface
@@ -211,6 +221,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                             // cout << "Object 2 Point Normal: (" << op1.normal[0] << ", " << op1.normal[1] << ", " << op1.normal[2] << ")" << endl;
                             // cout << "pos_dist: " << pos_dist << " and normal_dist: " << normal_dist << endl;
                             // cout << "-----------------------------------" << endl;
+
                             //Compute the distance between this contact and the previous one from this pair of objects
                             if(j > 0 && contact_added){
                                 Contact previous_contact = gContacts.back();
@@ -237,115 +248,83 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 		}
 	}
 
-    struct LineSegmentIntersection {
-        Vector2f intersection_point_1 = Vector2f(NAN, NAN);
-        Vector2f intersection_point_2 = Vector2f(NAN, NAN);
-        bool intersects = false;
-    };
-
-    /// @brief Computes the intersection of two line segments.
-    /// @param p1 Start point (2D) of line segment 1.
-    /// @param q1 End point (2D) of line segment 1.
-    /// @param p2 Start point (2D) of line segment 2.
-    /// @param q2 End point (2D) of line segment 2.
-    /// @return LineSegmentIntersection struct containing the intersection points and a boolean indicating if the line segments intersect.
-    LineSegmentIntersection line_segment_intersection(Vector2f p1, Vector2f q1, Vector2f p2, Vector2f q2)
+    vector<Vector3f> all_triangles_overlap_over_AARectangle(GridCell& g1, GridCell& g2)
     {
-        //Each line can be expressed as a parametric equation
-        // r = p + t*(q-p)
-        // where (p, q) are two points on the line and t is a scalar.
-        // The intersection point is the point for which the two parametric equations are equal:
-        //  p1 + s*(q1-p1) = p2 + t*(q2-p2)
-        // which can be rewritten as
-        //  t*(q2-p2) - s*(q1-p1) = p1 - p2
-        // and simplified with
-        //  c = p1 - p2
-        //  d1 = q1 - p1
-        //  d2 = q2 - p2
-        // producing 
-        //  t*d2 - s*d1 = c
-        // whose the solution obtained via Cramer's rule
-        //  s = (d1[0] * c[1] - d1[1] * c[0]) / det
-        //  t = (d2[0] * c[1] - d2[1] * c[0]) / det
-        // with det=(a1*b2 - a2*b1) being the determinant of the system
-        // that will be zero if the lines are parallel.
-        // Relevant: https://stackoverflow.com/a/565282
-        Vector2f d1 = q1 - p1;
-        Vector2f d2 = q2 - p2;
-        Vector2f c  = p1 - p2;
-        //Numerators
-        float num_s = (d1[0] * c[1] - d1[1] * c[0]);
-        float num_t = (d2[0] * c[1] - d2[1] * c[0]);
-        //Denominator / determinant
-        float det = (-d2[0] * d1[1] + d1[0] * d2[1]);
+        //Triangles associated with the two gridcells
+        vector<shared_ptr<Triangle<Vector3f>>> t1_list = g1.triangles;
+        vector<shared_ptr<Triangle<Vector3f>>> t2_list = g2.triangles;
 
-        struct LineSegmentIntersection result;
-
-        //If both the numerator and denominator are zero,
-        // then the lines are collinear.
-        if( abs(det)   < 1e-6 && 
-            abs(num_s) < 1e-6 && 
-            abs(num_t) < 1e-6){
-            //We compute the overlap between the two line segments (possibly zero)
-            float s1 = d1.dot(p2 - p1) / d1.dot(d1);
-            float s2 = s1 + d1.dot(d2) / d1.dot(d1);
-            float s_min = min(s1, s2);
-            float s_max = max(s1, s2);
-            //Line segments do not overlap
-            if(s_max < 0 || s_min > 1){
-                //Lines are collinear but disjoint
-                return result;
-            }
-            //Line segments overlap from s_min to s_max
-            struct LineSegmentIntersection result;
-            result.intersects = true;
-            result.intersection_point_1 = p1 + s_min*d1;
-            result.intersection_point_2 = p1 + s_max*d1;
-            return result;
-        }
-
-        //If the denominator is zero but the numerators are not,
-        // then the lines are parallel and non-intersecting.
-        if(abs(det)   < 1e-6 && 
-          (abs(num_s) > 1e-6 || abs(num_t) > 1e-6)){
-            //Lines are parallel
-            return result;
-        }
-
-        //Otherwise, there is a unique solution given by
-        float s = num_s / det;
-        float t = num_t / det;
-
-        //If the intersection happens when a parameter is between 0 and 1,
-        // then it means that the intersection happens within the line segment.
-        if (s >= 0 && s <= 1 && t >= 0 && t <= 1)
-        {
-            //Return the intersection point
-            result.intersects = true;
-            result.intersection_point_1 = p1 + (s * d1);
-        }
-
-        //The intersection happens outside of the line segment
-        return result;
-    }
-
-    void triangle_overlap_over_AARectangle(GridCell& g1, GridCell& g2){
-        //Triagnles associated with the two gridcells
-        // Note: This should be a list
-        Triangle t1 = *g1.triangle;
-        Triangle t2 = *g2.triangle;
         //Axis aligned intersection rectangle between the two contacting gridcells
         AARectangle r1 = g1.gridcell_to_gridcell_intersection(g2);
+
+        //Iterates over all triangle combinations
+        vector<Vector3f> all_intersections;
+        for(int i = 0; i < t1_list.size(); i++){
+            shared_ptr<Triangle<Vector3f>> t1 = t1_list[i];
+            for(int j = 0; j < t2_list.size(); j++){
+                shared_ptr<Triangle<Vector3f>> t2 = t2_list[j];
+                //Compute the intersection points between the two triangles
+                vector<Vector3f> intersections = triangle_overlap_over_AARectangle(r1, t1, t2);
+                //Append the intersections to the list
+                all_intersections.insert(all_intersections.end(), intersections.begin(), intersections.end());
+            }
+        }
+        return all_intersections;
+    }
+
+    vector<Vector3f> triangle_overlap_over_AARectangle(AARectangle& r1, shared_ptr<Triangle<Vector3f>> t1, shared_ptr<Triangle<Vector3f>> t2, bool boundary_included = false){
         //Project the triangles onto the rectangle.
         // Since the triangles are projected onto an Axis-Aligned rectangle,
         // at least one of the world coordinates of the triangle vertices will be zero.
         // such that we can now work in 2D.
-        Vector2f t1_v0_proj = r1.project_point(t1.vertex_0);
-        Vector2f t1_v1_proj = r1.project_point(t1.vertex_1);
-        Vector2f t1_v2_proj = r1.project_point(t1.vertex_2);
-        Vector2f t2_v0_proj = r1.project_point(t2.vertex_0);
-        Vector2f t2_v1_proj = r1.project_point(t2.vertex_1);
-        Vector2f t2_v2_proj = r1.project_point(t2.vertex_2);
+        Vector2f t1_v0_proj = r1.project_point(t1->vertex_0);
+        Vector2f t1_v1_proj = r1.project_point(t1->vertex_1);
+        Vector2f t1_v2_proj = r1.project_point(t1->vertex_2);
+        Triangle<Vector2f> t1_proj = Triangle<Vector2f>(t1_v0_proj, t1_v1_proj, t1_v2_proj);
+        Vector2f t2_v0_proj = r1.project_point(t2->vertex_0);
+        Vector2f t2_v1_proj = r1.project_point(t2->vertex_1);
+        Vector2f t2_v2_proj = r1.project_point(t2->vertex_2);
+        Triangle<Vector2f> t2_proj = Triangle<Vector2f>(t2_v0_proj, t2_v1_proj, t2_v2_proj);
+
+        //For each edge of the first triangle, we compute the intersection points with the second triangle
+        vector<Vector2f> e1_intersections = edge_triangle_intersection(t1_v0_proj, t1_v1_proj, t2_proj);
+        vector<Vector2f> e2_intersections = edge_triangle_intersection(t1_v1_proj, t1_v2_proj, t2_proj);
+        vector<Vector2f> e3_intersections = edge_triangle_intersection(t1_v2_proj, t1_v0_proj, t2_proj);
+
+        //Unproject all points and append them to a list
+        vector<Vector3f> all_intersections;
+        for(int i = 0; i < e1_intersections.size(); i++){
+            Vector2f p = e1_intersections[i];
+            if(boundary_included){
+                p = r1.inside_or_on(p);
+            }
+            if(r1.contains(p)){
+                Vector3f p3d = r1.unproject_point(p);
+                all_intersections.push_back(p3d);
+            }
+        }
+        for(int i = 0; i < e2_intersections.size(); i++){
+            Vector2f p = e2_intersections[i];
+            if(boundary_included){
+                p = r1.inside_or_on(p);
+            }
+            if(r1.contains(p)){
+                Vector3f p3d = r1.unproject_point(p);
+                all_intersections.push_back(p3d);
+            }
+        }
+        for(int i = 0; i < e3_intersections.size(); i++){
+            Vector2f p = e3_intersections[i];
+            if(boundary_included){
+                p = r1.inside_or_on(p);
+            }
+            if(r1.contains(p)){
+                Vector3f p3d = r1.unproject_point(p);
+                all_intersections.push_back(p3d);
+            }
+        }
+
+        return all_intersections;
     }
 
     /// @brief Computes the line at the intersection of the planes supporting the two oriented points, and finds the
@@ -399,6 +378,180 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 
 };
 
+/// @brief Find up to two intersection points between an edge/segment and a triangle in 2D.
+/// @param edge_p0 Start point of the edge/segment.
+/// @param edge_p1 End point of the edge/segment.
+/// @param triangle Two dimensional triangle.
+/// @return Positions of up to two intersection points between the edge/segment and the triangle.
+vector<Vector2f> edge_triangle_intersection(const Vector2f& edge_p0, const Vector2f& edge_p1, Triangle<Vector2f>& triangle)
+{
+    //Each triangle edge will results in up to 2 points:
+    // Case A - 0 point: the edge does not intersect the triangle
+    // Case B - 1 point: a vertex of the edge is on the boundary of the triangle
+    // Case C - 2 points: the edge crosses a segment of the triangle and reaches a point inside the triangle
+    // Case D - 2 points: the edge goes in and out of the triangle, crossing two segments
+    // Case E - 2 points: the edge is collinear with a segment of the triangle, and the two points are the endpoints of the intersection
+
+    //If any edge has accumulated 2 intersection points (Case D and E), there is no need to test other edges from the same triangle.
+    //After having tested all edges, the vertices of edges having accumulated less than 2 intersection points can be tested to see 
+    // if they lie inside the triangle.
+
+    vector<Vector2f> intersections;
+    int accumulated_nb_intersections = 0;
+
+    //First triangle side
+    LineSegmentIntersection result = line_segment_intersection(edge_p0, edge_p1, triangle.vertex_0, triangle.vertex_1, false);
+    accumulated_nb_intersections += result.nb_intersections;
+    if(result.nb_intersections == 1){
+        intersections.push_back(result.intersection_point_1);
+    }else if(result.nb_intersections == 2){
+        intersections.push_back(result.intersection_point_1);
+        intersections.push_back(result.intersection_point_2);
+    }
+    //Second triangle side
+    if(accumulated_nb_intersections < 2){
+        result = line_segment_intersection(edge_p0, edge_p1, triangle.vertex_1, triangle.vertex_2, false);
+        accumulated_nb_intersections += result.nb_intersections;
+        if(result.nb_intersections == 1){
+            intersections.push_back(result.intersection_point_1);
+        }else if(result.nb_intersections == 2){
+            intersections.push_back(result.intersection_point_1);
+            intersections.push_back(result.intersection_point_2);
+        }
+    }
+    //Third triangle side
+    if(accumulated_nb_intersections < 2){
+        result = line_segment_intersection(edge_p0, edge_p1, triangle.vertex_2, triangle.vertex_0, false);
+        accumulated_nb_intersections += result.nb_intersections;
+        if(result.nb_intersections == 1){
+            intersections.push_back(result.intersection_point_1);
+        }else if(result.nb_intersections == 2){
+            intersections.push_back(result.intersection_point_1);
+            intersections.push_back(result.intersection_point_2);
+        }
+    }
+    //If there are less than 2 intersection points, we test if the edge endpoints are inside the triangle
+    // to account for cases A, B, C.
+    if(accumulated_nb_intersections < 2){
+        if(triangle.contains(edge_p0, true)){
+            intersections.push_back(edge_p0);
+            accumulated_nb_intersections++;
+        }
+        if(triangle.contains(edge_p1, true)){
+            intersections.push_back(edge_p1);
+            accumulated_nb_intersections++;
+        }
+    }
+    return intersections;
+}
+
+/// @brief Computes the intersection of two line segments.
+/// @param p1 Start point (2D) of line segment 1.
+/// @param q1 End point (2D) of line segment 1.
+/// @param p2 Start point (2D) of line segment 2.
+/// @param q2 End point (2D) of line segment 2.
+/// @param closed_segments If true, the line segments are considered closed and the intersection points can be on the endpoints.
+/// @return LineSegmentIntersection struct containing the intersection points and a boolean indicating if the line segments intersect.
+LineSegmentIntersection line_segment_intersection(Vector2f p1, Vector2f q1, Vector2f p2, Vector2f q2, bool closed_segments)
+{
+    //Each line can be expressed as a parametric equation
+    // r = p + t*(q-p)
+    // where (p, q) are two points on the line and t is a scalar.
+    // The intersection point is the point for which the two parametric equations are equal:
+    //  p1 + s*(q1-p1) = p2 + t*(q2-p2)
+    // which can be rewritten as
+    //  t*(q2-p2) - s*(q1-p1) = p1 - p2
+    // and simplified with
+    //  c = p1 - p2
+    //  d1 = q1 - p1
+    //  d2 = q2 - p2
+    // producing 
+    //  t*d2 - s*d1 = c
+    // whose the solution obtained via Cramer's rule
+    //  t = (d1[0] * c[1] - d1[1] * c[0]) / det
+    //  s = (d2[0] * c[1] - d2[1] * c[0]) / det
+    // with det=(a1*b2 - a2*b1) being the determinant of the system
+    // that will be zero if the lines are parallel.
+    // Relevant: https://stackoverflow.com/a/565282
+    Vector2f d1 = q1 - p1;
+    Vector2f d2 = q2 - p2;
+    Vector2f c  = p1 - p2;
+    //Numerators
+    float num_t = (d1[0] * c[1] - d1[1] * c[0]);
+    float num_s = (d2[0] * c[1] - d2[1] * c[0]);
+    //Denominator / determinant
+    float det = (d1[0] * d2[1] - d2[0] * d1[1]);
+
+    struct LineSegmentIntersection result;
+
+    //If both the numerator and denominator are zero,
+    // then the lines are collinear.
+    if( abs(det)   < 1e-6 && 
+        abs(num_s) < 1e-6 && 
+        abs(num_t) < 1e-6){
+        //We compute the overlap between the two line segments (possibly zero)
+        float d12 = d1.dot(d2);
+        float d11 = d1.dot(d1);
+        float s1 = d1.dot(p2 - p1) / d11;
+        float s2 = s1 + d12 / d11;
+
+        //If d1 and d2 point in opposite directions
+        // we swap s1 and s2
+        if(d12 < 0){
+            float tmp = s1;
+            s1 = s2;
+            s2 = tmp;
+        }
+
+        if(s1 > 1 || s2 < 0){
+            //Lines are collinear but disjoint
+            return result;
+        }
+
+        float s_min = max(0.0f, s1);
+        float s_max = min(1.0f, s2);
+        
+        //Line segments overlap from s_min to s_max
+        struct LineSegmentIntersection result;
+        result.nb_intersections = 2;
+        result.intersection_point_1 = p1 + s_min*d1;
+        result.intersection_point_2 = p1 + s_max*d1;
+        return result;
+    }
+
+    //If the denominator is zero but the numerators are not,
+    // then the lines are parallel and non-intersecting.
+    if(abs(det)   < 1e-6 && 
+        (abs(num_s) > 1e-6 || abs(num_t) > 1e-6)){
+        //Lines are parallel
+        return result;
+    }
+
+    //Otherwise, there is a unique solution given by
+    float s = num_s / det;
+    float t = num_t / det;
+
+    //If the intersection happens when a parameter is between 0 and 1,
+    // then it means that the intersection happens within the line segment.
+    if(closed_segments){
+        //Endpoints are included
+        if (s >= 0 && s <= 1 && t >= 0 && t <= 1){
+            //Return the intersection point
+            result.nb_intersections = 1;
+            result.intersection_point_1 = p1 + (s * d1);
+        }
+    }else{
+        //Endpoints are not included
+        if (s > 0 && s < 1 && t > 0 && t < 1){
+            //Return the intersection point
+            result.nb_intersections = 1;
+            result.intersection_point_1 = p1 + (s * d1);
+        }
+    }
+
+    //The intersection happens outside of the line segment
+    return result;
+}
 
 /// @brief Initialize the physics engine.
 void Scene::startupPhysics()
