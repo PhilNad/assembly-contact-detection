@@ -111,21 +111,40 @@ AARectangle::AARectangle(PxPlane plane, Vector3f centre, Vector3f half_extents)
         //Normal is [1,0,0]
         this->u << 0, 0, 1;
         this->v << 0, 1, 0;
+        this->area = 4*this->half_extents[1]*this->half_extents[2];
     }else 
     if(abs(abs(plane.n[1]) - 1) < this->EPSILON){
         //Normal is [0,1,0]
         this->u << 1, 0, 0;
         this->v << 0, 0, 1;
+        this->area = 4*this->half_extents[0]*this->half_extents[2];
     }else
     if(abs(abs(plane.n[2]) - 1) < this->EPSILON){
         //Normal is [0,0,1]
         this->u << 1, 0, 0;
         this->v << 0, 1, 0;
+        this->area = 4*this->half_extents[0]*this->half_extents[1];
     }else{
         //If the rectangle is Axis Aligned, this should never be reached
         // unless the PxPlane was wrongly defined.
         throw runtime_error("Invalid plane normal.");
     }
+
+    //Extents in the local frame
+    this->u_extents = Vector2f(this->get_min_u(), this->get_max_u());
+    this->v_extents = Vector2f(this->get_min_v(), this->get_max_v());
+}
+
+/// @brief Project a point onto the plane of the AARectangle and clamp it to the rectangle boundaries.
+/// @param point 3D coordinates of the point in the world frame.
+/// @return 2D coordinates of the clamped point in the rectangle's local frame.
+Vector2f AARectangle::project_and_clamp(const Vector3f& point)
+{
+    //Project the point onto the rectangle
+    Vector2f projected_point = this->project_point(point);
+    //Clip the projected point to the rectangle boundaries
+    Vector2f clipped_point = this->inside_or_on(projected_point);
+    return clipped_point;
 }
 
 /// @brief Project a point onto the plane of the AARectangle.
@@ -158,8 +177,18 @@ Vector3f AARectangle::unproject_point(const Vector2f& point)
 /// @return True if the point is inside the rectangle, false otherwise.
 bool AARectangle::contains(const Vector2f& point)
 {
+    float tol = 1e-6;
     //Check if the point is inside the rectangle
-    return (abs(point[0]) <= this->half_extents[0] && abs(point[1]) <= this->half_extents[1]);
+    float u = point[0];
+    float v = point[1];
+
+    if(u < this->u_extents[0] - tol || u > this->u_extents[1] + tol){
+        return false;
+    }
+    if(v < this->v_extents[0] - tol || v > this->v_extents[1] + tol){
+        return false;
+    }
+    return true;
 }
 
 /// @brief Check if the rectangle contains a given 3D point expressed in the world frame.
@@ -183,8 +212,8 @@ Vector2f AARectangle::inside_or_on(const Vector2f& point)
         return point;
     }
     //If the point is not inside the rectangle, we clamp the point to the rectangle boundaries
-    float u = min(max(point[0], -this->half_extents[0]), this->half_extents[0]);
-    float v = min(max(point[1], -this->half_extents[1]), this->half_extents[1]);
+    float u = min(max(point[0], this->u_extents[0]), this->u_extents[1]);
+    float v = min(max(point[1], this->v_extents[0]), this->v_extents[1]);
     //Return the coordinates of the clamped point
     return Vector2f(u, v);
 }
@@ -203,8 +232,8 @@ Triangle<Vector2f> AARectangle::project_triangle(const Triangle<Vector3f>& trian
     return projected_triangle;
 }
 
-/// @brief Get the minimal boundary of the rectangle along the u axis.
-/// @return The minimal boundary of the rectangle along the u axis.
+/// @brief Get the minimal boundary of the rectangle along the u axis relative to the centre of the rectangle.
+/// @return The minimal boundary of the rectangle along the u axis relative to the centre of the rectangle.
 float AARectangle::get_min_u()
 {
     //There are three possible cases:
@@ -213,15 +242,15 @@ float AARectangle::get_min_u()
     // 3. The normal is [0,0,1], in which case the minimal boundary is the one with the smallest z coordinate
     if(abs(abs(this->plane.n[0]) - 1) < this->EPSILON){
         //Normal is [1,0,0]
-        return this->centre[0] - this->half_extents[0];
+        return -this->half_extents[2];
     }else
     if(abs(abs(this->plane.n[1]) - 1) < this->EPSILON){
         //Normal is [0,1,0]
-        return this->centre[1] - this->half_extents[1];
+        return -this->half_extents[0];
     }else
     if(abs(abs(this->plane.n[2]) - 1) < this->EPSILON){
         //Normal is [0,0,1]
-        return this->centre[2] - this->half_extents[2];
+        return -this->half_extents[0];
     }else{
         //If the rectangle is Axis Aligned, this should never be reached
         // unless the PxPlane was wrongly defined.
@@ -229,8 +258,8 @@ float AARectangle::get_min_u()
     }
 }
 
-/// @brief Get the maximal boundary of the rectangle along the u axis.
-/// @return The maximal boundary of the rectangle along the u axis.
+/// @brief Get the maximal boundary of the rectangle along the u axis relative to the centre of the rectangle.
+/// @return The maximal boundary of the rectangle along the u axis relative to the centre of the rectangle.
 float AARectangle::get_max_u()
 {
     //There are three possible cases:
@@ -239,15 +268,15 @@ float AARectangle::get_max_u()
     // 3. The normal is [0,0,1], in which case the maximal boundary is the one with the largest z coordinate
     if(abs(abs(this->plane.n[0]) - 1) < this->EPSILON){
         //Normal is [1,0,0]
-        return this->centre[0] + this->half_extents[0];
+        return this->half_extents[2];
     }else
     if(abs(abs(this->plane.n[1]) - 1) < this->EPSILON){
         //Normal is [0,1,0]
-        return this->centre[1] + this->half_extents[1];
+        return this->half_extents[0];
     }else
     if(abs(abs(this->plane.n[2]) - 1) < this->EPSILON){
         //Normal is [0,0,1]
-        return this->centre[2] + this->half_extents[2];
+        return this->half_extents[0];
     }else{
         //If the rectangle is Axis Aligned, this should never be reached
         // unless the PxPlane was wrongly defined.
@@ -255,8 +284,8 @@ float AARectangle::get_max_u()
     }
 }
 
-/// @brief Get the minimal boundary of the rectangle along the v axis.
-/// @return The minimal boundary of the rectangle along the v axis.
+/// @brief Get the minimal boundary of the rectangle along the v axis relative to the centre of the rectangle.
+/// @return The minimal boundary of the rectangle along the v axis relative to the centre of the rectangle.
 float AARectangle::get_min_v()
 {
     //There are three possible cases:
@@ -265,15 +294,15 @@ float AARectangle::get_min_v()
     // 3. The normal is [0,0,1], in which case the minimal boundary is the one with the smallest x coordinate
     if(abs(abs(this->plane.n[0]) - 1) < this->EPSILON){
         //Normal is [1,0,0]
-        return this->centre[1] - this->half_extents[1];
+        return -this->half_extents[1];
     }else
     if(abs(abs(this->plane.n[1]) - 1) < this->EPSILON){
         //Normal is [0,1,0]
-        return this->centre[2] - this->half_extents[2];
+        return -this->half_extents[2];
     }else
     if(abs(abs(this->plane.n[2]) - 1) < this->EPSILON){
         //Normal is [0,0,1]
-        return this->centre[0] - this->half_extents[0];
+        return -this->half_extents[1];
     }else{
         //If the rectangle is Axis Aligned, this should never be reached
         // unless the PxPlane was wrongly defined.
@@ -281,8 +310,8 @@ float AARectangle::get_min_v()
     }
 }
 
-/// @brief Get the maximal boundary of the rectangle along the v axis.
-/// @return The maximal boundary of the rectangle along the v axis.
+/// @brief Get the maximal boundary of the rectangle along the v axis relative to the centre of the rectangle.
+/// @return The maximal boundary of the rectangle along the v axis relative to the centre of the rectangle.
 float AARectangle::get_max_v()
 {
     //There are three possible cases:
@@ -291,15 +320,15 @@ float AARectangle::get_max_v()
     // 3. The normal is [0,0,1], in which case the maximal boundary is the one with the largest x coordinate
     if(abs(abs(this->plane.n[0]) - 1) < this->EPSILON){
         //Normal is [1,0,0]
-        return this->centre[1] + this->half_extents[1];
+        return this->half_extents[1];
     }else
     if(abs(abs(this->plane.n[1]) - 1) < this->EPSILON){
         //Normal is [0,1,0]
-        return this->centre[2] + this->half_extents[2];
+        return this->half_extents[2];
     }else
     if(abs(abs(this->plane.n[2]) - 1) < this->EPSILON){
         //Normal is [0,0,1]
-        return this->centre[0] + this->half_extents[0];
+        return this->half_extents[1];
     }else{
         //If the rectangle is Axis Aligned, this should never be reached
         // unless the PxPlane was wrongly defined.

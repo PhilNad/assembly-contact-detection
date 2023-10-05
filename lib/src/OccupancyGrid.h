@@ -47,12 +47,16 @@ class AARectangle
         PxPlane plane;
         Vector3f centre;
         Vector3f half_extents;
+        float area;
+        Vector2f u_extents;
+        Vector2f v_extents;
         AARectangle(PxPlane plane, Vector3f centre, Vector3f half_extents);
         Vector2f project_point(const Vector3f& point);
         Vector3f unproject_point(const Vector2f& point);
         Triangle<Vector2f> project_triangle(const Triangle<Vector3f>& triangle);
         bool contains(const Vector3f& point);
         bool contains(const Vector2f& point);
+        Vector2f project_and_clamp(const Vector3f& point);
         Vector2f inside_or_on(const Vector2f& point);
         float get_min_u();
         float get_max_u();

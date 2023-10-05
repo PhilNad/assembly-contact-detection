@@ -57,6 +57,13 @@ class Cube{
                 vertices.row(i) = abs(scaling)*(vertices.row(i) - centre) + centre;
             }
         }
+        void rotate(float angle, RowVector3f axis, RowVector3f centre){
+            Matrix3f rotation_matrix;
+            rotation_matrix = AngleAxisf(angle, axis.normalized());
+            for(int i = 0; i < vertices.rows(); i++){
+                vertices.row(i) = (rotation_matrix*(vertices.row(i) - centre).transpose()).transpose() + centre;
+            }
+        }
 };
 
 
@@ -175,7 +182,33 @@ void test_segment_triangle_intersection()
     cout << "---" << endl;
 }
 
+void test_triangle_triangle_intersections()
+{
+    /*
+        AARectangle: Plane: (0, 1, 0, 1) Centre: (0.538576, 1, 1) Half Extents: (0.00409374, 0, 0.0172414)
+        Triangle overlap over AARectangle
+            T1 Vertices: (0, 1, 0), (0, 1, 1), (1, 1, 1)
+            T2 Vertices: (0.146447, 1, 2.06066), (0.853553, 1, 1.35355), (0.5, 1, 1)
+                Intersection point: 0.54267       1       1
+                Intersection point: 0.534483        1        1
+                Intersection point: 1 1 1
+                Intersection point: 1 1 1
+    */
+
+    AARectangle r1(PxPlane(0, 1, 0, 1), Vector3f(0.538576, 1, 1), Vector3f(0.00409374, 0, 0.0172414));
+
+    Triangle<Vector3f> t1(Vector3f(0, 1, 0), Vector3f(0, 1, 1), Vector3f(1, 1, 1));
+    Triangle<Vector3f> t2(Vector3f(0.146447, 1, 2.06066), Vector3f(0.853553, 1, 1.35355), Vector3f(0.5, 1, 1));
+
+    shared_ptr<Triangle<Vector3f>> t1_ptr = make_shared<Triangle<Vector3f>>(t1);
+    shared_ptr<Triangle<Vector3f>> t2_ptr = make_shared<Triangle<Vector3f>>(t2);
+
+    vector<Vector3f> intersections = triangle_overlap_over_AARectangle(r1, t1_ptr, t2_ptr);
+}
+
 int main(int argc, char** argv) {
+    test_triangle_triangle_intersections();
+    return 0;
     // Initialize the scene
     Scene scene;
 
@@ -197,6 +230,7 @@ int main(int argc, char** argv) {
             0, 0, 1, 1.5,
             0, 0, 0, 1;
     Cube cube2 = Cube(1, 1, 1);
+    cube2.rotate(0.79, RowVector3f(0, 0, 1), RowVector3f(0, 0, 0));
     cube2.translate(pose(0, 3), pose(1, 3), pose(2, 3));
     scene.add_object(id, pose, cube2.vertices, cube2.triangles);
 

@@ -22,6 +22,8 @@ struct LineSegmentIntersection {
 };
 LineSegmentIntersection line_segment_intersection(Vector2f p1, Vector2f q1, Vector2f p2, Vector2f q2, bool closed_segments = true);
 vector<Vector2f> edge_triangle_intersection(const Vector2f& edge_p0, const Vector2f& edge_p1, Triangle<Vector2f>& triangle);
+vector<Vector2f> line_AARectangle_intersection(const Vector2f& segment_p0, const Vector2f& segment_p1, AARectangle& rectangle);
+vector<Vector3f> triangle_overlap_over_AARectangle(AARectangle& aarec, shared_ptr<Triangle<Vector3f>> t1, shared_ptr<Triangle<Vector3f>> t2, bool boundary_included = false);
 
 class Scene
 {

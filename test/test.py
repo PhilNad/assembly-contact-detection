@@ -50,13 +50,14 @@ cube2 = o3d.geometry.TriangleMesh.create_box(width=0.5, height=1.0, depth=1.0)
 cube2.scale(1, center=cube2.get_center())
 R = cube2.get_rotation_matrix_from_xyz((0, 3*np.pi/4, 0))
 cube2.rotate(R, center=np.array([0.5, 0.5, 1]))
-cube2.translate((0, 0, 1))
 
 cube3 = o3d.geometry.TriangleMesh.create_box(width=0.5, height=0.5, depth=1.0)
-cube1.translate((0, 0, 1))
+cube3.translate((0.25, 0.25, 1))
+R = cube3.get_rotation_matrix_from_xyz((0, 0, np.pi/4))
+cube3.rotate(R, center=np.array([0.5, 0.5, 1]))
 
 cone = o3d.geometry.TriangleMesh.create_cone(radius=0.5, height=1.0)
-cone.translate((0.5, 0.5, 2))
+cone.translate((0.5, 0.5, 1))
 
 #o3d.visualization.draw([cube1, cube2])
 #exit()
@@ -78,29 +79,29 @@ physxScene.add_object("cube1",
                         "wood")
 print("Cube1 added in: ", time.time() - start_time)
 
-start_time = time.time()
-physxScene.add_object("cone",
-                        np.identity(4),
-                        np.asarray(cone.vertices),
-                        np.asarray(cone.triangles),
-                        30,
-                        False,
-                        1.0,
-                        np.array([0, 0, 0]), #CoM is expressed wrt local frame 
-                        "wood")
-print("Cone added in: ", time.time() - start_time)
-
 # start_time = time.time()
-# physxScene.add_object("cube2", 
-#                         np.identity(4), 
-#                         np.asarray(cube2.vertices), 
-#                         np.asarray(cube2.triangles),
-#                         30, 
-#                         False, 
-#                         1.0, 
+# physxScene.add_object("cone",
+#                         np.identity(4),
+#                         np.asarray(cone.vertices),
+#                         np.asarray(cone.triangles),
+#                         30,
+#                         False,
+#                         1.0,
 #                         np.array([0, 0, 0]), #CoM is expressed wrt local frame 
 #                         "wood")
-# print("Cube2 added in: ", time.time() - start_time)
+# print("Cone added in: ", time.time() - start_time)
+
+start_time = time.time()
+physxScene.add_object("cube2", 
+                        np.identity(4), 
+                        np.asarray(cube2.vertices), 
+                        np.asarray(cube2.triangles),
+                        30, 
+                        False, 
+                        1.0, 
+                        np.array([0, 0, 0]), #CoM is expressed wrt local frame 
+                        "wood")
+print("Cube2 added in: ", time.time() - start_time)
 
 # start_time = time.time()
 # physxScene.add_object("cube3", 
@@ -153,8 +154,8 @@ o3d.visualization.draw([tm]+voxels)
 #print(physxScene.get_contacted_objects("cube1"))
 #print(physxScene.get_contacted_objects("cone"))
 #physxScene.merge_similar_contact_points()
-contact_points = physxScene.get_contact_points("cube1", "cone")
+contact_points = physxScene.get_contact_points("cube1", "cube2")
 
 contact_point_cloud = o3d.geometry.PointCloud()
 contact_point_cloud.points = o3d.utility.Vector3dVector(contact_points)
-o3d.visualization.draw([cube1, cone, contact_point_cloud])
+o3d.visualization.draw([cube1, cube2, contact_point_cloud])
