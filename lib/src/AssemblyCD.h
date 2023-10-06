@@ -2,3 +2,5 @@
 #include "Object.h"
 #include "Contact.h"
 #include "OccupancyGrid.h"
+#include "PointSet.h"
+#include "Points.h"

@@ -1,6 +1,8 @@
-#include "Scene.h"
+#include "AssemblyCD.h"
 #include <iostream>
 #include <memory>
+#include <unordered_set>
+#include <iterator>
 #include <set>
 #include <chrono>
 #include "PxPhysicsAPI.h"
@@ -359,17 +361,20 @@ vector<Vector3f> triangle_overlap_over_AARectangle(AARectangle& aarec, shared_pt
 
     //For each edge of the first triangle, we compute the intersection points with the second triangle
     //First edge: v0-v1
-    vector<Vector2f> line_rect_intersections = line_AARectangle_intersection(t1_v0_proj, t1_v1_proj, aarec);
+    PointSet2D line_rect_intersections = line_AARectangle_intersection(t1_v0_proj, t1_v1_proj, aarec);
     if(line_rect_intersections.size() > 0){
         Vector2f line_start;
         Vector2f line_end;
         if(line_rect_intersections.size() == 1){
-            line_start = line_rect_intersections[0];
-            line_end   = line_rect_intersections[0];
+            auto it = line_rect_intersections.begin();
+            line_start = *it;
+            line_end   = line_start;
         }
         if(line_rect_intersections.size() == 2){
-            line_start = line_rect_intersections[0];
-            line_end   = line_rect_intersections[1];
+            auto it = line_rect_intersections.begin();
+            line_start = *it;
+            advance(it, 1);
+            line_end   = *it;
         }
         vector<Vector2f> e1_intersections = edge_triangle_intersection(line_start, line_end, t2_proj);
         all_2d_intersections.insert(all_2d_intersections.end(), e1_intersections.begin(), e1_intersections.end());
@@ -381,12 +386,15 @@ vector<Vector3f> triangle_overlap_over_AARectangle(AARectangle& aarec, shared_pt
         Vector2f line_start;
         Vector2f line_end;
         if(line_rect_intersections.size() == 1){
-            line_start = line_rect_intersections[0];
-            line_end   = line_rect_intersections[0];
+            auto it = line_rect_intersections.begin();
+            line_start = *it;
+            line_end   = line_start;
         }
         if(line_rect_intersections.size() == 2){
-            line_start = line_rect_intersections[0];
-            line_end   = line_rect_intersections[1];
+            auto it = line_rect_intersections.begin();
+            line_start = *it;
+            advance(it, 1);
+            line_end   = *it;
         }
         vector<Vector2f> e2_intersections = edge_triangle_intersection(line_start, line_end, t2_proj);
         all_2d_intersections.insert(all_2d_intersections.end(), e2_intersections.begin(), e2_intersections.end());
@@ -398,12 +406,15 @@ vector<Vector3f> triangle_overlap_over_AARectangle(AARectangle& aarec, shared_pt
         Vector2f line_start;
         Vector2f line_end;
         if(line_rect_intersections.size() == 1){
-            line_start = line_rect_intersections[0];
-            line_end   = line_rect_intersections[0];
+            auto it = line_rect_intersections.begin();
+            line_start = *it;
+            line_end   = line_start;
         }
         if(line_rect_intersections.size() == 2){
-            line_start = line_rect_intersections[0];
-            line_end   = line_rect_intersections[1];
+            auto it = line_rect_intersections.begin();
+            line_start = *it;
+            advance(it, 1);
+            line_end   = *it;
         }
         vector<Vector2f> e3_intersections = edge_triangle_intersection(line_start, line_end, t2_proj);
         all_2d_intersections.insert(all_2d_intersections.end(), e3_intersections.begin(), e3_intersections.end());
@@ -416,29 +427,35 @@ vector<Vector3f> triangle_overlap_over_AARectangle(AARectangle& aarec, shared_pt
         Vector2f line_start;
         Vector2f line_end;
         if(line_rect_intersections.size() == 1){
-            line_start = line_rect_intersections[0];
-            line_end   = line_rect_intersections[0];
+            auto it = line_rect_intersections.begin();
+            line_start = *it;
+            line_end   = line_start;
         }
         if(line_rect_intersections.size() == 2){
-            line_start = line_rect_intersections[0];
-            line_end   = line_rect_intersections[1];
+            auto it = line_rect_intersections.begin();
+            line_start = *it;
+            advance(it, 1);
+            line_end   = *it;
         }
         vector<Vector2f> e4_intersections = edge_triangle_intersection(line_start, line_end, t1_proj);
         all_2d_intersections.insert(all_2d_intersections.end(), e4_intersections.begin(), e4_intersections.end());
     }
 
     //Second edge: v1-v2
-    line_rect_intersections =  line_AARectangle_intersection(t2_v1_proj, t2_v2_proj, aarec);
+    line_rect_intersections = line_AARectangle_intersection(t2_v1_proj, t2_v2_proj, aarec);
     if(line_rect_intersections.size() > 0){
         Vector2f line_start;
         Vector2f line_end;
         if(line_rect_intersections.size() == 1){
-            line_start = line_rect_intersections[0];
-            line_end   = line_rect_intersections[0];
+            auto it = line_rect_intersections.begin();
+            line_start = *it;
+            line_end   = line_start;
         }
         if(line_rect_intersections.size() == 2){
-            line_start = line_rect_intersections[0];
-            line_end   = line_rect_intersections[1];
+            auto it = line_rect_intersections.begin();
+            line_start = *it;
+            advance(it, 1);
+            line_end   = *it;
         }
         vector<Vector2f> e5_intersections = edge_triangle_intersection(line_start, line_end, t1_proj);
         all_2d_intersections.insert(all_2d_intersections.end(), e5_intersections.begin(), e5_intersections.end());
@@ -450,12 +467,15 @@ vector<Vector3f> triangle_overlap_over_AARectangle(AARectangle& aarec, shared_pt
         Vector2f line_start;
         Vector2f line_end;
         if(line_rect_intersections.size() == 1){
-            line_start = line_rect_intersections[0];
-            line_end   = line_rect_intersections[0];
+            auto it = line_rect_intersections.begin();
+            line_start = *it;
+            line_end   = line_start;
         }
         if(line_rect_intersections.size() == 2){
-            line_start = line_rect_intersections[0];
-            line_end   = line_rect_intersections[1];
+            auto it = line_rect_intersections.begin();
+            line_start = *it;
+            advance(it, 1);
+            line_end   = *it;
         }
         vector<Vector2f> e6_intersections = edge_triangle_intersection(line_start, line_end, t1_proj);
         all_2d_intersections.insert(all_2d_intersections.end(), e6_intersections.begin(), e6_intersections.end());
@@ -480,7 +500,7 @@ vector<Vector3f> triangle_overlap_over_AARectangle(AARectangle& aarec, shared_pt
 /// @param segment_p1 End point of the line segment.
 /// @param rectangle Axis-Aligned rectangle.
 /// @return List of up to two intersection points between the line segment and the rectangle.
-vector<Vector2f> line_AARectangle_intersection(const Vector2f& segment_p0, const Vector2f& segment_p1, AARectangle& rectangle)
+PointSet2D line_AARectangle_intersection(const Vector2f& segment_p0, const Vector2f& segment_p1, AARectangle& rectangle)
 {
     //Make 4 lines segments for the rectangle
     // p0--p1, p1--p2, p2--p3, p3--p0
@@ -492,34 +512,47 @@ vector<Vector2f> line_AARectangle_intersection(const Vector2f& segment_p0, const
     Vector2f rect_p3 = Vector2f(rect_p0[0], rect_p2[1]);
 
     //Find up to two intersection points between the line segment and the rectangle edges
-    vector<Vector2f> intersections;
+    PointSet2D intersections;
     int accumulated_nb_intersections = 0;
     //First side: p0--p1
-    LineSegmentIntersection result = line_segment_intersection(segment_p0, segment_p1, rect_p0, rect_p1, false);
+    LineSegmentIntersection result = line_segment_intersection(segment_p0, segment_p1, rect_p0, rect_p1, true);
     accumulated_nb_intersections += result.nb_intersections;
     if(result.nb_intersections == 1){
-        intersections.push_back(result.intersection_point_1);
+        intersections.insert(result.intersection_point_1);
+    }else if(result.nb_intersections == 2){
+        //If the segment overlaps the rectangle edge, we will get two points.
+        intersections.insert(result.intersection_point_1);
+        intersections.insert(result.intersection_point_2);
     }
     //Second side: p1--p2
-    result = line_segment_intersection(segment_p0, segment_p1, rect_p1, rect_p2, false);
+    result = line_segment_intersection(segment_p0, segment_p1, rect_p1, rect_p2, true);
     accumulated_nb_intersections += result.nb_intersections;
     if(result.nb_intersections == 1){
-        intersections.push_back(result.intersection_point_1);
+        intersections.insert(result.intersection_point_1);
+    }else if(result.nb_intersections == 2){
+        intersections.insert(result.intersection_point_1);
+        intersections.insert(result.intersection_point_2);
     }
     //Third side: p2--p3
     if(accumulated_nb_intersections < 2){
-        result = line_segment_intersection(segment_p0, segment_p1, rect_p2, rect_p3, false);
+        result = line_segment_intersection(segment_p0, segment_p1, rect_p2, rect_p3, true);
         accumulated_nb_intersections += result.nb_intersections;
         if(result.nb_intersections == 1){
-            intersections.push_back(result.intersection_point_1);
+            intersections.insert(result.intersection_point_1);
+        }else if(result.nb_intersections == 2){
+            intersections.insert(result.intersection_point_1);
+            intersections.insert(result.intersection_point_2);
         }
     }
     //Fourth side: p3--p0
     if(accumulated_nb_intersections < 2){
-        result = line_segment_intersection(segment_p0, segment_p1, rect_p3, rect_p0, false);
+        result = line_segment_intersection(segment_p0, segment_p1, rect_p3, rect_p0, true);
         accumulated_nb_intersections += result.nb_intersections;
         if(result.nb_intersections == 1){
-            intersections.push_back(result.intersection_point_1);
+            intersections.insert(result.intersection_point_1);
+        }else if(result.nb_intersections == 2){
+            intersections.insert(result.intersection_point_1);
+            intersections.insert(result.intersection_point_2);
         }
     }
 
@@ -529,21 +562,21 @@ vector<Vector2f> line_AARectangle_intersection(const Vector2f& segment_p0, const
         Triangle<Vector2f> triangle1(rect_p0, rect_p1, rect_p2);
         Triangle<Vector2f> triangle2(rect_p0, rect_p2, rect_p3);
         //Test if the segment endpoints are inside the first half of the rectangle
-        if(triangle1.contains(segment_p0, false)){
-            intersections.push_back(segment_p0);
+        if(triangle1.contains(segment_p0, true)){
+            intersections.insert(segment_p0);
             accumulated_nb_intersections++;
         }
-        if(accumulated_nb_intersections < 2 && triangle1.contains(segment_p1, false)){
-            intersections.push_back(segment_p1);
+        if(accumulated_nb_intersections < 2 && triangle1.contains(segment_p1, true)){
+            intersections.insert(segment_p1);
             accumulated_nb_intersections++;
         }
         //Test if the segment endpoints are inside the second half of the rectangle
-        if(accumulated_nb_intersections < 2 && triangle2.contains(segment_p0, false)){
-            intersections.push_back(segment_p0);
+        if(accumulated_nb_intersections < 2 && triangle2.contains(segment_p0, true)){
+            intersections.insert(segment_p0);
             accumulated_nb_intersections++;
         }
-        if(accumulated_nb_intersections < 2 && triangle2.contains(segment_p1, false)){
-            intersections.push_back(segment_p1);
+        if(accumulated_nb_intersections < 2 && triangle2.contains(segment_p1, true)){
+            intersections.insert(segment_p1);
             accumulated_nb_intersections++;
         }
     }

@@ -62,7 +62,7 @@ bool Triangle<T>::contains(const T& point, bool boundary_included)
         pt_in_tri_cache.d00 = pt_in_tri_cache.v0r.dot(pt_in_tri_cache.v0r);
         pt_in_tri_cache.d01 = pt_in_tri_cache.v0r.dot(pt_in_tri_cache.v1r);
         pt_in_tri_cache.d11 = pt_in_tri_cache.v1r.dot(pt_in_tri_cache.v1r);
-        pt_in_tri_cache.inv_denom = 1/(2*this->signed_area);
+        pt_in_tri_cache.inv_denom = 1/(pt_in_tri_cache.d00 * pt_in_tri_cache.d11 - pt_in_tri_cache.d01 * pt_in_tri_cache.d01);
         pt_in_tri_cache.active = true;
     }
 
@@ -80,9 +80,7 @@ bool Triangle<T>::contains(const T& point, bool boundary_included)
     d20 = v2r.dot(v0r);
     d21 = v2r.dot(v1r);
 
-    //The denominator is equal to two times the triangle area
-    // as it results from the cross product of two vectors
-    // whose magnitude is equal to the area of the parallelogram they form.
+    //Inverse of the denominator
     float inv_denom;
     inv_denom = pt_in_tri_cache.inv_denom;
 

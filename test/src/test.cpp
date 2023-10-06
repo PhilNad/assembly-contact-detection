@@ -1,4 +1,4 @@
-#include "Scene.h"
+#include "AssemblyCD.h"
 #include "PxPhysicsAPI.h"
 #include <iostream>
 #include <vector>
@@ -206,8 +206,69 @@ void test_triangle_triangle_intersections()
     vector<Vector3f> intersections = triangle_overlap_over_AARectangle(r1, t1_ptr, t2_ptr);
 }
 
+void test_segment_rectangle_intersection()
+{
+    AARectangle aarec(PxPlane(0, 0, 1, 1), Vector3f(0, 0, 0), Vector3f(1, 1, 1));
+    Vector2f start, end;
+    PointSet2D line_rect_intersections;
+
+    cout << "Segment overlapping one side." << endl;
+    start << -1.5, -1; end << 0, -1;
+    line_rect_intersections = line_AARectangle_intersection(start, end, aarec);
+    for(auto it = line_rect_intersections.begin(); it != line_rect_intersections.end(); ++it){
+        cout << (*it).transpose() << endl;
+    }
+    cout << "Should be (-1,-1), (0, -1)" << endl;
+    cout << "---" << endl;
+
+    cout << "Segment with one end on the boundary." << endl;
+    start << 1, 1; end << 2, 2;
+    line_rect_intersections = line_AARectangle_intersection(start, end, aarec);
+    for(auto it = line_rect_intersections.begin(); it != line_rect_intersections.end(); ++it){
+        cout << (*it).transpose() << endl;
+    }
+    cout << "Should be (1, 1)" << endl;
+    cout << "---" << endl;
+
+    cout << "Segment inside rectangle." << endl;
+    start << 0.5, 0.5; end << -0.5, -0.5;
+    line_rect_intersections = line_AARectangle_intersection(start, end, aarec);
+    for(auto it = line_rect_intersections.begin(); it != line_rect_intersections.end(); ++it){
+        cout << (*it).transpose() << endl;
+    }
+    cout << "Should be (0.5, 0.5), (-0.5, -0.5)" << endl;
+    cout << "---" << endl;
+
+    cout << "Segment outside rectangle." << endl;
+    start << 2, 0.5; end << 2, 1.5;
+    line_rect_intersections = line_AARectangle_intersection(start, end, aarec);
+    for(auto it = line_rect_intersections.begin(); it != line_rect_intersections.end(); ++it){
+        cout << (*it).transpose() << endl;
+    }
+    cout << "Should be empty." << endl;
+    cout << "---" << endl;
+
+    cout << "Segment going through rectangle." << endl;
+    start << -1.5, 0; end << 0, 1.5;
+    line_rect_intersections = line_AARectangle_intersection(start, end, aarec);
+    for(auto it = line_rect_intersections.begin(); it != line_rect_intersections.end(); ++it){
+        cout << (*it).transpose() << endl;
+    }
+    cout << "Should be (-1, 0.5), (-0.5, 1)" << endl;
+    cout << "---" << endl;
+
+    cout << "Segment intersecting one side." << endl;
+    start << 0.5, 0.5; end << 0.5, 1.5;
+    line_rect_intersections = line_AARectangle_intersection(start, end, aarec);
+    for(auto it = line_rect_intersections.begin(); it != line_rect_intersections.end(); ++it){
+        cout << (*it).transpose() << endl;
+    }
+    cout << "Should be (0.5, 0.5), (0.5, 1)" << endl;
+    cout << "---" << endl;
+}
+
 int main(int argc, char** argv) {
-    test_triangle_triangle_intersections();
+    test_segment_rectangle_intersection();
     return 0;
     // Initialize the scene
     Scene scene;
