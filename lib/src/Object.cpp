@@ -57,7 +57,7 @@ void Object::set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh)
     this->tri_vertices.resize(simpleTriMesh.points.count, 3);
     for (int i = 0; i < simpleTriMesh.points.count; i++) {
         PxVec3* data;
-        data = (PxVec3*)(simpleTriMesh.points.data + i*sizeof(PxVec3));
+        data = static_cast<PxVec3*>(const_cast<void*>(simpleTriMesh.points.data)) + i;
         this->tri_vertices(i, 0) = data->x;
         this->tri_vertices(i, 1) = data->y;
         this->tri_vertices(i, 2) = data->z;

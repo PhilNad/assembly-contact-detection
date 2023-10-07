@@ -18,7 +18,7 @@ PointSet2D::PointSet2D(const vector<Vector2f>& points)
 {
     *this = points;
 }
-PointSet2D::PointSet2D(const unordered_set<Point2D, Point2D::HashFunction>& points)
+PointSet2D::PointSet2D(const unordered_set<Point2D, Point2D::HashFunction, EpsilonEquality2D>& points)
 {
     _pointset.clear();
     for (auto& point : points)
@@ -38,19 +38,32 @@ pair<std::__detail::_Node_iterator<Point2D, true, true>, bool> PointSet2D::inser
 {
     return _pointset.insert(Point2D(point));
 }
-unordered_set<Point2D, Point2D::HashFunction>::iterator PointSet2D::begin()
+pair<std::__detail::_Node_iterator<Point2D, true, true>, bool> PointSet2D::insert(const Point2D& point)
+{
+    return _pointset.insert(point);
+}
+pair<std::__detail::_Node_iterator<Point2D, true, true>, bool> PointSet2D::insert(const PointSet2D& pointset)
+{
+    auto it = _pointset.end();
+    for(auto& point : pointset)
+    {
+        _pointset.insert(point);
+    }
+    return make_pair(it, true);
+}
+unordered_set<Point2D, Point2D::HashFunction, EpsilonEquality2D>::iterator PointSet2D::begin()
 {
     return _pointset.begin();
 }
-unordered_set<Point2D, Point2D::HashFunction>::iterator PointSet2D::end()
+unordered_set<Point2D, Point2D::HashFunction, EpsilonEquality2D>::iterator PointSet2D::end()
 {
     return _pointset.end();
 }
-unordered_set<Point2D, Point2D::HashFunction>::const_iterator PointSet2D::begin() const
+unordered_set<Point2D, Point2D::HashFunction, EpsilonEquality2D>::const_iterator PointSet2D::begin() const
 {
     return _pointset.begin();
 }
-unordered_set<Point2D, Point2D::HashFunction>::const_iterator PointSet2D::end() const
+unordered_set<Point2D, Point2D::HashFunction, EpsilonEquality2D>::const_iterator PointSet2D::end() const
 {
     return _pointset.end();
 }
@@ -75,7 +88,7 @@ PointSet3D::PointSet3D(const vector<Vector3f>& points)
 {
     *this = points;
 }
-PointSet3D::PointSet3D(const unordered_set<Point3D, Point3D::HashFunction>& points)
+PointSet3D::PointSet3D(const unordered_set<Point3D, Point3D::HashFunction, EpsilonEquality3D>& points)
 {
     _pointset.clear();
     for (auto& point : points)
@@ -95,19 +108,32 @@ pair<std::__detail::_Node_iterator<Point3D, true, true>, bool> PointSet3D::inser
 {
     return _pointset.insert(Point3D(point));
 }
-unordered_set<Point3D, Point3D::HashFunction>::iterator PointSet3D::begin()
+pair<std::__detail::_Node_iterator<Point3D, true, true>, bool> PointSet3D::insert(const Point3D& point)
+{
+    return _pointset.insert(point);
+}
+pair<std::__detail::_Node_iterator<Point3D, true, true>, bool> PointSet3D::insert(const PointSet3D& pointset)
+{
+    auto it = _pointset.end();
+    for(auto& point : pointset)
+    {
+        _pointset.insert(point);
+    }
+    return make_pair(it, true);
+}
+unordered_set<Point3D, Point3D::HashFunction, EpsilonEquality3D>::iterator PointSet3D::begin()
 {
     return _pointset.begin();
 }
-unordered_set<Point3D, Point3D::HashFunction>::iterator PointSet3D::end()
+unordered_set<Point3D, Point3D::HashFunction, EpsilonEquality3D>::iterator PointSet3D::end()
 {
     return _pointset.end();
 }
-unordered_set<Point3D, Point3D::HashFunction>::const_iterator PointSet3D::begin() const
+unordered_set<Point3D, Point3D::HashFunction, EpsilonEquality3D>::const_iterator PointSet3D::begin() const
 {
     return _pointset.begin();
 }
-unordered_set<Point3D, Point3D::HashFunction>::const_iterator PointSet3D::end() const
+unordered_set<Point3D, Point3D::HashFunction, EpsilonEquality3D>::const_iterator PointSet3D::end() const
 {
     return _pointset.end();
 }

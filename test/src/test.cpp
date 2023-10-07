@@ -125,14 +125,14 @@ void test_segment_triangle_intersection()
      (0,0)   (1,0)
     */
     Vector2f p1, q1;
-    vector<Vector2f> intersections;
+    PointSet2D intersections;
 
     cout << "Non-collinear and intersecting at one end of the segment" << endl;
     p1 << 0.5, 0.5; q1 << 0.5, 1.5;
     cout << "Line: (" << p1.transpose() << "), (" << q1.transpose() << ")" << endl;
     intersections = edge_triangle_intersection(p1, q1, triangle);
-    for(int i = 0; i < intersections.size(); i++){
-        cout << intersections[i].transpose() << endl;
+    for(auto& point : intersections){
+        cout << point.transpose() << endl;
     }
     cout << "---" << endl;
 
@@ -140,8 +140,8 @@ void test_segment_triangle_intersection()
     p1 << -0.25, 0.5; q1 << 0.75, 0.5;
     cout << "Line: (" << p1.transpose() << "), (" << q1.transpose() << ")" << endl;
     intersections = edge_triangle_intersection(p1, q1, triangle);
-    for(int i = 0; i < intersections.size(); i++){
-        cout << intersections[i].transpose() << endl;
+    for(auto& point : intersections){
+        cout << point.transpose() << endl;
     }
     cout << "---" << endl;
 
@@ -149,8 +149,8 @@ void test_segment_triangle_intersection()
     p1 << -0.25, 0.5; q1 << 0.25, 0.5;
     cout << "Line: (" << p1.transpose() << "), (" << q1.transpose() << ")" << endl;
     intersections = edge_triangle_intersection(p1, q1, triangle);
-    for(int i = 0; i < intersections.size(); i++){
-        cout << intersections[i].transpose() << endl;
+    for(auto& point : intersections){
+        cout << point.transpose() << endl;
     }
     cout << "---" << endl;
 
@@ -158,8 +158,8 @@ void test_segment_triangle_intersection()
     p1 << 0, 0; q1 << 0, 1;
     cout << "Line: (" << p1.transpose() << "), (" << q1.transpose() << ")" << endl;
     intersections = edge_triangle_intersection(p1, q1, triangle);
-    for(int i = 0; i < intersections.size(); i++){
-        cout << intersections[i].transpose() << endl;
+    for(auto& point : intersections){
+        cout << point.transpose() << endl;
     }
     cout << "---" << endl;
     
@@ -167,8 +167,8 @@ void test_segment_triangle_intersection()
     p1 << 0.25, 0.5; q1 << 0.5, 0.25;
     cout << "Line: (" << p1.transpose() << "), (" << q1.transpose() << ")" << endl;
     intersections = edge_triangle_intersection(p1, q1, triangle);
-    for(int i = 0; i < intersections.size(); i++){
-        cout << intersections[i].transpose() << endl;
+    for(auto& point : intersections){
+        cout << point.transpose() << endl;
     }
     cout << "---" << endl;
 
@@ -176,8 +176,8 @@ void test_segment_triangle_intersection()
     p1 << 0.25, 1; q1 << 0.75, 0.5;
     cout << "Line: (" << p1.transpose() << "), (" << q1.transpose() << ")" << endl;
     intersections = edge_triangle_intersection(p1, q1, triangle);
-    for(int i = 0; i < intersections.size(); i++){
-        cout << intersections[i].transpose() << endl;
+    for(auto& point : intersections){
+        cout << point.transpose() << endl;
     }
     cout << "---" << endl;
 }
@@ -185,25 +185,23 @@ void test_segment_triangle_intersection()
 void test_triangle_triangle_intersections()
 {
     /*
-        AARectangle: Plane: (0, 1, 0, 1) Centre: (0.538576, 1, 1) Half Extents: (0.00409374, 0, 0.0172414)
-        Triangle overlap over AARectangle
-            T1 Vertices: (0, 1, 0), (0, 1, 1), (1, 1, 1)
-            T2 Vertices: (0.146447, 1, 2.06066), (0.853553, 1, 1.35355), (0.5, 1, 1)
-                Intersection point: 0.54267       1       1
-                Intersection point: 0.534483        1        1
-                Intersection point: 1 1 1
-                Intersection point: 1 1 1
+    AARectangle: Plane: (0, 0, 1, 1) Centre: (0.304936, 0.310345, 1.09144) Half Extents: (0.0182872, 0.0172414, 0)
+    Triangle overlap over AARectangle
+        T1 Vertices: (0, 0, 1), (1, 0, 1), (1, 1, 1)
+        T2 Vertices: (-0.207107, 0, 1.70711), (0.5, 1, 1), (0.5, 0, 1)
+        Intersection point: 0.323223 0.323223  1.09144
+        Intersection point: 0.293103 0.293103  1.09144
     */
 
-    AARectangle r1(PxPlane(0, 1, 0, 1), Vector3f(0.538576, 1, 1), Vector3f(0.00409374, 0, 0.0172414));
+    AARectangle r1(PxPlane(0, 0, 1, 1), Vector3f(0.304936, 0.310345, 1.09144), Vector3f(0.0182872, 0.0172414, 0));
 
-    Triangle<Vector3f> t1(Vector3f(0, 1, 0), Vector3f(0, 1, 1), Vector3f(1, 1, 1));
-    Triangle<Vector3f> t2(Vector3f(0.146447, 1, 2.06066), Vector3f(0.853553, 1, 1.35355), Vector3f(0.5, 1, 1));
+    Triangle<Vector3f> t1(Vector3f(0, 0, 1), Vector3f(1, 0, 1), Vector3f(1, 1, 1));
+    Triangle<Vector3f> t2(Vector3f(-0.207107, 0, 1.70711), Vector3f(0.5, 1, 1), Vector3f(0.5, 0, 1));
 
     shared_ptr<Triangle<Vector3f>> t1_ptr = make_shared<Triangle<Vector3f>>(t1);
     shared_ptr<Triangle<Vector3f>> t2_ptr = make_shared<Triangle<Vector3f>>(t2);
 
-    vector<Vector3f> intersections = triangle_overlap_over_AARectangle(r1, t1_ptr, t2_ptr);
+    PointSet3D intersections = triangle_overlap_over_AARectangle(r1, t1_ptr, t2_ptr);
 }
 
 void test_segment_rectangle_intersection()
@@ -268,7 +266,15 @@ void test_segment_rectangle_intersection()
 }
 
 int main(int argc, char** argv) {
-    test_segment_rectangle_intersection();
+    PointSet3D set1, set2, set3;
+    set1.insert(Point3D(0, 0, 0));
+    set2.insert(Vector3f(0, 0, 0));
+    set3.insert(set1);
+    set3.insert(set2);
+    for(auto& point : set3){
+        cout << point.transpose() << endl;
+    }
+    //test_triangle_triangle_intersections();
     return 0;
     // Initialize the scene
     Scene scene;
