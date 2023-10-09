@@ -1,9 +1,9 @@
-#include "AssemblyCD.h"
-#include "PxPhysicsAPI.h"
 #include <iostream>
 #include <vector>
 #include <set>
+#include "PxPhysicsAPI.h"
 #include "eigen3/Eigen/Eigen"
+#include "AssemblyCD.h"
 
 using namespace physx;
 using namespace std;

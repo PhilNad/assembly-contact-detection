@@ -1,0 +1,27 @@
+#pragma once
+#include <eigen3/Eigen/Eigen>
+
+template <typename T>
+class Triangle
+{
+    private:
+        struct point_inside_triangle_computations_cache {
+            bool active = false;
+            T v0r;
+            T v1r;
+            float d00;
+            float d01;
+            float d11;
+            float inv_denom;
+        };
+        point_inside_triangle_computations_cache pt_in_tri_cache;
+        void compute_signed_area();
+    public:
+        T vertex_0;
+        T vertex_1;
+        T vertex_2;
+        float signed_area = 0;
+        Triangle(T vertex_0, T vertex_1, T vertex_2);
+        bool contains(const T& point, bool boundary_included);
+};
+

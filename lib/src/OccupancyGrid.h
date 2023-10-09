@@ -8,61 +8,13 @@
 #include <unordered_map>
 #include "PxPhysicsAPI.h"
 #include <eigen3/Eigen/Eigen>
+#include "Triangle.h"
+#include "AARectangle.h"
+#include "OccupancyGrid.h"
 
 using namespace std;
 using namespace Eigen;
 using namespace physx;
-
-template <typename T>
-class Triangle
-{
-    private:
-        struct point_inside_triangle_computations_cache {
-            bool active = false;
-            T v0r;
-            T v1r;
-            float d00;
-            float d01;
-            float d11;
-            float inv_denom;
-        };
-        point_inside_triangle_computations_cache pt_in_tri_cache;
-        void compute_signed_area();
-    public:
-        T vertex_0;
-        T vertex_1;
-        T vertex_2;
-        float signed_area = 0;
-        Triangle(T vertex_0, T vertex_1, T vertex_2);
-        bool contains(const T& point, bool boundary_included);
-};
-
-class AARectangle
-{
-    private:
-        Vector3f u;
-        Vector3f v;
-        float EPSILON = 1e-3;
-    public:
-        PxPlane plane;
-        Vector3f centre;
-        Vector3f half_extents;
-        float area;
-        Vector2f u_extents;
-        Vector2f v_extents;
-        AARectangle(PxPlane plane, Vector3f centre, Vector3f half_extents);
-        Vector2f project_point(const Vector3f& point);
-        Vector3f unproject_point(const Vector2f& point);
-        Triangle<Vector2f> project_triangle(const Triangle<Vector3f>& triangle);
-        bool contains(const Vector3f& point);
-        bool contains(const Vector2f& point);
-        Vector2f project_and_clamp(const Vector3f& point);
-        Vector2f inside_or_on(const Vector2f& point);
-        float get_min_u();
-        float get_max_u();
-        float get_min_v();
-        float get_max_v();
-};
 
 struct OrientedPoint
 {

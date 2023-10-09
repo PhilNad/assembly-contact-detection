@@ -4,3 +4,7 @@
 #include "OccupancyGrid.h"
 #include "PointSet.h"
 #include "Points.h"
+#include "Triangle.h"
+#include "AARectangle.h"
+#include "Intersections.h"
+#include "Polygon.h"
