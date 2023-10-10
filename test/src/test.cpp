@@ -193,15 +193,15 @@ void test_triangle_triangle_intersections()
         Intersection point: 0.293103 0.293103  1.09144
     */
 
-    AARectangle r1(PxPlane(0, 0, 1, 1), Vector3f(0.304936, 0.310345, 1.09144), Vector3f(0.0182872, 0.0172414, 0));
+    AARectangle r1(PxPlane(0, 0, 1, 0), Vector3f(4, 4, 0), Vector3f(1, 2, 0));
 
-    Triangle<Vector3f> t1(Vector3f(0, 0, 1), Vector3f(1, 0, 1), Vector3f(1, 1, 1));
-    Triangle<Vector3f> t2(Vector3f(-0.207107, 0, 1.70711), Vector3f(0.5, 1, 1), Vector3f(0.5, 0, 1));
+    Triangle<Vector3f> t1(Vector3f(0, 0, 0), Vector3f(8, 0, 0), Vector3f(0, 8, 0));
+    Triangle<Vector3f> t2(Vector3f(0, 0, 0), Vector3f(8, 0, 0), Vector3f(8, 8, 1));
 
     shared_ptr<Triangle<Vector3f>> t1_ptr = make_shared<Triangle<Vector3f>>(t1);
     shared_ptr<Triangle<Vector3f>> t2_ptr = make_shared<Triangle<Vector3f>>(t2);
 
-    PointSet3D intersections = triangle_overlap_over_AARectangle(r1, t1_ptr, t2_ptr);
+    PointSet3D intersections = triangle_triangle_AARectangle_intersection(r1, t1_ptr, t2_ptr);
 }
 
 void test_segment_rectangle_intersection()
@@ -266,15 +266,7 @@ void test_segment_rectangle_intersection()
 }
 
 int main(int argc, char** argv) {
-    PointSet3D set1, set2, set3;
-    set1.insert(Point3D(0, 0, 0));
-    set2.insert(Vector3f(0, 0, 0));
-    set3.insert(set1);
-    set3.insert(set2);
-    for(auto& point : set3){
-        cout << point.transpose() << endl;
-    }
-    //test_triangle_triangle_intersections();
+    test_triangle_triangle_intersections();
     return 0;
     // Initialize the scene
     Scene scene;

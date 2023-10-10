@@ -5,6 +5,44 @@
 using namespace Eigen;
 using namespace std;
 
+PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::shared_ptr<Triangle<Vector3f>> t1, std::shared_ptr<Triangle<Vector3f>> t2)
+{
+    //Project the 3D triangles onto the interface plane.
+    Vector2f t1_v0_proj = aarec.project_point(t1->vertex_0);
+    Vector2f t1_v1_proj = aarec.project_point(t1->vertex_1);
+    Vector2f t1_v2_proj = aarec.project_point(t1->vertex_2);
+    Triangle<Vector2f> t1_proj = Triangle<Vector2f>(t1_v0_proj, t1_v1_proj, t1_v2_proj);
+
+    Vector2f t2_v0_proj = aarec.project_point(t2->vertex_0);
+    Vector2f t2_v1_proj = aarec.project_point(t2->vertex_1);
+    Vector2f t2_v2_proj = aarec.project_point(t2->vertex_2);
+    Triangle<Vector2f> t2_proj = Triangle<Vector2f>(t2_v0_proj, t2_v1_proj, t2_v2_proj);
+
+    //All three shapes are instances of a convex 2d polygon
+    Convex2DPolygon poly_rectangle = Convex2DPolygon(aarec);
+    Convex2DPolygon poly_triangle1 = Convex2DPolygon(t1_proj);
+    Convex2DPolygon poly_triangle2 = Convex2DPolygon(t2_proj);
+
+    //Compute the intersection between the rectangle and the first triangle
+    Convex2DPolygon rec_t1_intersection = poly_rectangle.polygon_intersection(poly_triangle1);
+
+    //Compute the intersection between the rectangle-triangle1 intersection and the second triangle
+    Convex2DPolygon rec_t1_t2_intersection = rec_t1_intersection.polygon_intersection(poly_triangle2);
+    PointSet2D intersection_vertices = rec_t1_t2_intersection.vertices();
+
+    //Unproject all points and append them to a list
+    PointSet3D all_3d_intersections;
+    for(auto& pt_2d : intersection_vertices){
+        Vector3f p3d = aarec.unproject_point(pt_2d);
+        all_3d_intersections.insert(p3d);
+    }
+    for(auto& pt_3d : all_3d_intersections){
+        cout << "  Intersection point: (" << pt_3d[0] << ", " << pt_3d[1] << ", " << pt_3d[2] << ")" << endl;
+    }
+
+    return all_3d_intersections;
+}
+
 PointSet3D triangle_overlap_over_AARectangle(AARectangle& aarec, std::shared_ptr<Triangle<Vector3f>> t1, std::shared_ptr<Triangle<Vector3f>> t2)
 {
     cout << "  Triangle overlap over AARectangle" << endl;
