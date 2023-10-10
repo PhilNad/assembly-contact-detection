@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <eigen3/Eigen/Eigen>
 #include "Polygon.h"
+#include <iostream>
 
 using namespace Eigen;
 
@@ -52,14 +53,15 @@ Convex2DPolygon::Convex2DPolygon(AARectangle& rectangle)
 Convex2DPolygon::Convex2DPolygon(const PointSet2D& vertices)
 {
     //If there are less than 3 vertices, we cannot define a polygon.
-    if(vertices.size() >= 3){
+    if(vertices.size() < 3){
+        *this = Convex2DPolygon();
+    }else{
 
         //Define edges without assuming any order
         std::vector<std::pair<Point2D, Point2D>> edges;
 
         //Compute the centroid as the average of the vertices
-        for (auto& vertex : vertices)
-        {
+        for (auto& vertex : vertices){
             _vertices.insert(vertex);
             _centroid += vertex;
         }
@@ -69,8 +71,7 @@ Convex2DPolygon::Convex2DPolygon(const PointSet2D& vertices)
         // The vertices are sorted by increasing angle such that edges are defined
         // in a counter-clockwise order.
         std::vector<std::pair<float, Vector2f>> angles;
-        for (auto& vertex : vertices)
-        {
+        for (auto& vertex : vertices){
             Vector2f vertex_vector = vertex - _centroid;
             //Use atan2 to get the angle in the range [-pi, pi]
             float angle = atan2(vertex_vector[1], vertex_vector[0]);
@@ -84,8 +85,7 @@ Convex2DPolygon::Convex2DPolygon(const PointSet2D& vertices)
         });
 
         //Create the edges
-        for (int i = 0; i < angles.size(); i++)
-        {
+        for (int i = 0; i < angles.size(); i++){
             int j = (i + 1) % angles.size();
             edges.push_back(std::make_pair(Point2D(angles[i].second), Point2D(angles[j].second)));
         }
@@ -100,8 +100,7 @@ Convex2DPolygon::Convex2DPolygon(const std::vector<std::pair<Point2D, Point2D>> 
 {
 
     //Create the vertex PointSet
-    for (auto& edge : edges)
-    {
+    for (auto& edge : edges){
         _edges.push_back(edge);
         _vertices.insert(edge.first);
         _vertices.insert(edge.second);
@@ -111,45 +110,63 @@ Convex2DPolygon::Convex2DPolygon(const std::vector<std::pair<Point2D, Point2D>> 
     // We do not enforce the order of the edges, so we must make sure that each vertex
     // appears exactly twice in the set of edges. As a result, the size of the PointSet
     // will be equal to the number of edges.
-    if (_vertices.size() != edges.size())
-    {
-        throw std::invalid_argument("The polygon is not closed.");
+    if (_vertices.size() != edges.size()){
+        //throw std::invalid_argument("The polygon is not closed or has coincident vertices.");
+        *this = Convex2DPolygon();
+    }else{
+
+        //Compute the centroid as the average of the vertices
+        for (auto& vertex : _vertices){
+            _centroid += vertex;
+        }
+        _centroid /= _vertices.size();
+
+        //For each edge, compute the normal vector pointing outward from the polygon
+        // with a magnitude equal to the distance from the centroid to the edge.
+        for (auto& edge : edges){
+            //Points relative to the centroid
+            Vector2f vertex_centroid = edge.first - _centroid;
+            Vector2f edge_vector     = (edge.first - edge.second).normalized();
+            //The normal vector is the vector rejection of the centroid-to-edge vector
+            // projected onto the edge vector.
+            Vector2f projection = vertex_centroid.dot(edge_vector) * edge_vector;
+            Vector2f normal = vertex_centroid - projection;
+
+            _edge_normals.push_back(normal);
+        }
+
+        //A convex polygon can be decomposed into triangles by connecting each vertex to the centroid.
+        // We use the centroid as a common vertex for all triangles.
+        for (auto& edge : edges){
+            Vector2f v0 = {edge.first[0], edge.first[1]};
+            Vector2f v1 = {edge.second[0], edge.second[1]};
+            Vector2f c  = {_centroid[0], _centroid[1]};
+            Triangle<Vector2f> side_triangle = Triangle<Eigen::Vector2f>(v0, v1, c);
+            _triangles.push_back(side_triangle);
+            _area += abs(side_triangle.signed_area);
+        }
     }
+}
 
-    //Compute the centroid as the average of the vertices
-    for (auto& vertex : _vertices)
-    {
-        _centroid += vertex;
+/// @brief Overload the << operator for printing the polygon.
+/// @param os The output stream.
+/// @param polygon The polygon to print.
+/// @return The output stream.
+std::ostream& operator<<(std::ostream& os, Convex2DPolygon& polygon)
+{
+    for (auto& edge : polygon.edges()){
+        os << "(" << edge.first[0] << ", " << edge.first[1] << ")--(" << edge.second[0] << ", " << edge.second[1] << ") ";
     }
-    _centroid /= _vertices.size();
+    return os;
+}
 
-    //For each edge, compute the normal vector pointing outward from the polygon
-    // with a magnitude equal to the distance from the centroid to the edge.
-    for (auto& edge : edges)
-    {
-        //Points relative to the centroid
-        Vector2f vertex_centroid = edge.first - _centroid;
-        Vector2f edge_vector     = (edge.first - edge.second).normalized();
-        //The normal vector is the vector rejection of the centroid-to-edge vector
-        // projected onto the edge vector.
-        Vector2f projection = vertex_centroid.dot(edge_vector) * edge_vector;
-        Vector2f normal = vertex_centroid - projection;
 
-        _edge_normals.push_back(normal);
-    }
-
-    //A convex polygon can be decomposed into triangles by connecting each vertex to the centroid.
-    // We use the centroid as a common vertex for all triangles.
-    for (auto& edge : edges)
-    {
-        Vector2f v0 = {edge.first[0], edge.first[1]};
-        Vector2f v1 = {edge.second[0], edge.second[1]};
-        Vector2f c  = {_centroid[0], _centroid[1]};
-        Triangle<Vector2f> side_triangle = Triangle<Eigen::Vector2f>(v0, v1, c);
-        _triangles.push_back(side_triangle);
-        _area += abs(side_triangle.signed_area);
-    }
-
+/// @brief Return the area of the convex polygon.
+/// @return Surface area.
+float Convex2DPolygon::get_area()
+{
+    assert(_area >= 0);
+    return _area;
 }
 
 /// @brief Get the edges of the polygon as a vector of tuples of two 2D points.
@@ -254,16 +271,27 @@ PointSet2D Convex2DPolygon::line_intersection(const Eigen::Vector2f& segment_p0,
 /// @return The intersection polygon whose area is the intersection of the two polygons.
 Convex2DPolygon Convex2DPolygon::polygon_intersection(Convex2DPolygon& polygon)
 {
-    //The intersection polygon is defined by the intersection of each side of the two polygons.
-    // So we iterate over the edges of *this and compute the intersection points with the other
-    // polygon using the line_intersection() method. 
+    //The intersection polygon is defined by the intersection of the edges of the two polygons.
+
+    if(polygon._area == 0 || this->_area == 0){
+        //If one of the polygons has zero area, the intersection is empty.
+        return Convex2DPolygon();
+    }
 
     PointSet2D intersection_points;
 
     //Iterate over the edges of this polygon
     for(auto& edge : this->_edges){
-        //Compute the intersection points between the edge and the other polygon
+        //Compute the extremities of the edge that are contained in polygon.
         PointSet2D line_intersection_points = polygon.line_intersection(edge.first, edge.second);
+        //Append
+        intersection_points.insert(line_intersection_points);
+    }
+
+    //Iterate over the edges of the other polygon
+    for(auto& edge : polygon._edges){
+        //Compute the extremities of the edge that are contained in this polygon.
+        PointSet2D line_intersection_points = this->line_intersection(edge.first, edge.second);
         //Append
         intersection_points.insert(line_intersection_points);
     }

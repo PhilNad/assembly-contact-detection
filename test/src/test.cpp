@@ -185,23 +185,25 @@ void test_segment_triangle_intersection()
 void test_triangle_triangle_intersections()
 {
     /*
-    AARectangle: Plane: (0, 0, 1, 1) Centre: (0.304936, 0.310345, 1.09144) Half Extents: (0.0182872, 0.0172414, 0)
-    Triangle overlap over AARectangle
-        T1 Vertices: (0, 0, 1), (1, 0, 1), (1, 1, 1)
-        T2 Vertices: (-0.207107, 0, 1.70711), (0.5, 1, 1), (0.5, 0, 1)
-        Intersection point: 0.323223 0.323223  1.09144
-        Intersection point: 0.293103 0.293103  1.09144
+    AARectangle: Plane: (0, 0, 1, 1) Centre: (0.508839, 0.508333, 1) Half Extents: (0.00883888, 0.00833334, 0)
+    Rectangle: (0.5, 0.5, 1)--(0.517678, 0.5, 1)  (0.517678, 0.5, 1)--(0.517678, 0.516667, 1)  (0.517678, 0.516667, 1)--(0.5, 0.516667, 1)  (0.5, 0.516667, 1)--(0.5, 0.5, 1)  
+    Triangle 1:(0, 0, 1)--(1, 0, 1)  (1, 0, 1)--(1, 1, 1)  (1, 1, 1)--(0, 0, 1)  
+    Triangle 2:(-0.207107, 0, 1)--(0.5, 0, 1)  (0.5, 0, 1)--(0.5, 1, 1)  (0.5, 1, 1)--(-0.207107, 0, 1)    
+    Rectangle area: 0.000294629
+    Triangle 1 area: 0.5
+    Triangle 2 area: 0.353553
+    No intersection between the rectangle-triangle1 intersection and the second triangle.
     */
 
-    AARectangle r1(PxPlane(0, 0, 1, 0), Vector3f(4, 4, 0), Vector3f(1, 2, 0));
+    AARectangle r1(PxPlane(0, 0, 1, 1), Vector3f(0.508839, 0.508333, 1), Vector3f(0.00883888, 0.00833334, 0));
 
-    Triangle<Vector3f> t1(Vector3f(0, 0, 0), Vector3f(8, 0, 0), Vector3f(0, 8, 0));
-    Triangle<Vector3f> t2(Vector3f(0, 0, 0), Vector3f(8, 0, 0), Vector3f(8, 8, 1));
+    Triangle<Vector3f> t1(Vector3f(0, 0, 1), Vector3f(1, 0, 1), Vector3f(1, 1, 1));
+    Triangle<Vector3f> t2(Vector3f(-0.207107, 0, 1), Vector3f(0.5, 0, 1), Vector3f(0.5, 1, 1));
 
     shared_ptr<Triangle<Vector3f>> t1_ptr = make_shared<Triangle<Vector3f>>(t1);
     shared_ptr<Triangle<Vector3f>> t2_ptr = make_shared<Triangle<Vector3f>>(t2);
 
-    PointSet3D intersections = triangle_triangle_AARectangle_intersection(r1, t1_ptr, t2_ptr);
+    PointSet3D intersections = triangle_triangle_AARectangle_intersection(r1, t1_ptr, t2_ptr, r1.half_extents[0]);
 }
 
 void test_segment_rectangle_intersection()

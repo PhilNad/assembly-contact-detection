@@ -81,7 +81,7 @@ OrientedPoint GridCell::weighted_average(const Vector3f& query_point){
 /// @brief Determine the intersection rectangle between two grid cells assumed to be in contact.
 /// @param other GridCell different from the current one that is in contact with it.
 /// @return Axis Aligned Rectangle that represents the intersection between the two grid cells.
-AARectangle GridCell::gridcell_to_gridcell_intersection(const GridCell& other)
+AARectangle GridCell::gridcell_to_gridcell_intersection(const GridCell& other, const AARectangle::NORMAL_AXIS normal_axis)
 {
     //Compute the vector between the centres of the two cells
     Vector3f centres_vector = other.centre - this->centre;
@@ -89,7 +89,7 @@ AARectangle GridCell::gridcell_to_gridcell_intersection(const GridCell& other)
     //Get the maximal coefficient of the centres vector
     float max_coeff = centres_vector.maxCoeff();
     //The maximal coefficient indicates the normal of the intersection plane
-    if(max_coeff == centres_vector[1]){
+    if(normal_axis == AARectangle::NORMAL_AXIS::Y){//if(max_coeff == centres_vector[1]){
         //Normal is [0,1,0], Plane is X-Z
         PxPlane plane(0, 1, 0, this->centre[1]);
         //Axes aligned bounds of the intersection rectangle
@@ -102,7 +102,7 @@ AARectangle GridCell::gridcell_to_gridcell_intersection(const GridCell& other)
         Vector3f half_extents = Vector3f((u_max - u_min)/2, 0, (v_max - v_min)/2);
         AARectangle intersection_rectangle(plane, centre, half_extents);
         return intersection_rectangle;
-    }else if(max_coeff == centres_vector[2]){
+    }else if(normal_axis == AARectangle::NORMAL_AXIS::Z){//if(max_coeff == centres_vector[2]){
         //Normal is [0,0,1], Plane is X-Y
         PxPlane plane(0, 0, 1, this->centre[2]);
         //Axes aligned bounds of the intersection rectangle
@@ -601,7 +601,7 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
                 }else{
                     //Add the point to the existing grid cell
                     //this->grid_cells.at(cell_idx).additional_point(surface_point);
-                    //this->grid_cells.at(cell_idx).additional_triangle(triangle);
+                    this->grid_cells.at(cell_idx).additional_triangle(triangle);
                 }
             }
         }

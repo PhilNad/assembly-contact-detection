@@ -40,6 +40,22 @@ Triangle<T>::Triangle(T vertex_0, T vertex_1, T vertex_2) : vertex_0(vertex_0), 
     }
 }
 
+/// @brief Compute the shortest distance between a point and the plane of the triangle.
+/// @param point Point to compute the distance to/from.
+/// @return Distance between the point and the plane of the triangle.
+template <>
+float Triangle<Eigen::Vector3f>::shortest_distance_to_plane(const Eigen::Vector3f& point)
+{
+    //Compute the normal of the triangle
+    Eigen::Vector3f normal = (vertex_1 - vertex_0).cross(vertex_2 - vertex_0);
+    normal.normalize();
+
+    //Compute the distance between the point and the plane of the triangle
+    float distance = normal.dot(point - vertex_0);
+
+    return abs(distance);
+}
+
 /// @brief Determines whether a given point is inside a triangle defined by three vertices.
 /// @param point The point to check.
 /// @param boundary_included If true, points on the triangle edges are considered to be inside the triangle.

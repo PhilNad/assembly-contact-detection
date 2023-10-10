@@ -130,6 +130,14 @@ Triangle<Eigen::Vector2f> AARectangle::project_triangle(const Triangle<Eigen::Ve
     return projected_triangle;
 }
 
+/// @brief Return the coordinates of the origin of the rectangle in the world frame.
+/// @return 3D coordinates of the origin of the rectangle in the world frame.
+Eigen::Vector3f AARectangle::get_uv_origin_in_world()
+{
+    //Return the coordinates of the centre of the rectangle in the world frame
+    return this->unproject_point(Eigen::Vector2f(0, 0));
+}
+
 /// @brief Get the minimal boundary of the rectangle along the u axis relative to the centre of the rectangle.
 /// @return The minimal boundary of the rectangle along the u axis relative to the centre of the rectangle.
 float AARectangle::get_min_u()

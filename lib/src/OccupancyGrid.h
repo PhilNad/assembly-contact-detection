@@ -34,7 +34,7 @@ class GridCell
         void additional_point(shared_ptr<OrientedPoint> surface_point);
         void additional_triangle(shared_ptr<Triangle<Vector3f>> triangle);
         OrientedPoint weighted_average(const Vector3f& query_point);
-        AARectangle gridcell_to_gridcell_intersection(const GridCell& other);
+        AARectangle gridcell_to_gridcell_intersection(const GridCell& other, const AARectangle::NORMAL_AXIS normal_axis);
 };
 
 

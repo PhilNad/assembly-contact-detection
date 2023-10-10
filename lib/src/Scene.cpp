@@ -164,7 +164,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 
             //Get the contact points
 			PxU32 contactCount = pair.contactCount;
-            cout << contactCount << " contacts between " << id_obj0 << " and " << id_obj1 << endl;
+            //cout << contactCount << " contacts between " << id_obj0 << " and " << id_obj1 << endl;
 			if(contactCount)
 			{
 
@@ -258,27 +258,42 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
         vector<shared_ptr<Triangle<Vector3f>>> t2_list = g2.triangles;
 
         //Axis aligned intersection rectangle between the two contacting gridcells
-        AARectangle r1 = g1.gridcell_to_gridcell_intersection(g2);
-        cout << "AARectangle: Plane: (" << r1.plane.n.x << ", " << r1.plane.n.y << ", " << r1.plane.n.z << ", " << r1.plane.d << ")" << " Centre: (" << r1.centre[0] << ", " << r1.centre[1] << ", " << r1.centre[2] << ") Half Extents: (" << r1.half_extents[0] << ", " << r1.half_extents[1] << ", " << r1.half_extents[2] << ")" << endl;
+        AARectangle aarec_x = g1.gridcell_to_gridcell_intersection(g2, AARectangle::NORMAL_AXIS::X);
+        AARectangle aarec_y = g1.gridcell_to_gridcell_intersection(g2, AARectangle::NORMAL_AXIS::Y);
+        AARectangle aarec_z = g1.gridcell_to_gridcell_intersection(g2, AARectangle::NORMAL_AXIS::Z);
+        
+        //cout << "Gridcell IDs: #" << g1.id << " and #" << g2.id << endl;
+        //cout << "AARectangle: Plane: (" << aarec_x.plane.n.x << ", " << aarec_x.plane.n.y << ", " << aarec_x.plane.n.z << ", " << aarec_x.plane.d << ")" << " Centre: (" << aarec_x.centre[0] << ", " << aarec_x.centre[1] << ", " << aarec_x.centre[2] << ") Half Extents: (" << aarec_x.half_extents[0] << ", " << aarec_x.half_extents[1] << ", " << aarec_x.half_extents[2] << ")" << endl;
 
-        if(r1.area > minimum_area){
-            //Iterates over all triangle combinations
-            PointSet3D all_intersections;
-            for(int i = 0; i < t1_list.size(); i++){
-                shared_ptr<Triangle<Vector3f>> t1 = t1_list[i];
-                for(int j = 0; j < t2_list.size(); j++){
-                    shared_ptr<Triangle<Vector3f>> t2 = t2_list[j];
-                    //Compute the intersection points between the two triangles
-                    PointSet3D intersections = triangle_overlap_over_AARectangle(r1, t1, t2);
-                    //Append the intersections to the list
-                    all_intersections.insert(intersections);
+        //Maximum distance from an intersection point to the triangle planes
+        float x_max_dist = max(min(g1.half_extents[1], g2.half_extents[1]), min(g1.half_extents[2], g2.half_extents[2]));
+        float y_max_dist = max(min(g1.half_extents[0], g2.half_extents[0]), min(g1.half_extents[2], g2.half_extents[2]));
+        float z_max_dist = max(min(g1.half_extents[0], g2.half_extents[0]), min(g1.half_extents[1], g2.half_extents[1]));
+
+        //Iterate over each AARectangle and accumulate intersections with the triangles
+        vector<AARectangle> aarec_list = {aarec_x, aarec_y, aarec_z};
+        vector<float> max_dist_list = {x_max_dist, y_max_dist, z_max_dist};
+        PointSet3D all_intersections;
+        for(int aarec_i = 0; aarec_i < aarec_list.size(); aarec_i++){
+            AARectangle aarec = aarec_list[aarec_i];
+            //If the intersection area is too small, we don't consider the intersection
+            if(aarec.area > minimum_area){
+                //Iterates over all triangle combinations
+                for(int t1_i = 0; t1_i < t1_list.size(); t1_i++){
+                    shared_ptr<Triangle<Vector3f>> t1 = t1_list[t1_i];
+                    for(int t2_i = 0; t2_i < t2_list.size(); t2_i++){
+                        shared_ptr<Triangle<Vector3f>> t2 = t2_list[t2_i];
+                        //Compute the intersection points between the two triangles
+                        //PointSet3D intersections = triangle_overlap_over_AARectangle(aarec, t1, t2);
+                        PointSet3D intersections = triangle_triangle_AARectangle_intersection(aarec, t1, t2, max_dist_list[aarec_i]);
+                        //Append the intersections to the list
+                        all_intersections.insert(intersections);
+                    }
                 }
             }
-            return all_intersections;
-        }else{
-            cout << "WARNING: Very small intersection area (" << r1.area << ") between two gridcells." << endl;
-            return PointSet3D();
         }
+
+        return all_intersections;
     }
 
     /// @brief Computes the line at the intersection of the planes supporting the two oriented points, and finds the

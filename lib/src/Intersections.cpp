@@ -5,7 +5,7 @@
 using namespace Eigen;
 using namespace std;
 
-PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::shared_ptr<Triangle<Vector3f>> t1, std::shared_ptr<Triangle<Vector3f>> t2)
+PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::shared_ptr<Triangle<Vector3f>> t1, std::shared_ptr<Triangle<Vector3f>> t2, float max_distance)
 {
     //Project the 3D triangles onto the interface plane.
     Vector2f t1_v0_proj = aarec.project_point(t1->vertex_0);
@@ -23,22 +23,73 @@ PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::s
     Convex2DPolygon poly_triangle1 = Convex2DPolygon(t1_proj);
     Convex2DPolygon poly_triangle2 = Convex2DPolygon(t2_proj);
 
+    // //Unproject the vertices of the edges of the three shapes
+    // cout << "Rectangle: ";
+    // for(auto& edge : poly_rectangle.edges()){
+    //     Vector3f p3d = aarec.unproject_point(edge.first);
+    //     cout << "(" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")--";
+    //     p3d = aarec.unproject_point(edge.second);
+    //     cout << "(" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")  ";
+    // }
+    // cout << endl;
+    // cout << "Triangle 1:";
+    // for(auto& edge : poly_triangle1.edges()){
+    //     Vector3f p3d = aarec.unproject_point(edge.first);
+    //     cout << "(" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")--";
+    //     p3d = aarec.unproject_point(edge.second);
+    //     cout << "(" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")  ";
+    // }
+    // cout << endl;
+    // cout << "Triangle 2:";
+    // for(auto& edge : poly_triangle2.edges()){
+    //     Vector3f p3d = aarec.unproject_point(edge.first);
+    //     cout << "(" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")--";
+    //     p3d = aarec.unproject_point(edge.second);
+    //     cout << "(" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")  ";
+    // }
+    // cout << endl;
+
+    // //Print areas of the three shapes
+    // cout << "  Rectangle area: " << poly_rectangle.get_area() << endl;
+    // cout << "  Triangle 1 area: " << poly_triangle1.get_area() << endl;
+    // cout << "  Triangle 2 area: " << poly_triangle2.get_area() << endl;
+
+    //If one of the triangle has a zero area, it is a line and we return an empty list
+    if(poly_triangle1.get_area() == 0 || poly_triangle2.get_area() == 0){
+        //cout << "  One of the triangles has a zero area. No intersection." << endl;
+        return PointSet3D();
+    }
+
     //Compute the intersection between the rectangle and the first triangle
     Convex2DPolygon rec_t1_intersection = poly_rectangle.polygon_intersection(poly_triangle1);
 
+    if(rec_t1_intersection.get_area() == 0){
+        //cout << "  No intersection between the rectangle and the first triangle." << endl;
+        return PointSet3D();
+    }
+
     //Compute the intersection between the rectangle-triangle1 intersection and the second triangle
     Convex2DPolygon rec_t1_t2_intersection = rec_t1_intersection.polygon_intersection(poly_triangle2);
+
+    if(rec_t1_t2_intersection.get_area() == 0){
+        //cout << "  No intersection between the rectangle-triangle1 intersection and the second triangle." << endl;
+        return PointSet3D();
+    }
+
     PointSet2D intersection_vertices = rec_t1_t2_intersection.vertices();
 
     //Unproject all points and append them to a list
     PointSet3D all_3d_intersections;
     for(auto& pt_2d : intersection_vertices){
         Vector3f p3d = aarec.unproject_point(pt_2d);
-        all_3d_intersections.insert(p3d);
+        if(t1->shortest_distance_to_plane(p3d) < max_distance && t2->shortest_distance_to_plane(p3d) < max_distance){
+            all_3d_intersections.insert(p3d);
+        }
     }
-    for(auto& pt_3d : all_3d_intersections){
-        cout << "  Intersection point: (" << pt_3d[0] << ", " << pt_3d[1] << ", " << pt_3d[2] << ")" << endl;
-    }
+
+    // for(auto& p3d : all_3d_intersections){
+    //     cout << "  Intersection point: (" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")" << endl;
+    // }
 
     return all_3d_intersections;
 }

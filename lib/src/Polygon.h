@@ -28,4 +28,6 @@ class Convex2DPolygon
         bool contains(const Point2D& point);
         PointSet2D line_intersection(const Eigen::Vector2f& segment_p0, const Eigen::Vector2f& segment_p1);
         Convex2DPolygon polygon_intersection(Convex2DPolygon& polygon);
+        float get_area();
+        friend std::ostream& operator<<(std::ostream& os, Convex2DPolygon& polygon);
 };

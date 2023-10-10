@@ -343,6 +343,7 @@ bool Object::create_tetra_convex_set(PxArray<PxVec3> tetVertices, PxArray<PxU32>
 }
 
 /// @brief Redo the meshing of the surface mesh to make sure it is adequate for further processing.
+/// @note This function can make the mesh worse.
 void Object::remesh_surface_trimesh()
 {
     MatrixX3f in_vertices = this->tri_vertices;

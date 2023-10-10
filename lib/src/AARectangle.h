@@ -10,6 +10,7 @@ class AARectangle
         Eigen::Vector3f v;
         float EPSILON = 1e-3;
     public:
+        enum class NORMAL_AXIS { X, Y, Z };
         physx::PxPlane plane;
         Eigen::Vector3f centre;
         Eigen::Vector3f half_extents;
@@ -28,4 +29,5 @@ class AARectangle
         float get_max_u();
         float get_min_v();
         float get_max_v();
+        Eigen::Vector3f get_uv_origin_in_world();
 };
