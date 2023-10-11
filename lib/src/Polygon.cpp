@@ -114,7 +114,6 @@ Convex2DPolygon::Convex2DPolygon(const std::vector<std::pair<Point2D, Point2D>> 
         //throw std::invalid_argument("The polygon is not closed or has coincident vertices.");
         *this = Convex2DPolygon();
     }else{
-
         //Compute the centroid as the average of the vertices
         for (auto& vertex : _vertices){
             _centroid += vertex;

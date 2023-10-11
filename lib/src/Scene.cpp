@@ -4,6 +4,8 @@
 #include <unordered_set>
 #include <iterator>
 #include <set>
+#include <thread>
+#include <vector>
 #include <chrono>
 #include "PxPhysicsAPI.h"
 #include "extensions/PxTetMakerExt.h"
@@ -124,12 +126,60 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 	void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) 
 	{
 		PX_UNUSED((pairHeader));
-		std::vector<PxContactPairPoint> contactPoints;
-		
-		for(PxU32 i=0;i<nbPairs;i++)
-		{
+        //Maximum number of threads to use (can be zero)
+        const int num_threads = std::thread::hardware_concurrency();
+
+        if(num_threads > 1){
+            //List of threads
+            std::vector<std::thread> threads(num_threads);
+            //Each thread will generate a list of contacts, all of which will be merged at the end.
+            std::vector<std::vector<Contact>> thread_contacts(num_threads);
+            //Each thread will generate a list of contacted objects, all of which will be merged at the end.
+            std::vector<std::vector<pair<string, string>>> thread_contacted_objects(num_threads);
+
+            std::cout << "Using " << num_threads << " threads" << std::endl;
+
+            //Iterate over each thread
+            for(int thread_i = 0; thread_i < num_threads; thread_i++){
+                //Get the number of pairs to process in this thread
+                int nb_pairs_per_thread = nbPairs / num_threads;
+                //Get the index of the first pair to process in this thread
+                int first_pair_index = thread_i*nb_pairs_per_thread;
+                //Get the index of the last pair to process in this thread
+                int last_pair_index = (thread_i == num_threads - 1) ? nbPairs : (thread_i+1)*nb_pairs_per_thread;
+                //Launch the thread
+                threads[thread_i] = std::thread(&ContactReportCallbackForVoxelgrid::process_contact_pairs, this, pairs, first_pair_index, last_pair_index, std::ref(thread_contacts[thread_i]), std::ref(thread_contacted_objects[thread_i]));
+            }
+            //Wait for all threads to finish
+            for(auto& thread : threads){
+                thread.join();
+            }
+            //Merge the contact points from all threads
+            for(auto& thread_contact : thread_contacts){
+                gContacts.insert(gContacts.end(), thread_contact.begin(), thread_contact.end());
+            }
+            //Merge the contacted objects from all threads
+            for(auto& thread_contacted_object : thread_contacted_objects){
+                gContactedObjects.insert(gContactedObjects.end(), thread_contacted_object.begin(), thread_contacted_object.end());
+            }
+
+        }else{
+            std::vector<Contact> contacts;
+            std::vector<pair<string, string>> contact_object_ids;
+            process_contact_pairs(pairs, 0, nbPairs, contacts, contact_object_ids);
+            //Add the pair of objects to the list of contacted objects.
+            gContactedObjects.insert(gContactedObjects.end(), contact_object_ids.begin(), contact_object_ids.end());
+            //Add the contact points to the list of contact points
+            gContacts.insert(gContacts.end(), contacts.begin(), contacts.end());
+        }
+	}
+
+    void process_contact_pairs(const PxContactPair* pairs, int first_pair_index, int last_pair_index, std::vector<Contact>& thread_contacts, std::vector<pair<string, string>>& thread_contacted_objects)
+    {
+        for(PxU32 i=first_pair_index;i<last_pair_index;i++){
             //cout << "Contact pair " << i << endl;
             PxContactPair pair = pairs[i];
+  
             //Get the shapes involved in the collision
             PxShape* shape0 = pair.shapes[0];
             PxShape* shape1 = pair.shapes[1];
@@ -167,90 +217,20 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
             float position_threshold = max(position_threshold, 0.1f*max_side);
 
             //Get the contact points
-			PxU32 contactCount = pair.contactCount;
+            PxU32 contactCount = pair.contactCount;
             //cout << contactCount << " contacts between " << id_obj0 << " and " << id_obj1 << endl;
-			if(contactCount)
-			{
-
-                //Add the pair of objects to the list of contacted objects.
-                gContactedObjects.push_back(make_pair(id_obj0, id_obj1));
-
-				contactPoints.resize(contactCount);
-				pair.extractContacts(&contactPoints[0], contactCount);
-
+            if(contactCount)
+            {
                 PointSet3D intersections = all_triangles_overlap_over_AARectangle(*gridCell0, *gridCell1, max_distance_factor);
                 for(auto& p : intersections){
                     //Add a new contact point to the list
                     Contact contact(obj0, obj1, Vector3f(p[0], p[1], p[2]), Vector3f(0,0,1), 0.0f);
-                    gContacts.push_back(contact);
+                    thread_contacts.push_back(contact);
                 }
-                contactCount = 0; // DO NOT CONTINUE TO ADD CONTACTS
-
-				for(PxU32 j=0;j<contactCount;j++)
-				{
-                    //If at least one contact point has been added, we set contact_added to true
-                    bool contact_added = false;
-                    //cout << "Contact point " << j << endl;
-                    //Contact point data
-                    PxVec3 cp_pos = contactPoints[j].position;
-                    PxReal cp_sep = contactPoints[j].separation;
-
-                    //Create a contact instance and add it to the list of contact points
-                    if(abs(cp_sep) < min(obj0->max_separation, obj1->max_separation)){
-                        Vector3f query_point = Vector3f(contactPoints[j].position.x, contactPoints[j].position.y, contactPoints[j].position.z);
-                        //Get the weighted average of the surface points of the two grid cells
-                        OrientedPoint op0 = gridCell0->weighted_average(query_point);
-                        OrientedPoint op1 = gridCell1->weighted_average(query_point);
-                        
-                        //Compute the average of the two oriented points by first aligning the normal in the same half-space
-                        Vector3f pos = (op0.position + op1.position) / 2;
-                        if(op0.normal.dot(op1.normal) < 0){
-                            op1.normal = -op1.normal;
-                        }
-                        Vector3f normal = (op0.normal + op1.normal) / 2;
-                        normal.normalize();
-
-                        //Distance between the two oriented points along the normal
-                        float pos_dist = (op0.position - op1.position).norm();
-                        float normal_dist = 1-op0.normal.dot(op1.normal);
-
-                        bool normals_aligned = (normal_dist < 0.25);
-                        bool close_enough = true; (pos_dist < gridCell0->half_extents.maxCoeff() + gridCell1->half_extents.maxCoeff());
-                        //If the normals are aligned, then the contact is probably surface-to-surface
-                        //If the normals are not aligned, then the contact is probably surface-to-edge 
-                        if(close_enough && normals_aligned){
-                            // cout << "Object 1 Point Position: (" << op0.position[0] << ", " << op0.position[1] << ", " << op0.position[2] << ")" << endl;
-                            // cout << "Object 2 Point Position: (" << op1.position[0] << ", " << op1.position[1] << ", " << op1.position[2] << ")" << endl;
-                            // cout << "Object 1 Point Normal: (" << op0.normal[0] << ", " << op0.normal[1] << ", " << op0.normal[2] << ")" << endl;
-                            // cout << "Object 2 Point Normal: (" << op1.normal[0] << ", " << op1.normal[1] << ", " << op1.normal[2] << ")" << endl;
-                            // cout << "pos_dist: " << pos_dist << " and normal_dist: " << normal_dist << endl;
-                            // cout << "-----------------------------------" << endl;
-
-                            //Compute the distance between this contact and the previous one from this pair of objects
-                            if(j > 0 && contact_added){
-                                Contact previous_contact = gContacts.back();
-                                Vector3f prev_pos = previous_contact.get_position();
-                                float prev_pos_dist = (prev_pos - pos).norm();
-                                //If the distance is too small, we consider that its the same point and we don't add it
-                                if(prev_pos_dist < position_threshold){
-                                    continue;
-                                }
-                            }
-                            //Add a new contact point to the list
-                            Contact contact(obj0, obj1, pos, normal, pos_dist);
-                            gContacts.push_back(contact);
-                            contact_added = true;
-                            //cout << "Contact added" << endl;
-                        }else{
-                            //cout << "Contact not added, pos_dist: " << pos_dist << " and normal_dist: " << normal_dist << endl;
-                        }
-                    }else{
-                        //cout << "Contact not added, separation too large." << endl;
-                    }
-				}
-			}
-		}
-	}
+                thread_contacted_objects.push_back(make_pair(id_obj0, id_obj1));
+            }
+        }
+    }
 
     /// @brief Compute the extrema of the intersection between all combinations of triangles projected on the overlap between the two gridcells.
     /// @param g1 First gridcell in contact
@@ -290,7 +270,6 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                     for(int t2_i = 0; t2_i < t2_list.size(); t2_i++){
                         shared_ptr<Triangle<Vector3f>> t2 = t2_list[t2_i];
                         //Compute the intersection points between the two triangles
-                        //PointSet3D intersections = triangle_overlap_over_AARectangle(aarec, t1, t2);
                         PointSet3D intersections = triangle_triangle_AARectangle_intersection(aarec, t1, t2, max_dist_list[aarec_i]);
                         //Append the intersections to the list
                         all_intersections.insert(intersections);
@@ -405,7 +384,7 @@ Scene::~Scene(){
 /// @param max_distance_factor Distance factor (no unit).
 /// @note Setting this to zero will disable filtering, and is not recommended.
 /// @note See: all_triangles_overlap_over_AARectangle() in Scene.cpp
-void set_max_distance_factor(float max_distance_factor){
+void Scene::set_max_distance_factor(float max_distance_factor){
     assert(max_distance_factor >= 0);
     this->max_distance_factor = max_distance_factor;
 }
@@ -552,7 +531,7 @@ void Scene::merge_similar_contact_points(float position_threshold = 0, float nor
 PxShape* createTetrahedronShape(PxCookingParams params, PxConvexMeshDesc convexMeshDesc){
     //WARNING: I had no luck in making 
     //      bool res = PxValidateConvexMesh(params, convexMeshDesc);
-    // as it always complained about
+    // work, as it always complained about
     //      physx/source/geomutils/src/cooking/GuCookingConvexHullBuilder.cpp#L479
 
     // cout << "Vertices: " << endl;

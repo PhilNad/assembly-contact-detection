@@ -5,6 +5,13 @@
 using namespace Eigen;
 using namespace std;
 
+
+/// @brief Finds the vertices of the intersection polygon resulting from the projection of two triangles onto an axis-aligned rectangle.
+/// @param aarec The axis-aligned rectangle onto which the triangles are projected.
+/// @param t1 A shared pointer to the first triangle to intersect.
+/// @param t2 A shared pointer to the second triangle to intersect.
+/// @param max_distance The maximum distance between the intersection points and the nearest point on either triangle.
+/// @return A 3D point set containing the intersection points (vertices of the intersection polygon).
 PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::shared_ptr<Triangle<Vector3f>> t1, std::shared_ptr<Triangle<Vector3f>> t2, float max_distance)
 {
     //Project the 3D triangles onto the interface plane.
@@ -17,6 +24,12 @@ PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::s
     Vector2f t2_v1_proj = aarec.project_point(t2->vertex_1);
     Vector2f t2_v2_proj = aarec.project_point(t2->vertex_2);
     Triangle<Vector2f> t2_proj = Triangle<Vector2f>(t2_v0_proj, t2_v1_proj, t2_v2_proj);
+
+    //If one of the triangle has a zero area, it is a line and we return an empty list
+    if(t1_proj.signed_area == 0 || t2_proj.signed_area == 0){
+        //cout << "  One of the triangles has a zero area. No intersection." << endl;
+        return PointSet3D();
+    }
 
     //All three shapes are instances of a convex 2d polygon
     Convex2DPolygon poly_rectangle = Convex2DPolygon(aarec);
@@ -53,12 +66,6 @@ PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::s
     // cout << "  Rectangle area: " << poly_rectangle.get_area() << endl;
     // cout << "  Triangle 1 area: " << poly_triangle1.get_area() << endl;
     // cout << "  Triangle 2 area: " << poly_triangle2.get_area() << endl;
-
-    //If one of the triangle has a zero area, it is a line and we return an empty list
-    if(poly_triangle1.get_area() == 0 || poly_triangle2.get_area() == 0){
-        //cout << "  One of the triangles has a zero area. No intersection." << endl;
-        return PointSet3D();
-    }
 
     //Intersection between the rectangle and the first triangle
     Convex2DPolygon rec_t1_intersection;
@@ -118,182 +125,6 @@ PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::s
     // for(auto& p3d : all_3d_intersections){
     //     cout << "  Intersection point: (" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")" << endl;
     // }
-
-    return all_3d_intersections;
-}
-
-PointSet3D triangle_overlap_over_AARectangle(AARectangle& aarec, std::shared_ptr<Triangle<Vector3f>> t1, std::shared_ptr<Triangle<Vector3f>> t2)
-{
-    cout << "  Triangle overlap over AARectangle" << endl;
-    cout << "    T1 Vertices: " << "(" << t1->vertex_0[0] << ", " << t1->vertex_0[1] << ", " << t1->vertex_0[2] << "), "
-                            << "(" << t1->vertex_1[0] << ", " << t1->vertex_1[1] << ", " << t1->vertex_1[2] << "), "
-                            << "(" << t1->vertex_2[0] << ", " << t1->vertex_2[1] << ", " << t1->vertex_2[2] << ")" << endl;
-    cout << "    T2 Vertices: " << "(" << t2->vertex_0[0] << ", " << t2->vertex_0[1] << ", " << t2->vertex_0[2] << "), "
-                            << "(" << t2->vertex_1[0] << ", " << t2->vertex_1[1] << ", " << t2->vertex_1[2] << "), "
-                            << "(" << t2->vertex_2[0] << ", " << t2->vertex_2[1] << ", " << t2->vertex_2[2] << ")" << endl;
-    
-    //Project the 3D triangles onto the interface plane.
-    // Since the triangles are projected onto an Axis-Aligned rectangle,
-    // at least one of the world coordinates of the triangle vertices will be zero.
-    // such that we can now work in 2D.
-    Vector2f t1_v0_proj = aarec.project_point(t1->vertex_0);
-    Vector2f t1_v1_proj = aarec.project_point(t1->vertex_1);
-    Vector2f t1_v2_proj = aarec.project_point(t1->vertex_2);
-    Triangle<Vector2f> t1_proj = Triangle<Vector2f>(t1_v0_proj, t1_v1_proj, t1_v2_proj);
-
-    Vector2f t2_v0_proj = aarec.project_point(t2->vertex_0);
-    Vector2f t2_v1_proj = aarec.project_point(t2->vertex_1);
-    Vector2f t2_v2_proj = aarec.project_point(t2->vertex_2);
-    Triangle<Vector2f> t2_proj = Triangle<Vector2f>(t2_v0_proj, t2_v1_proj, t2_v2_proj);
-
-    //TODO: If the signed_area of a triangle is zero, then it can be simplified to a single edge.
-    //TODO: Cache Triangle overlaps to avoid recomputing them.
-    //TODO: If the rectangle is inside the triangle, then the overlap is the rectangle itself.
-    PointSet2D t1_2d_intersections;
-
-    //For each edge of the first triangle, we compute the intersection points with the second triangle
-    //First edge: v0-v1
-    PointSet2D line_rect_intersections = line_AARectangle_intersection(t1_v0_proj, t1_v1_proj, aarec);
-    if(line_rect_intersections.size() > 0){
-        Vector2f line_start;
-        Vector2f line_end;
-        if(line_rect_intersections.size() == 1){
-            auto it = line_rect_intersections.begin();
-            line_start = *it;
-            line_end   = line_start;
-        }
-        if(line_rect_intersections.size() == 2){
-            auto it = line_rect_intersections.begin();
-            line_start = *it;
-            advance(it, 1);
-            line_end   = *it;
-        }
-        PointSet2D e1_intersections = edge_triangle_intersection(line_start, line_end, t2_proj);
-        t1_2d_intersections.insert(e1_intersections);
-    }
-
-    //Second edge: v1-v2
-    line_rect_intersections =  line_AARectangle_intersection(t1_v1_proj, t1_v2_proj, aarec);
-    if(line_rect_intersections.size() > 0){
-        Vector2f line_start;
-        Vector2f line_end;
-        if(line_rect_intersections.size() == 1){
-            auto it = line_rect_intersections.begin();
-            line_start = *it;
-            line_end   = line_start;
-        }
-        if(line_rect_intersections.size() == 2){
-            auto it = line_rect_intersections.begin();
-            line_start = *it;
-            advance(it, 1);
-            line_end   = *it;
-        }
-        PointSet2D e2_intersections = edge_triangle_intersection(line_start, line_end, t2_proj);
-        t1_2d_intersections.insert(e2_intersections);
-    }
-
-    //Third edge: v2-v0
-    line_rect_intersections =  line_AARectangle_intersection(t1_v2_proj, t1_v0_proj, aarec);
-    if(line_rect_intersections.size() > 0){
-        Vector2f line_start;
-        Vector2f line_end;
-        if(line_rect_intersections.size() == 1){
-            auto it = line_rect_intersections.begin();
-            line_start = *it;
-            line_end   = line_start;
-        }
-        if(line_rect_intersections.size() == 2){
-            auto it = line_rect_intersections.begin();
-            line_start = *it;
-            advance(it, 1);
-            line_end   = *it;
-        }
-        PointSet2D e3_intersections = edge_triangle_intersection(line_start, line_end, t2_proj);
-        t1_2d_intersections.insert(e3_intersections);
-    }
-
-    //Verify that the overlap between the first triangle and the rectangle is significant
-    if(t1_2d_intersections.size() >= 3){
-        //Compute the area of overlap
-        cout << "    Triangle 1 overlaps the rectangle with " << t1_2d_intersections.size() << " intersection points." << endl;
-    }
-
-    PointSet2D t2_2d_intersections;
-
-    //For each edge of the second triangle, we compute the intersection points with the first triangle
-    //First edge: v0-v1
-    line_rect_intersections =  line_AARectangle_intersection(t2_v0_proj, t2_v1_proj, aarec);
-    if(line_rect_intersections.size() > 0){
-        Vector2f line_start;
-        Vector2f line_end;
-        if(line_rect_intersections.size() == 1){
-            auto it = line_rect_intersections.begin();
-            line_start = *it;
-            line_end   = line_start;
-        }
-        if(line_rect_intersections.size() == 2){
-            auto it = line_rect_intersections.begin();
-            line_start = *it;
-            advance(it, 1);
-            line_end   = *it;
-        }
-        PointSet2D e4_intersections = edge_triangle_intersection(line_start, line_end, t1_proj);
-        t2_2d_intersections.insert(e4_intersections);
-    }
-
-    //Second edge: v1-v2
-    line_rect_intersections = line_AARectangle_intersection(t2_v1_proj, t2_v2_proj, aarec);
-    if(line_rect_intersections.size() > 0){
-        Vector2f line_start;
-        Vector2f line_end;
-        if(line_rect_intersections.size() == 1){
-            auto it = line_rect_intersections.begin();
-            line_start = *it;
-            line_end   = line_start;
-        }
-        if(line_rect_intersections.size() == 2){
-            auto it = line_rect_intersections.begin();
-            line_start = *it;
-            advance(it, 1);
-            line_end   = *it;
-        }
-        PointSet2D e5_intersections = edge_triangle_intersection(line_start, line_end, t1_proj);
-        t2_2d_intersections.insert(e5_intersections);
-    }
-
-    //Third edge: v2-v0
-    line_rect_intersections =  line_AARectangle_intersection(t2_v2_proj, t2_v0_proj, aarec);
-    if(line_rect_intersections.size() > 0){
-        Vector2f line_start;
-        Vector2f line_end;
-        if(line_rect_intersections.size() == 1){
-            auto it = line_rect_intersections.begin();
-            line_start = *it;
-            line_end   = line_start;
-        }
-        if(line_rect_intersections.size() == 2){
-            auto it = line_rect_intersections.begin();
-            line_start = *it;
-            advance(it, 1);
-            line_end   = *it;
-        }
-        PointSet2D e6_intersections = edge_triangle_intersection(line_start, line_end, t1_proj);
-        t2_2d_intersections.insert(e6_intersections);
-    }
-
-    //Unproject all points and append them to a list
-    cout << "    Triangle 2 overlaps the rectangle with " << t2_2d_intersections.size() << " intersection points." << endl;
-    PointSet2D all_2d_intersections;
-    all_2d_intersections.insert(t1_2d_intersections);
-    all_2d_intersections.insert(t2_2d_intersections);
-    PointSet3D all_3d_intersections;
-    for(auto& pt_2d : all_2d_intersections){
-        Vector3f p3d = aarec.unproject_point(pt_2d);
-        all_3d_intersections.insert(p3d);
-    }
-    for(auto& pt_3d : all_3d_intersections){
-        cout << "  Intersection point: (" << pt_3d[0] << ", " << pt_3d[1] << ", " << pt_3d[2] << ")" << endl;
-    }
 
     return all_3d_intersections;
 }
