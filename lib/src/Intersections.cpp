@@ -82,7 +82,12 @@ PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::s
     PointSet3D all_3d_intersections;
     for(auto& pt_2d : intersection_vertices){
         Vector3f p3d = aarec.unproject_point(pt_2d);
-        if(t1->shortest_distance_to_plane(p3d) < max_distance && t2->shortest_distance_to_plane(p3d) < max_distance){
+        Eigen::Vector3f closest_pt_t1 = t1->closest_point_in_triangle(p3d);
+        Eigen::Vector3f closest_pt_t2 = t2->closest_point_in_triangle(p3d);
+        float shortest_dist_t1 = (closest_pt_t1 - p3d).norm();
+        float shortest_dist_t2 = (closest_pt_t2 - p3d).norm();
+
+        if(shortest_dist_t1 < max_distance && shortest_dist_t2 < max_distance){
             all_3d_intersections.insert(p3d);
         }
     }

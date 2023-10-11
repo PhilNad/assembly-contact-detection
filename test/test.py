@@ -7,7 +7,7 @@ import assembly_cd as acd
 import time
 
 obj1_name = "cube1"
-obj2_name = "cube3"
+obj2_name = "cone"
 obj_names = [obj1_name, obj2_name]
 object_geometries = []
 

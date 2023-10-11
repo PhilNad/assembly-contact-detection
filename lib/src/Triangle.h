@@ -24,5 +24,6 @@ class Triangle
         Triangle(T vertex_0, T vertex_1, T vertex_2);
         bool contains(const T& point, bool boundary_included);
         float shortest_distance_to_plane(const Eigen::Vector3f& point);
+        Eigen::Vector3f closest_point_in_triangle(Eigen::Vector3f p);
 };
 
