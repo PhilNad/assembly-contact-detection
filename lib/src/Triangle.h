@@ -1,5 +1,6 @@
 #pragma once
 #include <eigen3/Eigen/Eigen>
+#include "PointSet.h"
 
 template <typename T>
 class Triangle
@@ -25,5 +26,7 @@ class Triangle
         bool contains(const T& point, bool boundary_included);
         float shortest_distance_to_plane(const Eigen::Vector3f& point);
         Eigen::Vector3f closest_point_in_triangle(Eigen::Vector3f p);
+        int nb_points_inside(const PointSet2D& points);
+        int nb_points_inside(const PointSet3D& points);
 };
 

@@ -60,23 +60,46 @@ PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::s
         return PointSet3D();
     }
 
-    //Compute the intersection between the rectangle and the first triangle
-    Convex2DPolygon rec_t1_intersection = poly_rectangle.polygon_intersection(poly_triangle1);
+    //Intersection between the rectangle and the first triangle
+    Convex2DPolygon rec_t1_intersection;
 
-    if(rec_t1_intersection.get_area() == 0){
-        //cout << "  No intersection between the rectangle and the first triangle." << endl;
+    //If the first triangle contains all vertices of the rectangle, then the intersection is the rectangle itself
+    bool first_intersection_is_rectangle = false;
+    int rec_points_in_t1 = t1_proj.nb_points_inside(aarec.get_2d_vertices());
+    if(rec_points_in_t1 == 4){
+        //cout << "  Triangle 1 contains all vertices of the rectangle. Intersection is the rectangle itself." << endl;
+        rec_t1_intersection = poly_rectangle;
+        first_intersection_is_rectangle = true;
+    }else if(rec_points_in_t1 == 0){
+        //cout << "  Triangle 1 does not contain any vertex of the rectangle. No intersection." << endl;
         return PointSet3D();
+    }else{
+        //Otherwise, compute the intersection between the rectangle and the first triangle
+        rec_t1_intersection = poly_rectangle.polygon_intersection(poly_triangle1);
     }
 
-    //Compute the intersection between the rectangle-triangle1 intersection and the second triangle
-    Convex2DPolygon rec_t1_t2_intersection = rec_t1_intersection.polygon_intersection(poly_triangle2);
 
-    if(rec_t1_t2_intersection.get_area() == 0){
-        //cout << "  No intersection between the rectangle-triangle1 intersection and the second triangle." << endl;
-        return PointSet3D();
+    //If the outcome of the first intersection was the full aarec, then we can proceed with the same logic again.
+    PointSet2D intersection_vertices;
+    if(first_intersection_is_rectangle){
+        int rec_points_in_t2 = t2_proj.nb_points_inside(aarec.get_2d_vertices());
+        if(rec_points_in_t2 == 4){
+            //cout << "  Triangle 2 contains all vertices of the rectangle. Intersection is the rectangle itself." << endl;
+            intersection_vertices = aarec.get_2d_vertices();
+        }else if(rec_points_in_t2 == 0){
+            //cout << "  Triangle 2 does not contain any vertex of the rectangle. No intersection." << endl;
+            return PointSet3D();
+        }
+    }else{
+        //Compute the intersection between the rectangle-triangle1 intersection and the second triangle
+        Convex2DPolygon rec_t1_t2_intersection = rec_t1_intersection.polygon_intersection(poly_triangle2);
+        intersection_vertices = rec_t1_intersection.vertices();
+
+        if(rec_t1_t2_intersection.get_area() == 0){
+            //cout << "  No intersection between the rectangle-triangle1 intersection and the second triangle." << endl;
+            return PointSet3D();
+        }
     }
-
-    PointSet2D intersection_vertices = rec_t1_t2_intersection.vertices();
 
     //Unproject all points and append them to a list
     PointSet3D all_3d_intersections;

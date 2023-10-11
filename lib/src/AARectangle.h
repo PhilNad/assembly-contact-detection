@@ -2,6 +2,7 @@
 #include "PxPhysicsAPI.h"
 #include <eigen3/Eigen/Eigen>
 #include "Triangle.h"
+#include "PointSet.h"
 
 class AARectangle
 {
@@ -17,6 +18,8 @@ class AARectangle
         float area;
         Eigen::Vector2f u_extents;
         Eigen::Vector2f v_extents;
+        //Origin of the AARectangle relative to the world frame projected onto the plane.
+        Eigen::Vector2f centre_2d;
         AARectangle(physx::PxPlane plane, Eigen::Vector3f centre, Eigen::Vector3f half_extents);
         Eigen::Vector2f project_point(const Eigen::Vector3f& point);
         Eigen::Vector3f unproject_point(const Eigen::Vector2f& point);
@@ -30,4 +33,6 @@ class AARectangle
         float get_min_v();
         float get_max_v();
         Eigen::Vector3f get_uv_origin_in_world();
+        PointSet2D get_2d_vertices();
+        PointSet3D get_3d_vertices();
 };

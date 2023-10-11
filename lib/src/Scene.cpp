@@ -144,6 +144,10 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
             Object* obj0 = static_cast<Object*>(actor0->userData);
             Object* obj1 = static_cast<Object*>(actor1->userData);
 
+            //Get useful scene-related parameters
+            Scene* scene = obj0->scene;
+            float max_distance_factor = scene->max_distance_factor;
+
             //Get the grid cells involved in the collision
             GridCell* gridCell0 = static_cast<GridCell*>(shape0->userData);
             GridCell* gridCell1 = static_cast<GridCell*>(shape1->userData);
@@ -174,7 +178,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 				contactPoints.resize(contactCount);
 				pair.extractContacts(&contactPoints[0], contactCount);
 
-                PointSet3D intersections = all_triangles_overlap_over_AARectangle(*gridCell0, *gridCell1);
+                PointSet3D intersections = all_triangles_overlap_over_AARectangle(*gridCell0, *gridCell1, max_distance_factor);
                 for(auto& p : intersections){
                     //Add a new contact point to the list
                     Contact contact(obj0, obj1, Vector3f(p[0], p[1], p[2]), Vector3f(0,0,1), 0.0f);
@@ -248,11 +252,12 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 		}
 	}
 
-    PointSet3D all_triangles_overlap_over_AARectangle(GridCell& g1, GridCell& g2)
+    /// @brief Compute the extrema of the intersection between all combinations of triangles projected on the overlap between the two gridcells.
+    /// @param g1 First gridcell in contact
+    /// @param g2 Second gridcell in contact
+    /// @return Point set of 3D points representing the extrema of the intersection between the two gridcells
+    PointSet3D all_triangles_overlap_over_AARectangle(GridCell& g1, GridCell& g2, float max_distance_factor = 0.2)
     {
-        //Minimum area of the intersection between two gridcells for which we consider the intersection
-        float minimum_area = 1e-6;
-
         //Triangles associated with the two gridcells
         vector<shared_ptr<Triangle<Vector3f>>> t1_list = g1.triangles;
         vector<shared_ptr<Triangle<Vector3f>>> t2_list = g2.triangles;
@@ -266,9 +271,9 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
         //cout << "AARectangle: Plane: (" << aarec_x.plane.n.x << ", " << aarec_x.plane.n.y << ", " << aarec_x.plane.n.z << ", " << aarec_x.plane.d << ")" << " Centre: (" << aarec_x.centre[0] << ", " << aarec_x.centre[1] << ", " << aarec_x.centre[2] << ") Half Extents: (" << aarec_x.half_extents[0] << ", " << aarec_x.half_extents[1] << ", " << aarec_x.half_extents[2] << ")" << endl;
 
         //Maximum distance from an intersection point to the triangle planes
-        float x_max_dist = max(min(g1.half_extents[1], g2.half_extents[1]), min(g1.half_extents[2], g2.half_extents[2]))/5;
-        float y_max_dist = max(min(g1.half_extents[0], g2.half_extents[0]), min(g1.half_extents[2], g2.half_extents[2]))/5;
-        float z_max_dist = max(min(g1.half_extents[0], g2.half_extents[0]), min(g1.half_extents[1], g2.half_extents[1]))/5;
+        float x_max_dist = max(min(g1.half_extents[1], g2.half_extents[1]), min(g1.half_extents[2], g2.half_extents[2]))*max_distance_factor;
+        float y_max_dist = max(min(g1.half_extents[0], g2.half_extents[0]), min(g1.half_extents[2], g2.half_extents[2]))*max_distance_factor;
+        float z_max_dist = max(min(g1.half_extents[0], g2.half_extents[0]), min(g1.half_extents[1], g2.half_extents[1]))*max_distance_factor;
 
         //Iterate over each AARectangle and accumulate intersections with the triangles
         vector<AARectangle> aarec_list = {aarec_x, aarec_y, aarec_z};
@@ -277,6 +282,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
         for(int aarec_i = 0; aarec_i < aarec_list.size(); aarec_i++){
             AARectangle aarec = aarec_list[aarec_i];
             //If the intersection area is too small, we don't consider the intersection
+            float minimum_area = max_dist_list[aarec_i]*max_dist_list[aarec_i];
             if(aarec.area > minimum_area){
                 //Iterates over all triangle combinations
                 for(int t1_i = 0; t1_i < t1_list.size(); t1_i++){
@@ -392,6 +398,16 @@ Scene::Scene(){
 }
 Scene::~Scene(){
     cleanupPhysics();
+}
+
+/// @brief Sets a factor that multiplies that maximal distance an intersection point can be from the objects considered in contact.
+// The smaller the factor, the more contact points are filtered out.
+/// @param max_distance_factor Distance factor (no unit).
+/// @note Setting this to zero will disable filtering, and is not recommended.
+/// @note See: all_triangles_overlap_over_AARectangle() in Scene.cpp
+void set_max_distance_factor(float max_distance_factor){
+    assert(max_distance_factor >= 0);
+    this->max_distance_factor = max_distance_factor;
 }
 
 /// @brief Step the simulation by a given time step.
@@ -616,10 +632,9 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
     // When adding an element to the vector, the vector may reallocate memory and move the elements which will change their addresses.
     // However, we need to supply the callback with a persistent pointer to the object.
     // Therefore, we store pointers to preallocated objects in the vector instead of the objects themselves.
-    shared_ptr<Object> obj = make_shared<Object>(id, pose, vertices, triangles, is_fixed, mass, com, material_name);
+    shared_ptr<Object> obj = make_shared<Object>(this, id, pose, vertices, triangles, is_fixed, mass, com, material_name);
     object_ptrs.push_back(obj);
 
-    
     //Record the triangle mesh in the object
     obj->set_tri_mesh(vertices, triangles);
     //obj->remesh_surface_trimesh();

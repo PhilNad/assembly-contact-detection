@@ -22,6 +22,7 @@ class Scene
         void startupPhysics();
         void cleanupPhysics();
     public:
+        float max_distance_factor = 0.2;
         Scene();
         ~Scene();
         void add_object(
@@ -35,7 +36,7 @@ class Scene
             Vector3f com = Vector3f::Zero(),
             string material_name = "wood"
         );
-
+        void set_max_distance_factor(float max_distance_factor);
         Matrix4f get_object_pose(string id);
         void step_simulation(float dt);
         set<string> get_contacted_objects(string target_object);

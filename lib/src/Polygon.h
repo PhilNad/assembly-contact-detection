@@ -26,6 +26,7 @@ class Convex2DPolygon
         std::vector<std::pair<Point2D, Point2D>> edges();
         PointSet2D vertices();
         bool contains(const Point2D& point);
+        int nb_points_inside(const PointSet2D& points);
         PointSet2D line_intersection(const Eigen::Vector2f& segment_p0, const Eigen::Vector2f& segment_p1);
         Convex2DPolygon polygon_intersection(Convex2DPolygon& polygon);
         float get_area();

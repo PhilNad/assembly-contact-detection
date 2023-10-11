@@ -14,6 +14,9 @@ using namespace std;
 using namespace Eigen;
 using namespace physx;
 
+//Forward declaration
+class Scene;
+
 class Object
 {
     private:
@@ -30,7 +33,9 @@ class Object
         Vector3f com;
         string material_name;
         float max_separation;
+        Scene* scene;
         Object(
+            Scene* scene,
             string id, 
             Matrix4f pose, 
             MatrixX3f vertices, 

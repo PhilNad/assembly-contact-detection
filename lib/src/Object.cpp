@@ -9,7 +9,7 @@
 /// @param mass mass of the object (default: 1)
 /// @param com 3x1 vector representing the center of mass of the object (default: [0, 0, 0])
 /// @param material_name name of the material of the object (default: wood)
-Object::Object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i triangles, 
+Object::Object(Scene* scene, string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i triangles, 
         bool is_fixed = false, 
         float mass = 1.0f, 
         Vector3f com = (Vector3f() << 0.0f, 0.0f, 0.0f).finished(), 
@@ -24,7 +24,10 @@ Object::Object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i triangles
     com{com},
     material_name{material_name},
     max_separation{0.04f}
-{}
+{
+    //Store a pointer to the scene for access from within the contact callback
+    this->scene = scene;
+}
 Object::~Object(){}
 
 /// @brief Record the description of the tetrahedral mesh that represents the volume of the object

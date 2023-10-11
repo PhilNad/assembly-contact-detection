@@ -110,6 +110,36 @@ Eigen::Vector3f Triangle<Eigen::Vector3f>::closest_point_in_triangle(Eigen::Vect
     return a + ab * v + ac * w; // = u*a + v*b + w*c, u = va * denom = 1.0f - v - w
 }
 
+/// @brief Determine if the polygon contains a set of points and return the number of points inside the polygon.
+/// @param points 2D PointSet of points to check.
+/// @return The number of points inside the polygon.
+template <>
+int Triangle<Eigen::Vector2f>::nb_points_inside(const PointSet2D& points)
+{
+    int nb_points_inside = 0;
+    for (auto& point : points){
+        if (this->contains(Eigen::Vector2f(point[0], point[1]), true) == true){
+            nb_points_inside++;
+        }
+    }
+    return nb_points_inside;
+}
+
+/// @brief Determine if the polygon contains a set of points and return the number of points inside the polygon.
+/// @param points 3D PointSet of points to check.
+/// @return The number of points inside the polygon.
+template <>
+int Triangle<Eigen::Vector3f>::nb_points_inside(const PointSet3D& points)
+{
+    int nb_points_inside = 0;
+    for (auto& point : points){
+        if (this->contains(Eigen::Vector3f(point[0], point[1], point[2]), true) == true){
+            nb_points_inside++;
+        }
+    }
+    return nb_points_inside;
+}
+
 /// @brief Determines whether a given point is inside a triangle defined by three vertices.
 /// @param point The point to check.
 /// @param boundary_included If true, points on the triangle edges are considered to be inside the triangle.

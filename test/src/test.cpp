@@ -268,8 +268,8 @@ void test_segment_rectangle_intersection()
 }
 
 int main(int argc, char** argv) {
-    test_triangle_triangle_intersections();
-    return 0;
+    //test_triangle_triangle_intersections();
+    //return 0;
     // Initialize the scene
     Scene scene;
 

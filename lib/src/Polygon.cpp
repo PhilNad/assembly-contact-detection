@@ -197,6 +197,20 @@ bool Convex2DPolygon::contains(const Point2D& point)
     return true;
 }
 
+/// @brief Determine if the polygon contains a set of points and return the number of points inside the polygon.
+/// @param points 2D PointSet of points to check.
+/// @return The number of points inside the polygon.
+int Convex2DPolygon::nb_points_inside(const PointSet2D& points)
+{
+    int nb_points_inside = 0;
+    for (auto& point : points){
+        if (this->contains(point) == true){
+            nb_points_inside++;
+        }
+    }
+    return nb_points_inside;
+}
+
 /// @brief Find the intersection points (if any) between a line segment and the polygon.
 /// @param segment_p0 Start point of the line segment.
 /// @param segment_p1 End point of the line segment.

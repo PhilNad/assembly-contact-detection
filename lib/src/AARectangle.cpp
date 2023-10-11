@@ -10,18 +10,21 @@ AARectangle::AARectangle(physx::PxPlane plane, Eigen::Vector3f centre, Eigen::Ve
         this->u << 0, 0, 1;
         this->v << 0, 1, 0;
         this->area = 4*this->half_extents[1]*this->half_extents[2];
+        this->centre_2d = Eigen::Vector2f(centre[1], centre[2]);
     }else 
     if(abs(abs(plane.n[1]) - 1) < this->EPSILON){
         //Normal is [0,1,0]
         this->u << 1, 0, 0;
         this->v << 0, 0, 1;
         this->area = 4*this->half_extents[0]*this->half_extents[2];
+        this->centre_2d = Eigen::Vector2f(centre[0], centre[2]);
     }else
     if(abs(abs(plane.n[2]) - 1) < this->EPSILON){
         //Normal is [0,0,1]
         this->u << 1, 0, 0;
         this->v << 0, 1, 0;
         this->area = 4*this->half_extents[0]*this->half_extents[1];
+        this->centre_2d = Eigen::Vector2f(centre[0], centre[1]);
     }else{
         //If the rectangle is Axis Aligned, this should never be reached
         // unless the PxPlane was wrongly defined.
@@ -136,6 +139,34 @@ Eigen::Vector3f AARectangle::get_uv_origin_in_world()
 {
     //Return the coordinates of the centre of the rectangle in the world frame
     return this->unproject_point(Eigen::Vector2f(0, 0));
+}
+
+/// @brief Compute and return the 2D vertices of the rectangle in the local frame.
+/// @return 2D PointSet containing the 2D vertices of the rectangle in the local frame.
+/// @note The centre of the local frame is always [0,0].
+PointSet2D AARectangle::get_2d_vertices()
+{
+    //Create a new PointSet2D
+    PointSet2D vertices;
+    vertices.insert(Eigen::Vector2f(u_extents[0], v_extents[0]));
+    vertices.insert(Eigen::Vector2f(u_extents[0], v_extents[1]));
+    vertices.insert(Eigen::Vector2f(u_extents[1], v_extents[1]));
+    vertices.insert(Eigen::Vector2f(u_extents[1], v_extents[0]));
+    return vertices;
+}
+
+/// @brief Compute and return the 3D vertices of the rectangle in the world frame.
+/// @return 3D PointSet containing the 3D vertices of the rectangle in the world frame.
+PointSet3D AARectangle::get_3d_vertices()
+{
+    //Compute the 2D vertices of the rectangle in the world frame
+    PointSet2D vertices_2d = this->get_2d_vertices();
+    //Unproject the 2D vertices to the world frame
+    PointSet3D vertices;
+    for(auto& vertex_2d : vertices_2d){
+        vertices.insert(this->unproject_point(vertex_2d));
+    }
+    return vertices;
 }
 
 /// @brief Get the minimal boundary of the rectangle along the u axis relative to the centre of the rectangle.
