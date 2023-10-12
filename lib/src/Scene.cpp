@@ -174,6 +174,12 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
         }
 	}
 
+    /// @brief Process a subset of the contact pairs, possibly in a separate thread.
+    /// @param pairs Array of contact pairs
+    /// @param first_pair_index Index of the first pair to process
+    /// @param last_pair_index Index of the last pair to process
+    /// @param thread_contacts [Output] List of contacts to append to
+    /// @param thread_contacted_objects [Output] List of contacted objects to append to
     void process_contact_pairs(const PxContactPair* pairs, int first_pair_index, int last_pair_index, std::vector<Contact>& thread_contacts, std::vector<pair<string, string>>& thread_contacted_objects)
     {
         for(PxU32 i=first_pair_index;i<last_pair_index;i++){

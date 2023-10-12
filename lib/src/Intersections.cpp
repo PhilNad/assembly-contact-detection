@@ -85,7 +85,6 @@ PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::s
         rec_t1_intersection = poly_rectangle.polygon_intersection(poly_triangle1);
     }
 
-
     //If the outcome of the first intersection was the full aarec, then we can proceed with the same logic again.
     PointSet2D intersection_vertices;
     if(first_intersection_is_rectangle){

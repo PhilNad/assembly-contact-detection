@@ -13,8 +13,8 @@ cone.translate((0.5, 0.5, 1))
 
 #Instanciate the scene and add objects
 scene = acd.Scene()
-scene.add_object("cube", np.identity(4), np.asarray(cube.vertices), np.asarray(cube.triangles))
-scene.add_object("cone", np.identity(4), np.asarray(cone.vertices), np.asarray(cone.triangles))
+scene.add_object("cube", np.identity(4), np.asarray(cube.vertices), np.asarray(cube.triangles), 30)
+scene.add_object("cone", np.identity(4), np.asarray(cone.vertices), np.asarray(cone.triangles), 30)
 
 #Detect contact points between the two objects
 contact_points = scene.get_contact_points("cube", "cone")
