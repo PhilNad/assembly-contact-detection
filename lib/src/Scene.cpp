@@ -126,6 +126,12 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 	void onContact(const PxContactPairHeader& pairHeader, const PxContactPair* pairs, PxU32 nbPairs) 
 	{
 		PX_UNUSED((pairHeader));
+
+        //If there is no contact but the callback was nonetheless trigerred, we return.
+        if(nbPairs == 0){
+            return;
+        }
+
         //Maximum number of threads to use (can be zero)
         const int num_threads = std::thread::hardware_concurrency();
 
@@ -155,20 +161,25 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                 thread.join();
             }
             //Merge the contact points from all threads
+            int nb_added_points = 0;
             for(auto& thread_contact : thread_contacts){
+                nb_added_points += thread_contact.size();
                 gContacts.insert(gContacts.end(), thread_contact.begin(), thread_contact.end());
             }
-            //Merge the contacted objects from all threads
-            for(auto& thread_contacted_object : thread_contacted_objects){
-                gContactedObjects.insert(gContactedObjects.end(), thread_contacted_object.begin(), thread_contacted_object.end());
+            if(nb_added_points > 0){
+                //Merge the contacted objects from all threads
+                for(auto& thread_contacted_object : thread_contacted_objects){
+                    gContactedObjects.insert(gContactedObjects.end(), thread_contacted_object.begin(), thread_contacted_object.end());
+                }
             }
-
         }else{
             std::vector<Contact> contacts;
             std::vector<pair<string, string>> contact_object_ids;
             process_contact_pairs(pairs, 0, nbPairs, contacts, contact_object_ids);
             //Add the pair of objects to the list of contacted objects.
-            gContactedObjects.insert(gContactedObjects.end(), contact_object_ids.begin(), contact_object_ids.end());
+            if(contacts.size() > 0){
+                gContactedObjects.insert(gContactedObjects.end(), contact_object_ids.begin(), contact_object_ids.end());
+            }
             //Add the contact points to the list of contact points
             gContacts.insert(gContacts.end(), contacts.begin(), contacts.end());
         }
