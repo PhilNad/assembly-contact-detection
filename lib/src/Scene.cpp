@@ -20,7 +20,7 @@ vector<pair<string, string>> gContactedObjects;
 
 static PxDefaultAllocator		gAllocator;
 static PxDefaultErrorCallback	gErrorCallback;
-static PxFoundation*			gFoundation;
+static PxFoundation*			gFoundation = NULL;
 static PxPhysics*				gPhysics;
 static PxDefaultCpuDispatcher*	gDispatcher;
 static PxScene*					gScene;
@@ -352,7 +352,11 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 /// @brief Initialize the physics engine.
 void Scene::startupPhysics()
 {
-    gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
+    //Only one foundation object can be spawned per process. So we should keep track of it
+    // for the lifetime of the process (even if we destroy the scene).
+    if(gFoundation == NULL){
+        gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
+    }
 
     gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale());
 
@@ -378,15 +382,25 @@ void Scene::startupPhysics()
 
     gScene = gPhysics->createScene(sceneDesc);
     gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
+
+    gContacts.clear();
+    gContactedObjects.clear();
+    gContactPositions.clear();
 }
 
 /// @brief Clean up the physics engine by releasing memory.
 void Scene::cleanupPhysics()
 {
+    //Clear the list of contacted objects and contact points
+    gContacts.clear();
+    gContactedObjects.clear(); 
+    gContactPositions.clear();
+
     PX_RELEASE(gScene);
     PX_RELEASE(gDispatcher);
     PX_RELEASE(gPhysics);
-    PX_RELEASE(gFoundation);
+    //As noted in startupPhysics(), we should not release the foundation object.
+    //PX_RELEASE(gFoundation);
 }
 
 Scene::Scene(){
