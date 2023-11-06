@@ -79,6 +79,13 @@ if "cone" in obj_names:
     cone.triangles = o3d.utility.Vector3iVector(cone_triangles)
     object_geometries.append(cone)
 
+    cone_pose = physxScene.get_object_pose("cone")
+    #Translate the cone to the right
+    cone_pose[0, 3] += 0.5
+    physxScene.set_object_pose("cone", cone_pose)
+    cone_pose = physxScene.get_object_pose("cone")
+    cone.transform(cone_pose)
+
 if "cube2" in obj_names:    
     start_time = time.time()
     physxScene.add_object("cube2", 

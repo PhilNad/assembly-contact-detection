@@ -432,31 +432,18 @@ Vector3f Object::get_voxel_side_lengths()
     return cube_side_lengths;
 }
 
+/// @brief Return the number of cells per unit of length of the occupancy grid.
+/// @return OccupancyGrid resolution
+int Object::get_grid_resolution()
+{
+    return this->occupancy_grid->resolution;
+}
+
 /// @brief Set the maximal distance from the object to a valid contact point
 /// @param max_separation Distance in the object's units
 void Object::set_max_separation(float max_separation)
 {
     this->max_separation = abs(max_separation);
-}
-
-/// @brief Set the pose of the object
-/// @param pose 4x4 matrix representing the pose of the object
-void Object::set_pose(Matrix4f pose)
-{
-    if(this->is_valid_pose_matrix(pose))
-        this->pose = pose;
-    else
-        throw runtime_error("Invalid pose matrix.");
-}
-
-/// @brief Get the vertices of the triangle mesh in world coordinates
-/// @return Nx3 matrix representing the vertices of the object in world coordinates
-MatrixX3f Object::get_world_vertices()
-{
-    Matrix3f R = this->pose.block<3, 3>(0, 0);
-    Vector3f t = this->pose.block<3, 1>(0, 3);
-    MatrixX3f vert_wrt_world = (R * this->tri_vertices.transpose()).transpose().rowwise() + t.transpose();
-    return vert_wrt_world;
 }
 
 /// @brief  Test if the supplied matrix is a 4x4 homogeneous transformation matrix.

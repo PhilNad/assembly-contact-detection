@@ -130,6 +130,8 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
         //If there is no contact but the callback was nonetheless trigerred, we return.
         if(nbPairs == 0){
             return;
+        }else{
+            cout << "Contact detected: " << nbPairs << " pairs" << endl;
         }
 
         //Maximum number of threads to use (can be zero)
@@ -410,6 +412,17 @@ Scene::~Scene(){
     cleanupPhysics();
 }
 
+/// @brief Clear all recorded contacts such that the next call to step_simulation() will record new contacts.
+void Scene::clear_contacts()
+{
+    //Clear the list of contacted objects and contact points
+    gContacts.clear();
+    gContactedObjects.clear(); 
+    gContactPositions.clear();
+
+    cout << "Cleared contacts" << endl;
+}
+
 /// @brief Sets a factor that multiplies that maximal distance an intersection point can be from the objects considered in contact.
 // The smaller the factor, the more contact points are filtered out.
 /// @param max_distance_factor Distance factor (no unit).
@@ -427,9 +440,7 @@ void Scene::step_simulation(float dt)
     assert(dt > 0);
 
     //Clear the list of contacted objects and contact points
-    gContacts.clear();
-    gContactedObjects.clear(); 
-    gContactPositions.clear();
+    clear_contacts();
 
     gScene->simulate(dt);
     gScene->fetchResults(true);
@@ -611,6 +622,7 @@ PxShape* createVoxelShape(GridCell* cell)
         throw runtime_error("Error creating shape");
 
     shape->userData = cell;
+    //This is the pose relative to the actor's frame. If the actor is moved, the shape will move with it.
     shape->setLocalPose(PxTransform(PxVec3(cell->centre[0], cell->centre[1], cell->centre[2])));
     //Since the voxel will be at a half-extent away from the surface of the object,
     // we set the contact offset to zero, the minimal contact distance is actually the half-extent.
@@ -629,15 +641,25 @@ PxShape* createVoxelShape(GridCell* cell)
 /// @brief Add an object to the scene
 /// @param id unique identifier for the object
 /// @param pose 4x4 matrix representing the pose of the object
-/// @param vertices Nx3 matrix representing the vertices of the object
+/// @param vertices Nx3 matrix representing the vertices of the object WRT the object frame
 /// @param triangles Mx3 matrix representing the triangles of the object
 /// @param resolution resolution of the occupancy grid (default: 15)
 /// @param is_fixed boolean representing whether the object is fixed in space (default: false)
 /// @param mass mass of the object (default: 1)
-/// @param com 3x1 vector representing the center of mass of the object (default: [0, 0, 0])
+/// @param com 3x1 vector representing the center of mass of the object WRT the object frame (default: [0, 0, 0])
 /// @param material_name name of the material of the object (default: wood)
 void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i triangles, int resolution, bool is_fixed, float mass, Vector3f com, string material_name)
 {
+    assert(vertices.rows() > 0);
+    assert(triangles.rows() > 0);
+    assert(resolution > 0);
+    assert(mass > 0);
+
+    //The vertices are given relative to the object frame, so we transform them to the world frame
+    Matrix3f pose_R = pose.block<3,3>(0,0);
+    Vector3f pose_t = pose.block<3,1>(0,3);
+    vertices = (pose_R*vertices.transpose()).transpose().rowwise() + pose_t.transpose();
+
     //Create an object instance and add it to the scene
     // When adding an element to the vector, the vector may reallocate memory and move the elements which will change their addresses.
     // However, we need to supply the callback with a persistent pointer to the object.
@@ -650,11 +672,11 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
     //obj->remesh_surface_trimesh();
 
     //Create a occupancy grid
-    auto t1 = chrono::high_resolution_clock::now();
+    // auto t1 = chrono::high_resolution_clock::now();
     shared_ptr<OccupancyGrid> grid = obj->create_occupancy_grid(resolution, OccupancyGrid::sampling_method::random);
-    auto t2 = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
-    cout << "Occupancy grid created in " << duration << " ms" << endl;
+    // auto t2 = chrono::high_resolution_clock::now();
+    // auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+    // cout << "Occupancy grid created in " << duration << " ms" << endl;
 
     PxTolerancesScale scale;
     PxCookingParams params(scale);
@@ -670,13 +692,9 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
         convexShapes.pushBack(voxelShape);
     }
 
-    //Pose of the object/actor with respect to the world frame
-    PxTransform pxPose = PxTransform(PxMat44(
-        PxVec4(pose(0, 0), pose(0, 1), pose(0, 2), pose(0, 3)),
-        PxVec4(pose(1, 0), pose(1, 1), pose(1, 2), pose(1, 3)),
-        PxVec4(pose(2, 0), pose(2, 1), pose(2, 2), pose(2, 3)),
-        PxVec4(pose(3, 0), pose(3, 1), pose(3, 2), pose(3, 3))
-    ));
+    //The pose of the object/actor is always set to identity
+    // but the triangles are transformed to the correct pose.
+    PxTransform pxPose = PxTransform(PxIdentity);
     
     //If the object is fixed, there is no dynamics involved
     if(is_fixed){
@@ -684,6 +702,9 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
         //Attach all shapes in the object to the actor
         for(int i = 0; i < convexShapes.size(); i++){
             actor->attachShape(*convexShapes[i]);
+            //We release the shape after it has been attached such that when the actor
+            // is released, the shape is also released.
+            convexShapes[i]->release();
         }
         gScene->addActor(*actor);
         actor->setName(obj->id.c_str());
@@ -711,6 +732,142 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
         actor->setName(obj->id.c_str());
         actor->userData = obj.get();
     }
+
+    //The contacts are no longer valid, so clear them
+    clear_contacts();
+}
+
+/// @brief Get the actor with a specified name from the scene
+/// @param name name of the actor / object
+/// @return pointer to the actor or NULL if not found
+PxRigidActor* Scene::get_actor(string name)
+{
+    //Get the number of actors in the scene that are either dynamic or static
+    PxU32 nbActors = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
+
+    //Get all rigid actors in the scene
+    PxActor** actors = new PxActor*[nbActors];
+    PxU32 nbActorsReturned = gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, actors, nbActors);
+
+    //Iterate over actors and find the one with the specified name
+    for (int i = 0; i < nbActorsReturned; i++)
+    {
+        PxRigidActor* actor = static_cast<PxRigidActor*>(actors[i]);
+        if (actor->getName() == name)
+        {
+            return actor;
+        }
+    }
+    return NULL;
+}
+
+/// @brief Get the shapes attached to an actor
+/// @param actor pointer to the actor
+/// @return vector of pointers to the shapes attached to the actor
+vector<PxShape*> Scene::get_actor_shapes(PxRigidActor* actor)
+{
+    vector<PxShape*> shapes;
+    //Get the number of shapes attached to the actor
+    PxU32 nbShapes = actor->getNbShapes();
+    //Get all shapes attached to the actor
+    PxShape** shapesArray = new PxShape*[nbShapes];
+    PxU32 nbShapesReturned = actor->getShapes(shapesArray, nbShapes);
+    //Iterate over shapes and add them to the vector
+    for (int i = 0; i < nbShapesReturned; i++)
+    {
+        shapes.push_back(shapesArray[i]);
+    }
+    return shapes;
+}
+
+/// @brief Remove an object from the scene along with its attached shapes
+/// @param id unique identifier for the object
+void Scene::remove_object(string id)
+{
+    //Get the actor with the specified name
+    PxRigidActor* actor = get_actor(id);
+    if (actor == NULL)
+    {
+        cout << "Object with id " << id << " not found" << endl;
+        return;
+    }
+
+    //Get the shapes attached to the actor
+    vector<PxShape*> shapes = get_actor_shapes(actor);
+    //Remove the shapes from the actor
+    for (int i = 0; i < shapes.size(); i++)
+    {
+        actor->detachShape(*shapes[i]);
+    }
+
+    //Remove the actor from the scene
+    gScene->removeActor(*actor);
+    actor->release();
+
+    //Remove the object from the list of objects
+    for (int i = 0; i < this->object_ptrs.size(); i++)
+    {
+        if (this->object_ptrs[i]->id == id)
+        {
+            this->object_ptrs.erase(this->object_ptrs.begin() + i);
+            break;
+        }
+    }
+
+    //The contacts are no longer valid, so clear them
+    clear_contacts();
+}
+
+/// @brief Set the pose of an object by recreating a new object.
+/// @param id unique identifier for the object
+/// @param pose 4x4 matrix representing the pose of the object
+/// @note This is a relatively expensive operation.
+void Scene::set_object_pose(string id, Matrix4f pose)
+{
+    //Although it might seems to be inefficient, we need to recreate the object
+    // as the OccupancyGrid has to be axis-aligned, making simple transformation
+    // of the grid cells impossible. Furthermore, the shapes need to refer to the
+    // new grid cells for the contact report callback to work properly.
+
+    //Get object by ID
+    Object* obj = get_object_by_id(id);
+
+    if(obj != nullptr){
+        //Get object mesh
+        Matrix4f previous_pose = obj->pose;
+        MatrixX3f vertices  = obj->tri_vertices;
+        MatrixX3i triangles = obj->tri_triangles;
+        int resolution      = obj->get_grid_resolution();
+        bool is_fixed       = obj->is_fixed;
+        float mass          = obj->mass;
+        Vector3f com        = obj->com;
+        string material_name = obj->material_name;
+
+        //Remove the object from the scene
+        remove_object(id);
+
+        //The vertices are in the world frame, but the add_object() function expects them to be in the object frame.
+        // Hence, we need to transform them back to the object frame by using the inverse of the previous pose.
+        Matrix4f previous_pose_inv = previous_pose.inverse();
+        MatrixX3f ppi_R = previous_pose_inv.block<3,3>(0,0);
+        Vector3f  ppi_t = previous_pose_inv.block<3,1>(0,3);
+        vertices = (ppi_R*vertices.transpose()).transpose().rowwise() + ppi_t.transpose();
+
+        //Create a new object with the same mesh and the new pose
+        add_object(id, pose, vertices, triangles, resolution, is_fixed, mass, com, material_name);
+    }
+}
+
+/// @brief Return the object that has the given ID
+/// @param id unique identifier for the object
+/// @return pointer to the object
+Object* Scene::get_object_by_id(string id)
+{
+    for(const auto& obj : this->object_ptrs)
+        if(obj->id == id)
+            return obj.get();
+    cout << "Object with id " << id << " not found" << endl;
+    return nullptr;
 }
 
 /// @brief Get the pose of an object
@@ -718,10 +875,9 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
 /// @return 4x4 matrix representing the pose of the object
 Matrix4f Scene::get_object_pose(string id)
 {
-    for(const auto& obj : this->object_ptrs)
-        if(obj->id == id)
-            return obj->pose;
-    cout << "Object with id " << id << " not found" << endl;
+    Object* obj = get_object_by_id(id);
+    if(obj != nullptr)
+        return obj->pose;
     return Matrix4f::Identity();
 }
 
@@ -730,10 +886,9 @@ Matrix4f Scene::get_object_pose(string id)
 /// @return Nx3 matrix representing the vertices of the object
 MatrixX3f Scene::get_tri_vertices(string id)
 {
-    for(const auto& obj : this->object_ptrs)
-        if(obj->id == id)
-            return obj->tri_vertices;
-    cout << "Object with id " << id << " not found" << endl;
+    Object* obj = get_object_by_id(id);
+    if(obj != nullptr)
+        return obj->tri_vertices;
     return MatrixX3f::Zero(0, 3);
 }
 
@@ -742,10 +897,9 @@ MatrixX3f Scene::get_tri_vertices(string id)
 /// @return Mx3 matrix representing the triangles of the object
 MatrixX3i Scene::get_tri_triangles(string id)
 {
-    for(const auto& obj : this->object_ptrs)
-        if(obj->id == id)
+    Object* obj = get_object_by_id(id);
+    if(obj != nullptr)
             return obj->tri_triangles;
-    cout << "Object with id " << id << " not found" << endl;
     return MatrixX3i::Zero(0, 3);
 }
 
@@ -754,10 +908,9 @@ MatrixX3i Scene::get_tri_triangles(string id)
 /// @return Nx3 matrix representing the vertices of the object
 MatrixX3f Scene::get_tetra_vertices(string id)
 {
-    for(const auto& obj : this->object_ptrs)
-        if(obj->id == id)
+    Object* obj = get_object_by_id(id);
+    if(obj != nullptr)
             return obj->tetra_vertices;
-    cout << "Object with id " << id << " not found" << endl;
     return MatrixX3f::Zero(0, 3);
 }
 
@@ -766,10 +919,9 @@ MatrixX3f Scene::get_tetra_vertices(string id)
 /// @return Mx4 matrix representing the tetrahedra of the object
 MatrixX4i Scene::get_tetra_indices(string id)
 {
-    for(const auto& obj : this->object_ptrs)
-        if(obj->id == id)
+    Object* obj = get_object_by_id(id);
+    if(obj != nullptr)
             return obj->tetra_indices;
-    cout << "Object with id " << id << " not found" << endl;
     return MatrixX4i::Zero(0, 4);
 }
 
@@ -778,10 +930,9 @@ MatrixX4i Scene::get_tetra_indices(string id)
 /// @return Nx3 matrix representing the voxel centres of the object
 MatrixX3f Scene::get_voxel_centres(string id)
 {
-    for(const auto& obj : this->object_ptrs)
-        if(obj->id == id)
+    Object* obj = get_object_by_id(id);
+    if(obj != nullptr)
             return obj->get_voxel_centres();
-    cout << "Object with id " << id << " not found" << endl;
     return MatrixX3f::Zero(0, 3);
 }
 
@@ -790,9 +941,8 @@ MatrixX3f Scene::get_voxel_centres(string id)
 /// @return 3x1 vector representing the voxel side lengths of the object
 Vector3f Scene::get_voxel_side_lengths(string id)
 {
-    for(const auto& obj : this->object_ptrs)
-        if(obj->id == id)
+    Object* obj = get_object_by_id(id);
+    if(obj != nullptr)
             return obj->get_voxel_side_lengths();
-    cout << "Object with id " << id << " not found" << endl;
     return Vector3f::Zero();
 }

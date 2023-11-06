@@ -44,7 +44,6 @@ class OccupancyGrid
         Vector3f bb_origin;
         Vector3f bb_extents;
         Vector3f cell_size;
-        int resolution;
         unordered_map<uint32_t, GridCell> grid_cells;
         Vector3f cell_centre(uint32_t idx);
         
@@ -71,4 +70,6 @@ class OccupancyGrid
         uint32_t is_cell_occupied(uint32_t cell_idx);
         enum sampling_method {uniform, random};
         OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangles, int resolution, int sampling_method);
+        int resolution;
+        int sampling_method_used;
 };

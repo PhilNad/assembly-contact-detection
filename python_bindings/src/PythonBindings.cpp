@@ -20,6 +20,13 @@ PYBIND11_MODULE(assembly_cd, m) {
                 py::arg("mass") = 1.0f, 
                 py::arg("com") = (Vector3f() << 0.0f, 0.0f, 0.0f).finished(),
                 py::arg("material_name") = "wood")
+        .def("remove_object", &Scene::remove_object, "Remove an object from the scene.",
+                py::arg("id"))
+        .def("get_object_pose", &Scene::get_object_pose, "Get the pose of an object.",
+                py::arg("id"))
+        .def("set_object_pose", &Scene::set_object_pose, "Set the pose of an object.",
+                py::arg("id"), 
+                py::arg("pose"))
         .def("set_max_distance_factor", &Scene::set_max_distance_factor, "Sets a factor that multiplies that maximal distance an intersection point can be from the objects considered in contact.",
                 py::arg("max_distance_factor"))
         .def("step_simulation", &Scene::step_simulation, "Step the simulation by a given time step.",

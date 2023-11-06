@@ -281,8 +281,8 @@ int main(int argc, char** argv) {
             0, 0, 1, 0.5,
             0, 0, 0, 1;
     Cube cube1 = Cube(1, 1, 1);
-    cube1.translate(pose(0, 3), pose(1, 3), pose(2, 3));
     scene.add_object(id, pose, cube1.vertices, cube1.triangles);
+    cube1.translate(pose(0, 3), pose(1, 3), pose(2, 3));
 
     // Add another cube to the scene
     id = "cube2";
@@ -291,9 +291,37 @@ int main(int argc, char** argv) {
             0, 0, 1, 1.5,
             0, 0, 0, 1;
     Cube cube2 = Cube(1, 1, 1);
+    scene.add_object(id, pose, cube2.vertices, cube2.triangles);
     cube2.rotate(0.79, RowVector3f(0, 0, 1), RowVector3f(0, 0, 0));
     cube2.translate(pose(0, 3), pose(1, 3), pose(2, 3));
-    scene.add_object(id, pose, cube2.vertices, cube2.triangles);
+    
+
+    // Add a cube to the scene
+    id = "cube3";
+    pose << 1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0.5,
+            0, 0, 0, 1;
+    Cube cube3 = Cube(1, 1, 1);
+    scene.add_object(id, pose, cube3.vertices, cube3.triangles);
+    cube3.translate(pose(0, 3), pose(1, 3), pose(2, 3));
+
+    //Remove cube1
+    scene.remove_object("cube1");
+
+    //Move cube2
+    pose << 1, 0, 0, 0,
+            0, 1, 0, 2.25,
+            0, 0, 1, 1.5,
+            0, 0, 0, 1;
+    scene.set_object_pose("cube2", pose);
+
+    //Move cube3
+    pose << 1, 0, 0, 0,
+            0, 1, 0, 2,
+            0, 0, 1, 0.5,
+            0, 0, 0, 1;
+    scene.set_object_pose("cube3", pose);
 
     // Get the list of objects in contact with the cube
     set<string> contacted_objects = scene.get_contacted_objects("cube2");
@@ -304,7 +332,7 @@ int main(int argc, char** argv) {
     cout << endl;
 
     // Get the contact points between the two objects
-    MatrixX3f contact_points = scene.get_contact_points("cube1", "cube2");
+    MatrixX3f contact_points = scene.get_contact_points("cube2", "cube3");
     cout << "Found " << contact_points.rows() << " contact points." << endl;
     for (int i = 0; i < contact_points.rows(); i++) {
         //cout << contact_points.row(i) << endl;

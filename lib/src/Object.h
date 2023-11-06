@@ -48,8 +48,8 @@ class Object
         ~Object();
         MatrixX3f get_voxel_centres();
         Vector3f get_voxel_side_lengths();
+        int get_grid_resolution();
         void set_max_separation(float max_separation);
-        void set_pose(Matrix4f pose);
         bool is_valid_pose_matrix(Matrix4f matrix);
         void set_tetra_mesh(PxArray<PxVec3> vertices, PxArray<PxU32> indices);
         void set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh);
@@ -59,5 +59,4 @@ class Object
         bool create_tetra_mesh(PxSimpleTriangleMesh& triSurfaceMesh, PxArray<PxVec3>& tetMeshVertices, PxArray<PxU32>& tetMeshIndices);
         bool create_tetra_convex_set(PxArray<PxVec3> tetVertices, PxArray<PxU32> tetIndices, PxArray<PxConvexMeshDesc>& convexMeshDescs);
         shared_ptr<OccupancyGrid> create_occupancy_grid(int resolution, int sampling_method);
-        MatrixX3f get_world_vertices();
 };

@@ -21,6 +21,9 @@ class Scene
         vector<shared_ptr<Object>> object_ptrs;
         void startupPhysics();
         void cleanupPhysics();
+        void clear_contacts();
+        PxRigidActor* get_actor(string name);
+        vector<PxShape*> get_actor_shapes(PxRigidActor* actor);
     public:
         float max_distance_factor = 0.2;
         Scene();
@@ -36,12 +39,15 @@ class Scene
             Vector3f com = Vector3f::Zero(),
             string material_name = "wood"
         );
+        void remove_object(string id);
         void set_max_distance_factor(float max_distance_factor);
         Matrix4f get_object_pose(string id);
+        void set_object_pose(string id, Matrix4f pose);
         void step_simulation(float dt);
         set<string> get_contacted_objects(string target_object);
         MatrixX3f get_contact_points(string id1, string id2);
         void merge_similar_contact_points(float position_threshold, float normal_threshold);
+        Object* get_object_by_id(string id);
         MatrixX3f get_tri_vertices(string id);
         MatrixX3i get_tri_triangles(string id);
         MatrixX3f get_tetra_vertices(string id);

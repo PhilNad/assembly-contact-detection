@@ -529,7 +529,7 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
     // and must be at least 1.
     assert(resolution > 0);
 
-    // Get bounding box
+    // Get axis-aligned bounding box
     float min_x = vertices.col(0).minCoeff();
     float min_y = vertices.col(1).minCoeff();
     float min_z = vertices.col(2).minCoeff();
@@ -537,11 +537,14 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
     float max_y = vertices.col(1).maxCoeff();
     float max_z = vertices.col(2).maxCoeff();
 
-    // Get bounding box extents
+    // Get axis-aligned bounding box extents
     this->bb_extents = {max_x - min_x, max_y - min_y, max_z - min_z};
 
     // Get grid resolution, which is the number of cells along each dimension
     this->resolution = resolution;
+
+    // Record sampling method used in case we want to re-create the grid
+    this->sampling_method_used = sampling_method;
 
     // Get grid cell size
     this->cell_size = {this->bb_extents[0]/(resolution-1), this->bb_extents[1]/(resolution-1), this->bb_extents[2]/(resolution-1)};
