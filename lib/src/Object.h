@@ -21,6 +21,8 @@ class Object
 {
     private:
         shared_ptr<OccupancyGrid> occupancy_grid;
+        shared_ptr<PxVec3> tri_mesh_vertices;
+        shared_ptr<PxU32> tri_mesh_indices;
     public:
         string id;
         Matrix4f pose;
@@ -34,6 +36,7 @@ class Object
         string material_name;
         float max_separation;
         Scene* scene;
+        shared_ptr<PxSimpleTriangleMesh> tri_mesh;
         Object(
             Scene* scene,
             string id, 

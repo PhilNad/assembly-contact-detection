@@ -24,6 +24,10 @@ class Scene
         void clear_contacts();
         PxRigidActor* get_actor(string name);
         vector<PxShape*> get_actor_shapes(PxRigidActor* actor);
+        PxArray<PxShape*> make_tetmesh(Object* obj);
+        PxArray<PxShape*> make_canary_spheres(Object* obj, PxArray<PxShape*> tetConvexShapes);
+        Matrix3f tetra_local_frame(const vector<Vector3f>& vertices);
+        vector<bool> check_points_in_tetra(const vector<Vector3f>& points, const Matrix3f& tetra, const Vector3f& origin);
     public:
         float max_distance_factor = 0.2;
         Scene();
@@ -46,6 +50,7 @@ class Scene
         void step_simulation(float dt);
         set<string> get_contacted_objects(string target_object);
         MatrixX3f get_contact_points(string id1, string id2);
+        MatrixX3f get_penetrating_contact_points(string id1, string id2);
         void merge_similar_contact_points(float position_threshold, float normal_threshold);
         Object* get_object_by_id(string id);
         MatrixX3f get_tri_vertices(string id);

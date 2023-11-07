@@ -56,6 +56,23 @@ void Object::set_tetra_mesh(PxArray<PxVec3> vertices, PxArray<PxU32> indices)
 /// @param simpleTriMesh Triangle mesh
 void Object::set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh)
 {
+    //Record the triangle mesh
+    this->tri_mesh = make_shared<PxSimpleTriangleMesh>(simpleTriMesh);
+    //Record the vertices and indices to shared_ptr<PxVec3> tri_mesh_vertices;
+    PxVec3* vertices_ptr = new PxVec3[simpleTriMesh.points.count];
+    for (int i = 0; i < simpleTriMesh.points.count; i++) {
+        vertices_ptr[i] = PxVec3(this->tri_vertices(i, 0), this->tri_vertices(i, 1), this->tri_vertices(i, 2));
+    }
+    this->tri_mesh_vertices = shared_ptr<PxVec3>(vertices_ptr);
+
+    PxU32* indices_ptr = new PxU32[simpleTriMesh.triangles.count*3];
+    for (int i = 0; i < simpleTriMesh.triangles.count; i++) {
+        indices_ptr[i*3+0] = this->tri_triangles(i, 0);
+        indices_ptr[i*3+1] = this->tri_triangles(i, 1);
+        indices_ptr[i*3+2] = this->tri_triangles(i, 2);
+    }
+    this->tri_mesh_indices = shared_ptr<PxU32>(indices_ptr);
+
     //Convert PxSimpleTriangleMesh to Eigen Matrix
     this->tri_vertices.resize(simpleTriMesh.points.count, 3);
     for (int i = 0; i < simpleTriMesh.points.count; i++) {
@@ -83,6 +100,32 @@ void Object::set_tri_mesh(MatrixX3f& vertices, MatrixX3i& triangles)
 {
     this->tri_vertices  = vertices;
     this->tri_triangles = triangles;
+
+    //Allocate and populate the PxVec3 array
+    shared_ptr<PxVec3> vertices_ptr(new PxVec3[vertices.rows()]);
+    for (int i = 0; i < vertices.rows(); i++) {
+        vertices_ptr.get()[i] = PxVec3(vertices(i, 0), vertices(i, 1), vertices(i, 2));
+    }
+    this->tri_mesh_vertices = vertices_ptr;
+
+    //Allocate and populate the PxU32 array
+    shared_ptr<PxU32> triangles_ptr(new PxU32[triangles.rows()*3]);
+    for (int i = 0; i < triangles.rows(); i++) {
+        triangles_ptr.get()[i*3+0] = triangles(i, 0);
+        triangles_ptr.get()[i*3+1] = triangles(i, 1);
+        triangles_ptr.get()[i*3+2] = triangles(i, 2);
+    }
+    this->tri_mesh_indices = triangles_ptr;
+
+    //Build a PxSimpleTriangleMesh from the vertices and triangles
+    shared_ptr<PxSimpleTriangleMesh> simpleTriMesh_ptr(new PxSimpleTriangleMesh());
+    simpleTriMesh_ptr->points.count   = vertices.rows();
+    simpleTriMesh_ptr->points.stride  = sizeof(PxVec3);
+    simpleTriMesh_ptr->points.data    = vertices_ptr.get();
+    simpleTriMesh_ptr->triangles.count    = triangles.rows();
+    simpleTriMesh_ptr->triangles.stride   = 3*sizeof(PxU32);
+    simpleTriMesh_ptr->triangles.data     = triangles_ptr.get();
+    this->tri_mesh = simpleTriMesh_ptr;
 }
 
 /// @brief Create a grid of cells that represent the volume of the object.
@@ -395,15 +438,12 @@ void Object::remesh_surface_trimesh()
 bool Object::create_tetra_mesh(PxSimpleTriangleMesh& triSurfaceMesh, PxArray<PxVec3>& tetMeshVertices, PxArray<PxU32>& tetMeshIndices)
 {
     //Verify that the mesh is valid for tetrahedralization
-    bool is_valid = this->validate_mesh(triSurfaceMesh);
+    // If the mesh is invalid, an exception will be thrown
+    this->validate_mesh(triSurfaceMesh);
 
-    if(is_valid){
-        //Create a tetrahedron mesh from the surface mesh
-        bool success = PxTetMaker::createConformingTetrahedronMesh(triSurfaceMesh, tetMeshVertices, tetMeshIndices);
-        return success;
-    }
-
-    return false;
+    //Create a tetrahedron mesh from the surface mesh
+    bool success = PxTetMaker::createConformingTetrahedronMesh(triSurfaceMesh, tetMeshVertices, tetMeshIndices);
+    return success;
 }
 
 /// @brief Get the position of the centre of each occupied cell in the occupancy grid

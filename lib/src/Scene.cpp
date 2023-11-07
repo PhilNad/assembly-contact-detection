@@ -15,6 +15,7 @@ using namespace std;
 using namespace Eigen;
 
 vector<Contact> gContacts;
+vector<Contact> gPenetrationContacts;
 vector<PxVec3> gContactPositions;
 vector<pair<string, string>> gContactedObjects;
 
@@ -140,8 +141,10 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
         if(num_threads > 1){
             //List of threads
             std::vector<std::thread> threads(num_threads);
-            //Each thread will generate a list of contacts, all of which will be merged at the end.
+            //Each thread will generate a list of surface contacts, all of which will be merged at the end.
             std::vector<std::vector<Contact>> thread_contacts(num_threads);
+            //Each thread will generate a list of penetrating contacts, all of which will be merged at the end.
+            std::vector<std::vector<Contact>> thread_pen_contacts(num_threads);
             //Each thread will generate a list of contacted objects, all of which will be merged at the end.
             std::vector<std::vector<pair<string, string>>> thread_contacted_objects(num_threads);
 
@@ -156,7 +159,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                 //Get the index of the last pair to process in this thread
                 int last_pair_index = (thread_i == num_threads - 1) ? nbPairs : (thread_i+1)*nb_pairs_per_thread;
                 //Launch the thread
-                threads[thread_i] = std::thread(&ContactReportCallbackForVoxelgrid::process_contact_pairs, this, pairs, first_pair_index, last_pair_index, std::ref(thread_contacts[thread_i]), std::ref(thread_contacted_objects[thread_i]));
+                threads[thread_i] = std::thread(&ContactReportCallbackForVoxelgrid::process_contact_pairs, this, pairs, first_pair_index, last_pair_index, std::ref(thread_contacts[thread_i]), std::ref(thread_pen_contacts[thread_i]), std::ref(thread_contacted_objects[thread_i]));
             }
             //Wait for all threads to finish
             for(auto& thread : threads){
@@ -168,6 +171,9 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                 nb_added_points += thread_contact.size();
                 gContacts.insert(gContacts.end(), thread_contact.begin(), thread_contact.end());
             }
+            for(auto& thread_pen_contacts : thread_pen_contacts){
+                gPenetrationContacts.insert(gPenetrationContacts.end(), thread_pen_contacts.begin(), thread_pen_contacts.end());
+            }
             if(nb_added_points > 0){
                 //Merge the contacted objects from all threads
                 for(auto& thread_contacted_object : thread_contacted_objects){
@@ -176,14 +182,17 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
             }
         }else{
             std::vector<Contact> contacts;
+            std::vector<Contact> pen_contacts;
             std::vector<pair<string, string>> contact_object_ids;
-            process_contact_pairs(pairs, 0, nbPairs, contacts, contact_object_ids);
+            process_contact_pairs(pairs, 0, nbPairs, contacts, pen_contacts, contact_object_ids);
             //Add the pair of objects to the list of contacted objects.
             if(contacts.size() > 0){
                 gContactedObjects.insert(gContactedObjects.end(), contact_object_ids.begin(), contact_object_ids.end());
             }
-            //Add the contact points to the list of contact points
+            //Add the surface contact points to the list of contact points
             gContacts.insert(gContacts.end(), contacts.begin(), contacts.end());
+            //Add the penetrating contact points to the list of contact points
+            gPenetrationContacts.insert(gPenetrationContacts.end(), pen_contacts.begin(), pen_contacts.end());
         }
 	}
 
@@ -192,61 +201,84 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
     /// @param first_pair_index Index of the first pair to process
     /// @param last_pair_index Index of the last pair to process
     /// @param thread_contacts [Output] List of contacts to append to
+    /// @param thread_pen_contacts [Output] List of penetrating contacts to append to
     /// @param thread_contacted_objects [Output] List of contacted objects to append to
-    void process_contact_pairs(const PxContactPair* pairs, int first_pair_index, int last_pair_index, std::vector<Contact>& thread_contacts, std::vector<pair<string, string>>& thread_contacted_objects)
+    void process_contact_pairs(const PxContactPair* pairs, int first_pair_index, int last_pair_index, std::vector<Contact>& thread_contacts, std::vector<Contact>& thread_pen_contacts, std::vector<pair<string, string>>& thread_contacted_objects)
     {
+        std::vector<PxContactPairPoint> contactPoints;
+        //Iterate over each contact pair
         for(PxU32 i=first_pair_index;i<last_pair_index;i++){
             //cout << "Contact pair " << i << endl;
             PxContactPair pair = pairs[i];
-  
-            //Get the shapes involved in the collision
-            PxShape* shape0 = pair.shapes[0];
-            PxShape* shape1 = pair.shapes[1];
-            
-            //Get the actors
-            PxRigidActor* actor0 = shape0->getActor();
-            PxRigidActor* actor1 = shape1->getActor();
-            string id_obj0 = actor0->getName();
-            string id_obj1 = actor1->getName();
-
-            //Get the objects
-            Object* obj0 = static_cast<Object*>(actor0->userData);
-            Object* obj1 = static_cast<Object*>(actor1->userData);
-
-            //Get useful scene-related parameters
-            Scene* scene = obj0->scene;
-            float max_distance_factor = scene->max_distance_factor;
-
-            //Get the grid cells involved in the collision
-            GridCell* gridCell0 = static_cast<GridCell*>(shape0->userData);
-            GridCell* gridCell1 = static_cast<GridCell*>(shape1->userData);
-
-            //Surface points can be obtained with
-            //  gridCell0->surface_points[0].get()->position
-            //  gridCell0->surface_points[1].get()->position
-            //  ...
-            //  gridCell0->surface_points[0].get()->normal
-            //  ...
-
-            //Compute the position threshold based on the size of the voxels in contact
-            // two contact points are merged if they are closer than this threshold
-            Vector3f o1_sides = obj0->get_voxel_side_lengths();
-            Vector3f o2_sides = obj1->get_voxel_side_lengths();
-            float max_side = max(o1_sides.maxCoeff(), o2_sides.maxCoeff());
-            float position_threshold = max(position_threshold, 0.1f*max_side);
-
-            //Get the contact points
             PxU32 contactCount = pair.contactCount;
             //cout << contactCount << " contacts between " << id_obj0 << " and " << id_obj1 << endl;
+  
             if(contactCount)
             {
-                PointSet3D intersections = all_triangles_overlap_over_AARectangle(*gridCell0, *gridCell1, max_distance_factor);
-                for(auto& p : intersections){
-                    //Add a new contact point to the list
-                    Contact contact(obj0, obj1, Vector3f(p[0], p[1], p[2]), Vector3f(0,0,1), 0.0f);
-                    thread_contacts.push_back(contact);
+                //Get the shapes involved in the collision
+                PxShape* shape0 = pair.shapes[0];
+                PxShape* shape1 = pair.shapes[1];
+
+                //Geometry type of each shape
+                PxGeometryType::Enum shape0_type = shape0->getGeometry().getType();
+                PxGeometryType::Enum shape1_type = shape1->getGeometry().getType();
+                
+                //Get the actors
+                PxRigidActor* actor0 = shape0->getActor();
+                PxRigidActor* actor1 = shape1->getActor();
+                string id_obj0 = actor0->getName();
+                string id_obj1 = actor1->getName();
+
+                //Get the objects
+                Object* obj0 = static_cast<Object*>(actor0->userData);
+                Object* obj1 = static_cast<Object*>(actor1->userData);
+
+                //Get useful scene-related parameters
+                Scene* scene = obj0->scene;
+                float max_distance_factor = scene->max_distance_factor;
+
+                //Compute the position threshold based on the size of the voxels in contact
+                // two contact points are merged if they are closer than this threshold
+                Vector3f o1_sides = obj0->get_voxel_side_lengths();
+                Vector3f o2_sides = obj1->get_voxel_side_lengths();
+                float max_side = max(o1_sides.maxCoeff(), o2_sides.maxCoeff());
+                float position_threshold = max(position_threshold, 0.1f*max_side);
+
+                //If the collision is between a sphere and a tetrahedron, it means that there is an inter-penetration
+                if((shape0_type == PxGeometryType::eSPHERE && shape1_type == PxGeometryType::eCONVEXMESH) ||
+                    (shape1_type == PxGeometryType::eSPHERE && shape0_type == PxGeometryType::eCONVEXMESH) ){
+                    PxVec3 p;
+                    //Get the position of the sphere/point
+                    if(shape0_type == PxGeometryType::eSPHERE){
+                        p = shape0->getLocalPose().p;
+                    }else{
+                        p = shape1->getLocalPose().p;
+                    }
+                    Contact contact(obj0, obj1, Vector3f(p.x, p.y, p.z), Vector3f(0,0,1), 0.0f);
+                    thread_pen_contacts.push_back(contact);
                 }
-                thread_contacted_objects.push_back(make_pair(id_obj0, id_obj1));
+
+                //The collision is between two gridcells
+                if( shape0_type == PxGeometryType::eBOX && shape1_type == PxGeometryType::eBOX ){
+                    //Get the grid cells involved in the collision
+                    GridCell* gridCell0 = static_cast<GridCell*>(shape0->userData);
+                    GridCell* gridCell1 = static_cast<GridCell*>(shape1->userData);
+
+                    //Surface points can be obtained with
+                    //  gridCell0->surface_points[0].get()->position
+                    //  gridCell0->surface_points[1].get()->position
+                    //  ...
+                    //  gridCell0->surface_points[0].get()->normal
+                    //  ...
+                    PointSet3D intersections = all_triangles_overlap_over_AARectangle(*gridCell0, *gridCell1, max_distance_factor);
+                    for(auto& p : intersections){
+                        //Add a new contact point to the list
+                        //TODO: Use the right normal
+                        Contact contact(obj0, obj1, Vector3f(p[0], p[1], p[2]), Vector3f(0,0,1), 0.0f);
+                        thread_contacts.push_back(contact);
+                    }
+                    thread_contacted_objects.push_back(make_pair(id_obj0, id_obj1));
+                }
             }
         }
     }
@@ -417,6 +449,7 @@ void Scene::clear_contacts()
 {
     //Clear the list of contacted objects and contact points
     gContacts.clear();
+    gPenetrationContacts.clear();
     gContactedObjects.clear(); 
     gContactPositions.clear();
 
@@ -493,6 +526,39 @@ MatrixX3f Scene::get_contact_points(string id1, string id2)
             contact_points.push_back(gContacts[i].get_position());
         if (object_ids.first == id2 && object_ids.second == id1)
             contact_points.push_back(gContacts[i].get_position());
+    }
+
+    //Convert the vector of contact points to a matrix
+    MatrixX3f contact_points_matrix(contact_points.size(), 3);
+    for (int i = 0; i < contact_points.size(); i++)
+    {
+        //The contact point is a column vector, but we want to store it as a row vector.
+        contact_points_matrix.row(i) = contact_points[i].transpose();
+    }
+    return contact_points_matrix;
+}
+
+/// @brief Get the contact points between two objects.
+/// @param id1 id of the first object
+/// @param id2 id of the second object
+/// @return Nx3 matrix representing the contact points between the two objects
+MatrixX3f Scene::get_penetrating_contact_points(string id1, string id2)
+{
+    //If there are no contacts, step the simulation by a small amount
+    // to make sure that the collision detection is performed.
+    if(gPenetrationContacts.size() == 0){
+        this->step_simulation(1/1000.0f);
+    }
+
+    //Iterate over gPenetrationContacts and find the contact points between the two objects
+    vector<Vector3f> contact_points;
+    for (int i = 0; i < gPenetrationContacts.size(); i++)
+    {
+        pair<string, string> object_ids = gPenetrationContacts[i].get_object_ids();
+        if (object_ids.first == id1 && object_ids.second == id2)
+            contact_points.push_back(gPenetrationContacts[i].get_position());
+        if (object_ids.first == id2 && object_ids.second == id1)
+            contact_points.push_back(gPenetrationContacts[i].get_position());
     }
 
     //Convert the vector of contact points to a matrix
@@ -638,6 +704,187 @@ PxShape* createVoxelShape(GridCell* cell)
     return shape;
 }
 
+
+/// @brief Produce a sphere for at each voxel corner that is contained in a tetrahedron defining the volume of the object.
+///         These spheres can be used to detect interpenetration as they are embedded in the volume of the object.
+/// @param obj Object for which to generate the spheres (must be volumetric).
+/// @param tetConvexShapes Array of tetrahedra from make_tetmesh().
+/// @return An array of shapes, each representing a sphere.
+PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetConvexShapes)
+{
+    //Surface voxels information
+    MatrixX3f voxel_centres = obj->get_voxel_centres();
+    Vector3f voxel_side_lengths = obj->get_voxel_side_lengths();
+
+    //Array of voxel vertices, 8 per voxel
+    vector<Vector3f> voxel_vertices(voxel_centres.rows()*8);
+
+    //Iterate over voxels
+    for(int i = 0; i < voxel_centres.rows(); i++){
+        //Get the centre of the voxel
+        Vector3f voxel_centre = voxel_centres.row(i);
+        //Get the half-extents of the voxel
+        Vector3f voxel_half_extents = voxel_side_lengths/2;
+
+        //Compute position of each vertex
+        Vector3f v1 = voxel_centre + Vector3f(voxel_half_extents[0], voxel_half_extents[1], voxel_half_extents[2]);
+        Vector3f v2 = voxel_centre + Vector3f(-voxel_half_extents[0], voxel_half_extents[1], voxel_half_extents[2]);
+        Vector3f v3 = voxel_centre + Vector3f(-voxel_half_extents[0], -voxel_half_extents[1], voxel_half_extents[2]);
+        Vector3f v4 = voxel_centre + Vector3f(voxel_half_extents[0], -voxel_half_extents[1], voxel_half_extents[2]);
+        Vector3f v5 = voxel_centre + Vector3f(voxel_half_extents[0], voxel_half_extents[1], -voxel_half_extents[2]);
+        Vector3f v6 = voxel_centre + Vector3f(-voxel_half_extents[0], voxel_half_extents[1], -voxel_half_extents[2]);
+        Vector3f v7 = voxel_centre + Vector3f(-voxel_half_extents[0], -voxel_half_extents[1], -voxel_half_extents[2]);
+        Vector3f v8 = voxel_centre + Vector3f(voxel_half_extents[0], -voxel_half_extents[1], -voxel_half_extents[2]);
+
+        //Append the vertices to the list
+        voxel_vertices.push_back(v1);
+        voxel_vertices.push_back(v2);
+        voxel_vertices.push_back(v3);
+        voxel_vertices.push_back(v4);
+        voxel_vertices.push_back(v5);
+        voxel_vertices.push_back(v6);
+        voxel_vertices.push_back(v7);
+        voxel_vertices.push_back(v8);
+    }
+
+    //Array where an element is True if the associated voxel vertex is inside a tetrahedron
+    vector<bool> inside_volume(voxel_vertices.size());
+
+    //Iterate over tetrahedra
+    for(int i = 0; i < tetConvexShapes.size(); i++){
+        PxShape* tetConvexShape = tetConvexShapes[i];
+        const PxConvexMeshGeometry& convexMeshGeometry = static_cast<const PxConvexMeshGeometry&>(tetConvexShape->getGeometry());
+        PxConvexMesh* convexMesh = convexMeshGeometry.convexMesh;
+        //Get the vertices
+        const PxVec3* vertices = convexMesh->getVertices();
+        Vector3f v1(vertices[0].x, vertices[0].y, vertices[0].z);
+        Vector3f v2(vertices[1].x, vertices[1].y, vertices[1].z);
+        Vector3f v3(vertices[2].x, vertices[2].y, vertices[2].z);
+        Vector3f v4(vertices[3].x, vertices[3].y, vertices[3].z);
+        //Vector of vertices
+        vector<Vector3f> tetra_vertices = {v1, v2, v3, v4};
+
+        //Compute the tetrahedron coordinate system
+        Matrix3f T_world_to_local = tetra_local_frame(tetra_vertices);
+
+        //Test if each voxel vertex is inside the tetrahedron
+        vector<bool> inside = check_points_in_tetra(voxel_vertices, T_world_to_local, v1);
+
+        //Update the list of voxels inside the volume
+        for(int j = 0; j < inside.size(); j++){
+            inside_volume[j] = inside_volume[j] || inside[j];
+        }
+    }
+
+    //For each vertex flagged as inside the volume, create a sphere
+    PxArray<PxShape*> spheres;
+    for(int i = 0; i < inside_volume.size(); i++){
+        if(inside_volume[i]){
+            //Create a sphere at the voxel vertex
+            PxSphereGeometry sphereGeometry = PxSphereGeometry(voxel_side_lengths.minCoeff()/10);
+            PxShape* sphere = gPhysics->createShape(sphereGeometry, *gMaterial, true);
+            if(!sphere)
+                throw runtime_error("Error creating shape");
+            //Set the position of the sphere
+            Vector3f pos = voxel_vertices[i];
+            sphere->setLocalPose(PxTransform(PxVec3(pos[0], pos[1], pos[2])));
+            sphere->setRestOffset(0);
+            sphere->setContactOffset(1e-6);
+            //Add the sphere to the list
+            spheres.pushBack(sphere);
+        }
+    }
+    cout << "Spheres for object " << obj->id << ": " << spheres.size() << endl;
+    return spheres;
+}
+
+/// @brief Define an affine transformation that maps the edges of the tetrahedron to
+///         an orthogonal frame.
+/// @param vertices Vertices of the tetrahedron.
+/// @note See https://stackoverflow.com/a/60745339
+Matrix3f Scene::tetra_local_frame(const vector<Vector3f>& vertices) 
+{
+    //The frame is defined relative to the first vertex
+    Vector3f origin = vertices[0];
+    //Each edge defines a basis vector
+    Matrix3f mat;
+    for (int i = 0; i < 3; i++) {
+        mat.col(i) = vertices[i + 1] - origin;
+    }
+    //Transform a world point into a point in the local frame.
+    Matrix3f T_world_to_local = mat.inverse();
+    return T_world_to_local;
+}
+
+/// @brief Determine if points are inside a tetrahedron.
+/// @param points Vector of points to test.
+/// @param T_world_to_local Transformation matrix from the world frame to the local frame of the tetrahedron.
+/// @param origin Position of the origin of the tetrahedron frame in the world frame.
+/// @return Vector of booleans, one for each point, indicating whether the point is inside the tetrahedron.
+vector<bool> Scene::check_points_in_tetra(const vector<Vector3f>& points, const Matrix3f& T_world_to_local, const Vector3f& origin) 
+{
+    vector<bool> inside(points.size());
+
+    //A greater tolerance is more strict on inclusion
+    float tol = 0.1;
+
+    for (int i = 0; i < points.size(); i++) {
+        //Transform the point into an orthogonal frame through an affine transformation (T_world_to_local)
+        Vector3f newp = T_world_to_local * (points[i] - origin);
+        //Check if the point is inside the tetrahedron (barycentric coordinates)
+        inside[i] = newp.minCoeff() >= tol && newp.maxCoeff() <= 1-tol && newp.sum() <= 1-tol;
+    }
+
+    return inside;
+}
+
+/// @brief Generate a tetrahedral mesh from the triangular surface mesh of the given object.
+/// @param obj Object for which to generate the tetrahedral mesh.
+/// @return Array of shapes, each representing a tetrahedron.
+PxArray<PxShape*> Scene::make_tetmesh(Object* obj)
+{
+    PxArray<PxVec3> tetMeshVertices;
+    PxArray<PxU32> tetMeshIndices;
+
+    shared_ptr<PxSimpleTriangleMesh> triSurfaceMesh_ptr = obj->tri_mesh;
+    PxSimpleTriangleMesh triSurfaceMesh = *triSurfaceMesh_ptr;
+
+    //Create a tetrahedral mesh from the triangle mesh
+    bool result = obj->create_tetra_mesh(triSurfaceMesh, tetMeshVertices, tetMeshIndices);
+
+    if(!result)
+        throw runtime_error("Error creating tetrahedral mesh");
+    
+    //For each tetrahedron, create a convex mesh.
+    PxArray<PxConvexMeshDesc> convexMeshDescs;
+    result = obj->create_tetra_convex_set(tetMeshVertices, tetMeshIndices, convexMeshDescs);
+
+    if(!result)
+        throw runtime_error("Error creating convex mesh");
+
+    //Record the tetrahedral mesh in the object
+    obj->set_tetra_mesh(tetMeshVertices, tetMeshIndices);
+
+    PxArray<PxShape*> convexShapes;
+    //For each convex mesh, create a shape
+    for(int i = 0; i < convexMeshDescs.size(); i++){
+        PxConvexMeshDesc convexMeshDesc = convexMeshDescs[i];
+        //Cooking parameters
+        PxTolerancesScale scale;
+        PxCookingParams params(scale);
+        PxShape* convexShape = createTetrahedronShape(params, convexMeshDesc);
+
+        //Contacts are genereated when an object is at the contact offset from this shape
+        // which must be positive and slightly larger than the rest offset that defines
+        // the depth of the equilibrium position of the object.
+        convexShape->setRestOffset(0);
+        convexShape->setContactOffset(1e-6);
+
+        convexShapes.pushBack(convexShape);
+    }
+    return convexShapes;
+}
+
 /// @brief Add an object to the scene
 /// @param id unique identifier for the object
 /// @param pose 4x4 matrix representing the pose of the object
@@ -690,6 +937,21 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
         GridCell* cell  = &item.second;
         PxShape* voxelShape = createVoxelShape(cell);
         convexShapes.pushBack(voxelShape);
+    }
+
+    //Create the tetrahedral mesh built from the triangle mesh.
+    PxArray<PxShape*> tetConvexShapes;
+    tetConvexShapes = make_tetmesh(obj.get());
+    //Augment convexShapes with the shapes
+    for(auto& shape : tetConvexShapes){
+        convexShapes.pushBack(shape);
+    }
+
+    //Create spheres embedded in the volume of the object that can be used to detect interpenetration.
+    PxArray<PxShape*> sphereShapes = make_canary_spheres(obj.get(), tetConvexShapes);
+    //Augment convexShapes with the shapes
+    for(auto& shape : sphereShapes){
+        convexShapes.pushBack(shape);
     }
 
     //The pose of the object/actor is always set to identity

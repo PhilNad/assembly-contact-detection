@@ -162,13 +162,20 @@ o3d.visualization.draw([tm]+voxels)
 
 
 contact_points = physxScene.get_contact_points(obj1_name, obj2_name)
+print("Number of contact points: ", len(contact_points))
 
 contact_point_cloud = o3d.geometry.PointCloud()
 contact_point_cloud.points = o3d.utility.Vector3dVector(contact_points)
-contact_point_cloud.paint_uniform_color([1, 0, 0])
+contact_point_cloud.paint_uniform_color([0, 0, 1])
 
+pen_contact_points = physxScene.get_penetrating_contact_points(obj1_name, obj2_name)
+print("Number of penetrating contact points: ", len(pen_contact_points))
 
-geometries = object_geometries + [contact_point_cloud]
+pen_contact_point_cloud = o3d.geometry.PointCloud()
+pen_contact_point_cloud.points = o3d.utility.Vector3dVector(pen_contact_points)
+pen_contact_point_cloud.paint_uniform_color([1, 0, 0])
+
+geometries = object_geometries + [contact_point_cloud, pen_contact_point_cloud]
 obj1 = object_geometries[0]
 obj2 = object_geometries[1]
 

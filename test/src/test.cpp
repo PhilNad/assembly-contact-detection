@@ -312,7 +312,7 @@ int main(int argc, char** argv) {
     //Move cube2
     pose << 1, 0, 0, 0,
             0, 1, 0, 2.25,
-            0, 0, 1, 1.5,
+            0, 0, 1, 1.5,//1.5
             0, 0, 0, 1;
     scene.set_object_pose("cube2", pose);
 
@@ -333,6 +333,7 @@ int main(int argc, char** argv) {
 
     // Get the contact points between the two objects
     MatrixX3f contact_points = scene.get_contact_points("cube2", "cube3");
+    contact_points = scene.get_penetrating_contact_points("cube2", "cube3");
     cout << "Found " << contact_points.rows() << " contact points." << endl;
     for (int i = 0; i < contact_points.rows(); i++) {
         //cout << contact_points.row(i) << endl;
