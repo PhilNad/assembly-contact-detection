@@ -5,6 +5,7 @@ This library grew from the need for a fast collision detection algorithm that co
 
 An additional requirement is that the detected contact points covers as much as possible of the interface between colliding objects. This is typically not supported by most collision detection libraries as the dynamical behaviour of objects in collision can be more efficiently simulated using a small number of contact points at which impacts occur. However, for assembly planning, it is important to think about potential counteracting forces that could appear at any point of contact between rigid objects. To facilitate the detection of a great number of contact points, a voxelization of the surface of the objects is performed. By detecting collisions between pairs of voxels from different objects, a large number of contact points can be produced. This technique has the added benefit of having no requirements on the triangular mesh provided as input (i.e. any triangle soup can be used), making it easy to interface with Trimesh and Open3D through the Python bindings.
 
+### Contact Resolution
 Since the voxels are axis-aligned, the intersection between two voxels will result in a cuboid with two faces being normal to X, two faces being normal to Y, and two faces being normal to Z. The surface triangles from which the voxels were created are then projected onto the faces of the cuboid, and the intersection between the projected triangles is computed to produce a convex two-dimensional polygon. The vertices of this polygon are then projected back into 3D space to produce the contact points (points that are very close to each other are merged). This technique has the advantage of not requiring any point sampling and works very well with edge-face contacts that would be difficult to detect otherwise.
 
 Most of the compute time is spent computing the intersections, but that task can be easily parallelized with multiple threads. The library is configured to use the maximum number of threads available on the computer. 
@@ -17,6 +18,11 @@ Summary:
 - Multi-threading is used for contact resolution if possible.
 - The library will work for objects that are not convex, almost touching (useful when pose estimation is erroneous), and for objects that are not watertight (i.e. have holes in them).
 - Python bindings are provided.
+
+### Object Inter-Penetration Detection
+This library can also be used to detect when the volume of an object intersects with the one of another object (inter-penetration). This operation is more expensive and requires the input surface mesh to be watertight (a much more difficult requirement to satisfy than for contact detection). The volume of the objects is described through a tetrahedralization. Small spheres (*Canary Spheres*) are placed at the corners of the voxels that lie inside the volume of a tetrahedron, thereby guaranteeing that the canary spheres are all inside the volume of the object and not merely on the surface. During contact resolution, a contact between a canary sphere and the tetrahedron of another object implies that the two objects are inter-penetrating. The position of the inter-penetration contact point is defined as the one of the canary sphere.
+
+With this technique, inter-penetration should not be triggered when one object touches another one without going through. However, it requires generating a large number of collision shapes, which increases the compute time significantly.
 
 ## Dependencies
 - [PhysX](https://github.com/NVIDIA-Omniverse/PhysX) : Download the latest release, and unzip it in a convenient (permanent) location.
