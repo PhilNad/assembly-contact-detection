@@ -30,6 +30,7 @@ class Object
         MatrixX3i tri_triangles;
         MatrixX3f tetra_vertices;
         MatrixX4i tetra_indices;
+        bool is_volumetric;
         bool is_fixed;
         float mass;
         Vector3f com;
@@ -43,6 +44,7 @@ class Object
             Matrix4f pose, 
             MatrixX3f vertices, 
             MatrixX3i triangles,
+            bool is_volumetric,
             bool is_fixed,
             float mass,
             Vector3f com,

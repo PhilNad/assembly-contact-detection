@@ -10,6 +10,7 @@
 /// @param com 3x1 vector representing the center of mass of the object (default: [0, 0, 0])
 /// @param material_name name of the material of the object (default: wood)
 Object::Object(Scene* scene, string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i triangles, 
+        bool is_volumetric = true,
         bool is_fixed = false, 
         float mass = 1.0f, 
         Vector3f com = (Vector3f() << 0.0f, 0.0f, 0.0f).finished(), 
@@ -19,6 +20,7 @@ Object::Object(Scene* scene, string id, Matrix4f pose, MatrixX3f vertices, Matri
     pose{pose},
     tri_vertices{vertices},
     tri_triangles{triangles},
+    is_volumetric{is_volumetric},
     is_fixed{is_fixed},
     mass{mass},
     com{com},

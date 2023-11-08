@@ -47,7 +47,8 @@ if "cube1" in obj_names:
                             np.identity(4), 
                             np.asarray(cube1.vertices), 
                             np.asarray(cube1.triangles),
-                            5, 
+                            30,
+                            True, 
                             False, 
                             1.0, 
                             np.array([0, 0, 0]), #CoM is expressed wrt local frame 
@@ -67,6 +68,7 @@ if "cone" in obj_names:
                             np.asarray(cone.vertices),
                             np.asarray(cone.triangles),
                             30,
+                            True,
                             False,
                             1.0,
                             np.array([0, 0, 0]), #CoM is expressed wrt local frame 
@@ -82,6 +84,7 @@ if "cone" in obj_names:
     cone_pose = physxScene.get_object_pose("cone")
     #Translate the cone to the right
     cone_pose[0, 3] += 0.5
+    cone_pose[2, 3] -= 0.1
     physxScene.set_object_pose("cone", cone_pose)
     cone_pose = physxScene.get_object_pose("cone")
     cone.transform(cone_pose)
@@ -93,6 +96,7 @@ if "cube2" in obj_names:
                             np.asarray(cube2.vertices), 
                             np.asarray(cube2.triangles),
                             30, 
+                            True,
                             False, 
                             1.0, 
                             np.array([0, 0, 0]), #CoM is expressed wrt local frame 
@@ -111,7 +115,8 @@ if "cube3" in obj_names:
                             np.identity(4), 
                             np.asarray(cube3.vertices), 
                             np.asarray(cube3.triangles),
-                            30, 
+                            30,
+                            True, 
                             False, 
                             1.0, 
                             np.array([0, 0, 0]), #CoM is expressed wrt local frame 

@@ -291,7 +291,7 @@ int main(int argc, char** argv) {
             0, 0, 1, 1.5,
             0, 0, 0, 1;
     Cube cube2 = Cube(1, 1, 1);
-    scene.add_object(id, pose, cube2.vertices, cube2.triangles);
+    scene.add_object(id, pose, cube2.vertices, cube2.triangles, 30);
     cube2.rotate(0.79, RowVector3f(0, 0, 1), RowVector3f(0, 0, 0));
     cube2.translate(pose(0, 3), pose(1, 3), pose(2, 3));
     
@@ -303,7 +303,7 @@ int main(int argc, char** argv) {
             0, 0, 1, 0.5,
             0, 0, 0, 1;
     Cube cube3 = Cube(1, 1, 1);
-    scene.add_object(id, pose, cube3.vertices, cube3.triangles);
+    scene.add_object(id, pose, cube3.vertices, cube3.triangles, 30);
     cube3.translate(pose(0, 3), pose(1, 3), pose(2, 3));
 
     //Remove cube1
