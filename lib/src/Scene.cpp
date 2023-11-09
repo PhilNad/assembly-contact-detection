@@ -66,8 +66,13 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
             cout << "Contact detected: " << nbPairs << " pairs" << endl;
         }
 
+        //In debug, we only use one thread to make debugging easier
+        #ifndef NDEBUG
+        const int num_threads = 1;
+        #else
         //Maximum number of threads to use (can be zero)
         const int num_threads = std::thread::hardware_concurrency();
+        #endif
 
         if(num_threads > 1){
             //List of threads
@@ -175,6 +180,12 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                 float max_side = max(o1_sides.maxCoeff(), o2_sides.maxCoeff());
                 float position_threshold = max(position_threshold, 0.1f*max_side);
 
+                //Print the pose of each shape
+                PxTransform pose0 = actor0->getGlobalPose() * shape0->getLocalPose();
+                PxTransform pose1 = actor1->getGlobalPose() * shape1->getLocalPose();
+                //cout << "Pose 0: (" << pose0.p.x << ", " << pose0.p.y << ", " << pose0.p.z << ")" << endl;
+                //cout << "Pose 1: (" << pose1.p.x << ", " << pose1.p.y << ", " << pose1.p.z << ")" << endl;
+
                 //If the collision is between a sphere and a tetrahedron, it means that there is an inter-penetration
                 if((shape0_type == PxGeometryType::eSPHERE && shape1_type == PxGeometryType::eCONVEXMESH) ||
                     (shape1_type == PxGeometryType::eSPHERE && shape0_type == PxGeometryType::eCONVEXMESH) ){
@@ -182,8 +193,14 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                     //Get the position of the sphere/point
                     if(shape0_type == PxGeometryType::eSPHERE){
                         p = shape0->getLocalPose().p;
+                        //Get the position of the sphere/point in the world frame
+                        PxTransform actor_pose = actor0->getGlobalPose();
+                        p = actor_pose.transform(p);
                     }else{
                         p = shape1->getLocalPose().p;
+                        //Get the position of the sphere/point in the world frame
+                        PxTransform actor_pose = actor1->getGlobalPose();
+                        p = actor_pose.transform(p);
                     }
                     Contact contact(obj0, obj1, Vector3f(p.x, p.y, p.z), Vector3f(0,0,1), 0.0f);
                     thread_pen_contacts.push_back(contact);
@@ -610,8 +627,10 @@ PxShape* createTetrahedronShape(PxCookingParams params, PxConvexMeshDesc convexM
 }
 
 /// @brief Create a PxShape representing a cube for the given occupancy cell.
+/// @param cell Occupancy cell for which to create the shape.
+/// @param obj_world_pose Pose of the object in the world frame.
 /// @return Shape representing the cube.
-PxShape* createVoxelShape(GridCell* cell)
+PxShape* Scene::create_voxel_shape(GridCell* cell, Matrix4f obj_world_pose)
 {
     PxBoxGeometry boxGeometry = PxBoxGeometry(cell->half_extents[0], cell->half_extents[1], cell->half_extents[2]);
     PxShape* shape = gPhysics->createShape(boxGeometry, *gMaterial, true);
@@ -619,8 +638,19 @@ PxShape* createVoxelShape(GridCell* cell)
         throw runtime_error("Error creating shape");
 
     shape->userData = cell;
-    //This is the pose relative to the actor's frame. If the actor is moved, the shape will move with it.
-    shape->setLocalPose(PxTransform(PxVec3(cell->centre[0], cell->centre[1], cell->centre[2])));
+    //Gridcells, and therefore voxels, are defined with respect to the world frame.
+    // When actor->setGlobalPose() is called, the shapes are transformed accordingly.
+    // However, this transformation misalignes the voxels, which must stay Axis-Aligned.
+    // Therefore, it is important to re-create the OccupancyGrid AFTER any call to
+    // actor->setGlobalPose() is made.
+    PxTransform objPose = PxTransform(PxMat44(
+        PxVec3(obj_world_pose(0,0), obj_world_pose(1,0), obj_world_pose(2,0)),
+        PxVec3(obj_world_pose(0,1), obj_world_pose(1,1), obj_world_pose(2,1)),
+        PxVec3(obj_world_pose(0,2), obj_world_pose(1,2), obj_world_pose(2,2)),
+        PxVec3(obj_world_pose(0,3), obj_world_pose(1,3), obj_world_pose(2,3))));
+    PxTransform boxPose_w = PxTransform(PxVec3(cell->centre[0], cell->centre[1], cell->centre[2]));
+    PxTransform boxPose_o = objPose.transformInv(boxPose_w);
+    shape->setLocalPose(boxPose_o);
     //Since the voxel will be at a half-extent away from the surface of the object,
     // we set the contact offset to zero, the minimal contact distance is actually the half-extent.
     //               |-----------------|
@@ -661,6 +691,15 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
     batch = (voxel_centres.rowwise() - RowVector3f(voxel_half_extents[0], voxel_half_extents[1], voxel_half_extents[2])).transpose();
     voxel_vertices_matrix.block(0, batch.cols(), 3, batch.cols()) = batch;
 
+    //The voxels are defined in the world frame but the tetrahedra are defined in the object frame
+    // and the position of the spheres will be set in the object frame. Therefore, we need to transform
+    // the voxel vertices to the object frame.
+    Matrix4f pose_inv = obj->pose.inverse();
+    Matrix3f T_R = pose_inv.block(0,0,3,3);
+    Vector3f T_t = pose_inv.block(0,3,3,1);
+    voxel_vertices_matrix = (T_R*voxel_vertices_matrix).colwise() + T_t;
+
+
     auto t2 = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
     cout << "Generated voxel vertices in " << duration << " ms" << endl;
@@ -686,8 +725,15 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
 
     //Iterate over tetrahedra and flag the points that are inside the volume
     VectorXd inside_volume = VectorXd::Zero(voxel_vertices_matrix.cols());
-    //Number of threads to use (at most the number of tetrahedra)
+
+    //In debug, we only use one thread to make debugging easier
+    #ifndef NDEBUG
+    const int num_threads = 1;
+    #else
+    //Maximum number of threads to use (can be zero), at most the number of tetrahedra
     const int num_threads = min(tetConvexShapes.size(), std::thread::hardware_concurrency());
+    #endif
+
     if(num_threads > 1){
         //List of threads
         std::vector<std::thread> threads(num_threads);
@@ -732,7 +778,7 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
             PxShape* sphere = gPhysics->createShape(sphereGeometry, *gMaterial, true);
             if(!sphere)
                 throw runtime_error("Error creating shape");
-            //Set the position of the sphere
+            //Set the position of the sphere. The voxel vertices are in the object frame here.
             Vector3f pos = voxel_vertices_matrix.col(i);
             sphere->setLocalPose(PxTransform(PxVec3(pos[0], pos[1], pos[2])));
             sphere->setRestOffset(0);
@@ -872,10 +918,15 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
     assert(resolution > 0);
     assert(mass > 0);
 
+    /*
     //The vertices are given relative to the object frame, so we transform them to the world frame
     Matrix3f pose_R = pose.block<3,3>(0,0);
     Vector3f pose_t = pose.block<3,1>(0,3);
     vertices = (pose_R*vertices.transpose()).transpose().rowwise() + pose_t.transpose();
+    */
+
+    //The vertices, spheres and tetrahedra are defined relative to the object frame,
+    // but the voxels are defined relative to the world frame.
 
     //Create an object instance and add it to the scene
     // When adding an element to the vector, the vector may reallocate memory and move the elements which will change their addresses.
@@ -906,7 +957,7 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
     for(auto& item : *cells){
         uint32_t index = item.first;
         GridCell* cell  = &item.second;
-        PxShape* voxelShape = createVoxelShape(cell);
+        PxShape* voxelShape = create_voxel_shape(cell, pose);
         convexShapes.pushBack(voxelShape);
     }
     t2 = chrono::high_resolution_clock::now();
@@ -939,10 +990,13 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
         cout << "Created canary spheres in " << duration << " ms" << endl;
     }
 
-    //The pose of the object/actor is always set to identity
-    // but the triangles are transformed to the correct pose.
-    PxTransform pxPose = PxTransform(PxIdentity);
-    
+    //Pose of the actor/object in the world frame column by column [col0 | col1 | col2 | col3]
+    PxTransform pxPose = PxTransform(PxMat44(
+        PxVec3(pose(0,0), pose(1,0), pose(2,0)),
+        PxVec3(pose(0,1), pose(1,1), pose(2,1)),
+        PxVec3(pose(0,2), pose(1,2), pose(2,2)),
+        PxVec3(pose(0,3), pose(1,3), pose(2,3))));
+
     //If the object is fixed, there is no dynamics involved
     if(is_fixed){
         PxRigidStatic* actor = gPhysics->createRigidStatic(pxPose);
@@ -954,6 +1008,7 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
             convexShapes[i]->release();
         }
         gScene->addActor(*actor);
+        actor->setGlobalPose(pxPose);
         actor->setName(obj->id.c_str());
         actor->userData = obj.get();
     }
@@ -969,12 +1024,14 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
         //Attach all shapes in the object to the actor
         for(int i = 0; i < convexShapes.size(); i++){
             actor->attachShape(*convexShapes[i]);
+            convexShapes[i]->release();
         }
         PxVec3 pxCom = PxVec3(com(0), com(1), com(2));
         //PxRigidBodyExt::setMassAndUpdateInertia(*actor, mass, &pxCom, true);
         actor->setMass(mass);
         actor->setCMassLocalPose(PxTransform(pxCom));
         gScene->addActor(*actor);
+        actor->setGlobalPose(pxPose);
         actor->setKinematicTarget(pxPose);
         actor->setName(obj->id.c_str());
         actor->userData = obj.get();
@@ -1076,10 +1133,106 @@ void Scene::set_object_pose(string id, Matrix4f pose)
     // of the grid cells impossible. Furthermore, the shapes need to refer to the
     // new grid cells for the contact report callback to work properly.
 
-    //Get object by ID
+    //The OccupancyGrid is created in the world frame. Therefore, the voxels
+    // are also in the world frame. Therefore, the pose of the actor must be
+    // set to identity/zero and the pose of the shapes must be individually
+    // set.
+    //Alternatively, we could set the local pose of the voxel shapes such that
+    // it is the inverse of the pose of the actor. Doing so would allow us to
+    // set the global pose of the actor to the desired pose and not have to
+    // set the pose of every shape individually, potentially saving some time.
+
+    bool use_new_method = true;
+
+    //Get object by ID, actor and shapes
     Object* obj = get_object_by_id(id);
 
-    if(obj != nullptr){
+    //New Method
+    if(obj != nullptr && use_new_method == true){
+        PxRigidActor* actor = get_actor(id);
+        PxActorType::Enum actor_type = actor->getType();
+        vector<PxShape*> attached_shapes = get_actor_shapes(actor);
+        Matrix4f previous_pose = obj->pose;
+        Matrix4f previous_pose_inv = previous_pose.inverse();
+        MatrixX3f vertices  = obj->tri_vertices;
+        MatrixX3i triangles = obj->tri_triangles;
+        int resolution      = obj->get_grid_resolution();
+        bool is_fixed       = obj->is_fixed;
+        bool is_volumetric  = obj->is_volumetric;
+        float mass          = obj->mass;
+        Vector3f com        = obj->com;
+        string material_name = obj->material_name;
+
+        //Transform that expresses the pose change
+        Matrix4f pose_transform = pose*previous_pose_inv;
+        //Convert to PhysX matrix by column [col0 | col1 | col2 | col3]
+        PxTransform px_pose_transform = PxTransform(PxMat44(
+            PxVec3(pose_transform(0,0), pose_transform(1,0), pose_transform(2,0)),
+            PxVec3(pose_transform(0,1), pose_transform(1,1), pose_transform(2,1)),
+            PxVec3(pose_transform(0,2), pose_transform(1,2), pose_transform(2,2)),
+            PxVec3(pose_transform(0,3), pose_transform(1,3), pose_transform(2,3))
+        ));
+
+        //Create a new occupancy grid
+        obj->reset_pose(pose);
+        shared_ptr<OccupancyGrid> new_grid = obj->occupancy_grid;
+
+        //Update the shapes attached to the actor
+        for (int i = 0; i < attached_shapes.size(); i++)
+        {
+            PxShape* shape = attached_shapes[i];
+            PxGeometryType::Enum shape_type = shape->getGeometry().getType();
+            PxTransform shape_pose = shape->getLocalPose();
+
+            //Detach all box shapes from the actor
+            if(shape_type == PxGeometryType::eBOX){
+                actor->detachShape(*shape);
+            }
+
+            /*
+            if(shape_type == PxGeometryType::eSPHERE){
+                //Change the position of the sphere
+                PxTransform new_pose = px_pose_transform*shape_pose;
+                shape->setLocalPose(new_pose);
+            }
+
+            if(shape_type == PxGeometryType::eCONVEXMESH){
+                //Change the position of the tetrahedra
+                PxTransform new_pose = px_pose_transform*shape_pose;
+                shape->setLocalPose(new_pose);
+            }
+            */
+        }
+
+        //Change the pose of the actor such that the tetrahedra and spheres
+        // are in the correct position.
+        PxTransform pxPose = PxTransform(PxMat44(
+            PxVec3(pose(0,0), pose(1,0), pose(2,0)),
+            PxVec3(pose(0,1), pose(1,1), pose(2,1)),
+            PxVec3(pose(0,2), pose(1,2), pose(2,2)),
+            PxVec3(pose(0,3), pose(1,3), pose(2,3))
+        ));
+
+        actor->setGlobalPose(pxPose);
+        if(actor_type == PxActorType::Enum::eRIGID_DYNAMIC){
+            //Cast to dynamic actor
+            static_cast<PxRigidDynamic*>(actor)->setKinematicTarget(pxPose);
+        }
+
+        //Create a shape from each voxel in the occupancy grid.
+        unordered_map<uint32_t, GridCell>* new_cells = new_grid->get_grid_cells();
+        //Create a shape for each occupancy grid cell
+        for(auto& item : *new_cells){
+            GridCell* cell  = &item.second;
+            PxShape* voxelShape = create_voxel_shape(cell, pose);
+            actor->attachShape(*voxelShape);
+            voxelShape->release();
+        }
+
+    }
+
+    //Old Method
+    if(obj != nullptr && use_new_method == false){
         //Get object mesh
         Matrix4f previous_pose = obj->pose;
         MatrixX3f vertices  = obj->tri_vertices;
@@ -1104,6 +1257,7 @@ void Scene::set_object_pose(string id, Matrix4f pose)
         //Create a new object with the same mesh and the new pose
         add_object(id, pose, vertices, triangles, resolution, is_volumetric, is_fixed, mass, com, material_name);
     }
+    cout << "Moved object " << id << " to pose " << endl << pose << endl;
 }
 
 /// @brief Return the object that has the given ID

@@ -267,6 +267,19 @@ void test_segment_rectangle_intersection()
     cout << "---" << endl;
 }
 
+/// @brief Expressed the given vertices in the object frame.
+/// @param pose Homogeneous pose matrix of the object.
+/// @param vertices_world Nx3 matrix of vertices in the world frame.
+/// @return Nx3 matrix of vertices in the object frame.
+MatrixX3f vertices_to_object_frame(Matrix4f pose, MatrixX3f vertices_world)
+{
+    Matrix4f pose_inv = pose.inverse();
+    Matrix3f pose_inv_R = pose_inv.block<3, 3>(0, 0); //Rotation
+    Vector3f pose_inv_t = pose_inv.block<3, 1>(0, 3); //Translation
+    MatrixX3f vertices_o = (pose_inv_R*vertices_world.transpose()).transpose().rowwise() + pose_inv_t.transpose();
+    return vertices_o;
+}
+
 int main(int argc, char** argv) {
     //test_triangle_triangle_intersections();
     //return 0;
@@ -288,10 +301,10 @@ int main(int argc, char** argv) {
     id = "cube2";
     pose << 1, 0, 0, 0,
             0, 1, 0, 0.25,
-            0, 0, 1, 1.5,
+            0, 0, 1, 1.4,
             0, 0, 0, 1;
     Cube cube2 = Cube(1, 1, 1);
-    scene.add_object(id, pose, cube2.vertices, cube2.triangles, 30);
+    scene.add_object(id, pose, cube2.vertices, cube2.triangles, 5);
     cube2.rotate(0.79, RowVector3f(0, 0, 1), RowVector3f(0, 0, 0));
     cube2.translate(pose(0, 3), pose(1, 3), pose(2, 3));
     
@@ -303,25 +316,25 @@ int main(int argc, char** argv) {
             0, 0, 1, 0.5,
             0, 0, 0, 1;
     Cube cube3 = Cube(1, 1, 1);
-    scene.add_object(id, pose, cube3.vertices, cube3.triangles, 30);
+    scene.add_object(id, pose, cube3.vertices, cube3.triangles, 5);
     cube3.translate(pose(0, 3), pose(1, 3), pose(2, 3));
 
     //Remove cube1
     scene.remove_object("cube1");
 
-    //Move cube2
-    pose << 1, 0, 0, 0,
-            0, 1, 0, 2.25,
-            0, 0, 1, 1.5,//1.5
-            0, 0, 0, 1;
-    scene.set_object_pose("cube2", pose);
+    // //Move cube2
+    // pose << 1, 0, 0, 0,
+    //         0, 1, 0, 2.25,
+    //         0, 0, 1, 1.5,//1.5
+    //         0, 0, 0, 1;
+    // scene.set_object_pose("cube2", pose);
 
-    //Move cube3
-    pose << 1, 0, 0, 0,
-            0, 1, 0, 2,
-            0, 0, 1, 0.5,
-            0, 0, 0, 1;
-    scene.set_object_pose("cube3", pose);
+    // //Move cube3
+    // pose << 1, 0, 0, 0,
+    //         0, 1, 0, 2,
+    //         0, 0, 1, 0.5,
+    //         0, 0, 0, 1;
+    // scene.set_object_pose("cube3", pose);
 
     // Get the list of objects in contact with the cube
     set<string> contacted_objects = scene.get_contacted_objects("cube2");
@@ -333,8 +346,9 @@ int main(int argc, char** argv) {
 
     // Get the contact points between the two objects
     MatrixX3f contact_points = scene.get_contact_points("cube2", "cube3");
-    contact_points = scene.get_penetrating_contact_points("cube2", "cube3");
     cout << "Found " << contact_points.rows() << " contact points." << endl;
+    contact_points = scene.get_penetrating_contact_points("cube2", "cube3");
+    cout << "Found " << contact_points.rows() << " penetrating points." << endl;
     for (int i = 0; i < contact_points.rows(); i++) {
         //cout << contact_points.row(i) << endl;
     }

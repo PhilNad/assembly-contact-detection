@@ -130,13 +130,20 @@ void Object::set_tri_mesh(MatrixX3f& vertices, MatrixX3i& triangles)
     this->tri_mesh = simpleTriMesh_ptr;
 }
 
-/// @brief Create a grid of cells that represent the volume of the object.
+/// @brief Create a grid of cells, defined in the world frame, that represents the volume of the object.
 /// @param resolution Number of cells per unit of length.
 /// @return Pointer to the occupancy grid
 shared_ptr<OccupancyGrid> Object::create_occupancy_grid(int resolution, int sampling_method)
 {
+    //Object vertices are given relative to the object frame
     MatrixX3f vertices = this->tri_vertices;
     MatrixX3i triangles = this->tri_triangles;
+
+    //We need to transform vertices to the world frame such that the OccupancyGrid is defined in the world frame
+    Matrix3f pose_R = this->pose.block<3,3>(0,0);
+    Vector3f pose_t = this->pose.block<3,1>(0,3);
+    vertices = (pose_R*vertices.transpose()).transpose().rowwise() + pose_t.transpose();
+
     //Build the grid
     shared_ptr<OccupancyGrid> grid = make_shared<OccupancyGrid>(vertices, triangles, resolution, sampling_method);
     this->occupancy_grid = grid;
@@ -450,6 +457,7 @@ bool Object::create_tetra_mesh(PxSimpleTriangleMesh& triSurfaceMesh, PxArray<PxV
 
 /// @brief Get the position of the centre of each occupied cell in the occupancy grid
 /// @return Nx3 matrix representing the centre positions
+/// @note The centres are given in the world frame
 MatrixX3f Object::get_voxel_centres()
 {
     std::unordered_map<uint32_t, GridCell>* grid = this->occupancy_grid->get_grid_cells();
@@ -466,6 +474,7 @@ MatrixX3f Object::get_voxel_centres()
 
 /// @brief Get the side lengths of each occupied cell in the occupancy grid
 /// @return 3x1 vector representing the side lengths
+/// @note All cells have the same side lengths, which are defined in the world frame
 Vector3f Object::get_voxel_side_lengths()
 {
     std::unordered_map<uint32_t, GridCell>* grid = this->occupancy_grid->get_grid_cells();
@@ -486,6 +495,42 @@ int Object::get_grid_resolution()
 void Object::set_max_separation(float max_separation)
 {
     this->max_separation = abs(max_separation);
+}
+
+/// @brief Change the pose of the object and updates the occupancy grid.
+/// @param pose Homogeneous transformation matrix describing the new pose of the object.
+void Object::reset_pose(Matrix4f new_pose)
+{
+    bool valid_pose = is_valid_pose_matrix(new_pose);
+    if(valid_pose == false){
+        throw runtime_error("Invalid pose matrix.");
+    }
+
+    /*
+    Matrix4f previous_pose = this->pose;
+    Matrix4f previous_pose_inv = previous_pose.inverse();
+    Matrix4f T = new_pose * previous_pose_inv; // 4x4 transformation matrix
+    Matrix3f T_R = T.block<3, 3>(0, 0); // 3x3 rotation matrix
+    Vector3f T_t = T.block<3, 1>(0, 3); // 3x1 translation vector
+
+    MatrixX3f old_tri_vertices = this->tri_vertices;
+    MatrixX3f old_tetra_vertices = this->tetra_vertices;
+
+    //Transform the vertices of the meshes
+    MatrixX3f new_tri_vertices = (T_R*old_tri_vertices.transpose()).transpose().rowwise() + T_t.transpose();
+    MatrixX3f new_tetra_vertices = (T_R*old_tetra_vertices.transpose()).transpose().rowwise() + T_t.transpose();
+
+    //Update the vertices
+    this->set_tri_mesh(new_tri_vertices, this->tri_triangles);
+    this->tetra_vertices = new_tetra_vertices;
+    */
+    
+    //The vertices are defined in the object frame, so they dont have to be transformed.
+    // However, the occupancy grid is defined in the world frame so it must be updated.
+    this->pose = new_pose;
+
+    //Create a new OccupancyGrid
+    this->create_occupancy_grid(this->occupancy_grid->resolution, this->occupancy_grid->sampling_method_used);
 }
 
 /// @brief  Test if the supplied matrix is a 4x4 homogeneous transformation matrix.

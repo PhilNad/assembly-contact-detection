@@ -26,6 +26,7 @@ class Scene
         vector<PxShape*> get_actor_shapes(PxRigidActor* actor);
         PxArray<PxShape*> make_tetmesh(Object* obj);
         PxArray<PxShape*> make_canary_spheres(Object* obj, PxArray<PxShape*> tetConvexShapes);
+        PxShape* create_voxel_shape(GridCell* cell, Matrix4f obj_world_pose);
         Matrix3f tetra_local_frame(const vector<Vector3f>& vertices);
         VectorXd check_points_in_tetra(const Matrix3Xf& points, const Matrix3f& T_world_to_local, const Vector3f& origin);
         void points_in_tetrahedron(Matrix3Xf voxel_vertices_matrix, vector<vector<Vector3f>> tetra_vertices_list, int index_first_tet, int index_last_tet, VectorXd& inside_volume);

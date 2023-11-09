@@ -20,7 +20,6 @@ class Scene;
 class Object
 {
     private:
-        shared_ptr<OccupancyGrid> occupancy_grid;
         shared_ptr<PxVec3> tri_mesh_vertices;
         shared_ptr<PxU32> tri_mesh_indices;
     public:
@@ -38,6 +37,7 @@ class Object
         float max_separation;
         Scene* scene;
         shared_ptr<PxSimpleTriangleMesh> tri_mesh;
+        shared_ptr<OccupancyGrid> occupancy_grid;
         Object(
             Scene* scene,
             string id, 
@@ -55,6 +55,7 @@ class Object
         Vector3f get_voxel_side_lengths();
         int get_grid_resolution();
         void set_max_separation(float max_separation);
+        void reset_pose(Matrix4f new_pose);
         bool is_valid_pose_matrix(Matrix4f matrix);
         void set_tetra_mesh(PxArray<PxVec3> vertices, PxArray<PxU32> indices);
         void set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh);
