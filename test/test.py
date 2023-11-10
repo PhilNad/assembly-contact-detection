@@ -85,8 +85,10 @@ if "cone" in obj_names:
     #Translate the cone to the right
     cone_pose[0, 3] += 0.5
     cone_pose[2, 3] -= 0.1
+    start_time = time.time()
     physxScene.set_object_pose("cone", cone_pose)
     cone_pose = physxScene.get_object_pose("cone")
+    print("Cone moved in: ", time.time() - start_time)
     cone.transform(cone_pose)
 
 if "cube2" in obj_names:    

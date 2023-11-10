@@ -505,25 +505,6 @@ void Object::reset_pose(Matrix4f new_pose)
     if(valid_pose == false){
         throw runtime_error("Invalid pose matrix.");
     }
-
-    /*
-    Matrix4f previous_pose = this->pose;
-    Matrix4f previous_pose_inv = previous_pose.inverse();
-    Matrix4f T = new_pose * previous_pose_inv; // 4x4 transformation matrix
-    Matrix3f T_R = T.block<3, 3>(0, 0); // 3x3 rotation matrix
-    Vector3f T_t = T.block<3, 1>(0, 3); // 3x1 translation vector
-
-    MatrixX3f old_tri_vertices = this->tri_vertices;
-    MatrixX3f old_tetra_vertices = this->tetra_vertices;
-
-    //Transform the vertices of the meshes
-    MatrixX3f new_tri_vertices = (T_R*old_tri_vertices.transpose()).transpose().rowwise() + T_t.transpose();
-    MatrixX3f new_tetra_vertices = (T_R*old_tetra_vertices.transpose()).transpose().rowwise() + T_t.transpose();
-
-    //Update the vertices
-    this->set_tri_mesh(new_tri_vertices, this->tri_triangles);
-    this->tetra_vertices = new_tetra_vertices;
-    */
     
     //The vertices are defined in the object frame, so they dont have to be transformed.
     // However, the occupancy grid is defined in the world frame so it must be updated.

@@ -180,12 +180,6 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                 float max_side = max(o1_sides.maxCoeff(), o2_sides.maxCoeff());
                 float position_threshold = max(position_threshold, 0.1f*max_side);
 
-                //Print the pose of each shape
-                PxTransform pose0 = actor0->getGlobalPose() * shape0->getLocalPose();
-                PxTransform pose1 = actor1->getGlobalPose() * shape1->getLocalPose();
-                //cout << "Pose 0: (" << pose0.p.x << ", " << pose0.p.y << ", " << pose0.p.z << ")" << endl;
-                //cout << "Pose 1: (" << pose1.p.x << ", " << pose1.p.y << ", " << pose1.p.z << ")" << endl;
-
                 //If the collision is between a sphere and a tetrahedron, it means that there is an inter-penetration
                 if((shape0_type == PxGeometryType::eSPHERE && shape1_type == PxGeometryType::eCONVEXMESH) ||
                     (shape1_type == PxGeometryType::eSPHERE && shape0_type == PxGeometryType::eCONVEXMESH) ){
@@ -641,8 +635,8 @@ PxShape* Scene::create_voxel_shape(GridCell* cell, Matrix4f obj_world_pose)
     //Gridcells, and therefore voxels, are defined with respect to the world frame.
     // When actor->setGlobalPose() is called, the shapes are transformed accordingly.
     // However, this transformation misalignes the voxels, which must stay Axis-Aligned.
-    // Therefore, it is important to re-create the OccupancyGrid AFTER any call to
-    // actor->setGlobalPose() is made.
+    // Therefore, we set the box pose in the object frame, and expect PhysX to transform
+    // it to the world frame later.
     PxTransform objPose = PxTransform(PxMat44(
         PxVec3(obj_world_pose(0,0), obj_world_pose(1,0), obj_world_pose(2,0)),
         PxVec3(obj_world_pose(0,1), obj_world_pose(1,1), obj_world_pose(2,1)),
@@ -729,6 +723,7 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
     //In debug, we only use one thread to make debugging easier
     #ifndef NDEBUG
     const int num_threads = 1;
+    cout << "Using only one thread for debugging" << endl;
     #else
     //Maximum number of threads to use (can be zero), at most the number of tetrahedra
     const int num_threads = min(tetConvexShapes.size(), std::thread::hardware_concurrency());
@@ -917,16 +912,6 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
     assert(triangles.rows() > 0);
     assert(resolution > 0);
     assert(mass > 0);
-
-    /*
-    //The vertices are given relative to the object frame, so we transform them to the world frame
-    Matrix3f pose_R = pose.block<3,3>(0,0);
-    Vector3f pose_t = pose.block<3,1>(0,3);
-    vertices = (pose_R*vertices.transpose()).transpose().rowwise() + pose_t.transpose();
-    */
-
-    //The vertices, spheres and tetrahedra are defined relative to the object frame,
-    // but the voxels are defined relative to the world frame.
 
     //Create an object instance and add it to the scene
     // When adding an element to the vector, the vector may reallocate memory and move the elements which will change their addresses.
@@ -1128,80 +1113,38 @@ void Scene::remove_object(string id)
 /// @note This is a relatively expensive operation.
 void Scene::set_object_pose(string id, Matrix4f pose)
 {
-    //Although it might seems to be inefficient, we need to recreate the object
-    // as the OccupancyGrid has to be axis-aligned, making simple transformation
-    // of the grid cells impossible. Furthermore, the shapes need to refer to the
-    // new grid cells for the contact report callback to work properly.
+
+    //Every time the object is moved, the OccupancyGrid has to be recreated
+    // such that the voxels are axis-aligned (our geometric intersection
+    // algorithm relies on that to be fast). However, other shapes attached
+    // to the object (tetrahedra, spheres) do not have to be recreated when
+    // relying on shape->setLocalPose() and actor->setGlobalPose().
 
     //The OccupancyGrid is created in the world frame. Therefore, the voxels
-    // are also in the world frame. Therefore, the pose of the actor must be
-    // set to identity/zero and the pose of the shapes must be individually
-    // set.
-    //Alternatively, we could set the local pose of the voxel shapes such that
-    // it is the inverse of the pose of the actor. Doing so would allow us to
-    // set the global pose of the actor to the desired pose and not have to
-    // set the pose of every shape individually, potentially saving some time.
+    // are also in the world frame. We set the local pose of the voxel shapes
+    // such that, when setGlobalPose() is called, the voxels are correctly positioned. 
+    //   See: create_voxel_shape()
 
-    bool use_new_method = true;
+    auto t1 = chrono::high_resolution_clock::now();
 
     //Get object by ID, actor and shapes
     Object* obj = get_object_by_id(id);
 
     //New Method
-    if(obj != nullptr && use_new_method == true){
+    if(obj != nullptr){
         PxRigidActor* actor = get_actor(id);
         PxActorType::Enum actor_type = actor->getType();
         vector<PxShape*> attached_shapes = get_actor_shapes(actor);
-        Matrix4f previous_pose = obj->pose;
-        Matrix4f previous_pose_inv = previous_pose.inverse();
-        MatrixX3f vertices  = obj->tri_vertices;
-        MatrixX3i triangles = obj->tri_triangles;
-        int resolution      = obj->get_grid_resolution();
-        bool is_fixed       = obj->is_fixed;
-        bool is_volumetric  = obj->is_volumetric;
-        float mass          = obj->mass;
-        Vector3f com        = obj->com;
-        string material_name = obj->material_name;
 
-        //Transform that expresses the pose change
-        Matrix4f pose_transform = pose*previous_pose_inv;
-        //Convert to PhysX matrix by column [col0 | col1 | col2 | col3]
-        PxTransform px_pose_transform = PxTransform(PxMat44(
-            PxVec3(pose_transform(0,0), pose_transform(1,0), pose_transform(2,0)),
-            PxVec3(pose_transform(0,1), pose_transform(1,1), pose_transform(2,1)),
-            PxVec3(pose_transform(0,2), pose_transform(1,2), pose_transform(2,2)),
-            PxVec3(pose_transform(0,3), pose_transform(1,3), pose_transform(2,3))
-        ));
-
-        //Create a new occupancy grid
-        obj->reset_pose(pose);
-        shared_ptr<OccupancyGrid> new_grid = obj->occupancy_grid;
-
-        //Update the shapes attached to the actor
+        //Detach all box shapes from the actor
         for (int i = 0; i < attached_shapes.size(); i++)
         {
             PxShape* shape = attached_shapes[i];
             PxGeometryType::Enum shape_type = shape->getGeometry().getType();
-            PxTransform shape_pose = shape->getLocalPose();
 
-            //Detach all box shapes from the actor
             if(shape_type == PxGeometryType::eBOX){
                 actor->detachShape(*shape);
             }
-
-            /*
-            if(shape_type == PxGeometryType::eSPHERE){
-                //Change the position of the sphere
-                PxTransform new_pose = px_pose_transform*shape_pose;
-                shape->setLocalPose(new_pose);
-            }
-
-            if(shape_type == PxGeometryType::eCONVEXMESH){
-                //Change the position of the tetrahedra
-                PxTransform new_pose = px_pose_transform*shape_pose;
-                shape->setLocalPose(new_pose);
-            }
-            */
         }
 
         //Change the pose of the actor such that the tetrahedra and spheres
@@ -1214,14 +1157,18 @@ void Scene::set_object_pose(string id, Matrix4f pose)
         ));
 
         actor->setGlobalPose(pxPose);
+        //Static actors do not have a kinematic target
         if(actor_type == PxActorType::Enum::eRIGID_DYNAMIC){
             //Cast to dynamic actor
             static_cast<PxRigidDynamic*>(actor)->setKinematicTarget(pxPose);
         }
 
+        //Create a new occupancy grid
+        obj->reset_pose(pose);
+        shared_ptr<OccupancyGrid> new_grid = obj->occupancy_grid;
+
         //Create a shape from each voxel in the occupancy grid.
         unordered_map<uint32_t, GridCell>* new_cells = new_grid->get_grid_cells();
-        //Create a shape for each occupancy grid cell
         for(auto& item : *new_cells){
             GridCell* cell  = &item.second;
             PxShape* voxelShape = create_voxel_shape(cell, pose);
@@ -1230,34 +1177,9 @@ void Scene::set_object_pose(string id, Matrix4f pose)
         }
 
     }
-
-    //Old Method
-    if(obj != nullptr && use_new_method == false){
-        //Get object mesh
-        Matrix4f previous_pose = obj->pose;
-        MatrixX3f vertices  = obj->tri_vertices;
-        MatrixX3i triangles = obj->tri_triangles;
-        int resolution      = obj->get_grid_resolution();
-        bool is_fixed       = obj->is_fixed;
-        bool is_volumetric  = obj->is_volumetric;
-        float mass          = obj->mass;
-        Vector3f com        = obj->com;
-        string material_name = obj->material_name;
-
-        //Remove the object from the scene
-        remove_object(id);
-
-        //The vertices are in the world frame, but the add_object() function expects them to be in the object frame.
-        // Hence, we need to transform them back to the object frame by using the inverse of the previous pose.
-        Matrix4f previous_pose_inv = previous_pose.inverse();
-        MatrixX3f ppi_R = previous_pose_inv.block<3,3>(0,0);
-        Vector3f  ppi_t = previous_pose_inv.block<3,1>(0,3);
-        vertices = (ppi_R*vertices.transpose()).transpose().rowwise() + ppi_t.transpose();
-
-        //Create a new object with the same mesh and the new pose
-        add_object(id, pose, vertices, triangles, resolution, is_volumetric, is_fixed, mass, com, material_name);
-    }
-    cout << "Moved object " << id << " to pose " << endl << pose << endl;
+    auto t2 = chrono::high_resolution_clock::now();
+    auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+    cout << "Moved object " << id << " in " << duration << " ms to pose " << endl << pose << endl;
 }
 
 /// @brief Return the object that has the given ID
