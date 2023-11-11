@@ -12,6 +12,8 @@ struct LineSegmentIntersection {
     int nb_intersections = 0;
 };
 
+Eigen::Vector3f line_plane_intersection(const Eigen::Vector3f vector_start, const Eigen::Vector3f vector_dir, const Eigen::Vector3f plane_normal, const float plane_distance);
+
 PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::shared_ptr<Triangle<Eigen::Vector3f>> t1, std::shared_ptr<Triangle<Eigen::Vector3f>> t2, float max_distance);
 
 PointSet3D triangle_overlap_over_AARectangle(AARectangle& aarec, std::shared_ptr<Triangle<Eigen::Vector3f>> t1, std::shared_ptr<Triangle<Eigen::Vector3f>> t2);

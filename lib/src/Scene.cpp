@@ -198,6 +198,8 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                     }
                     Contact contact(obj0, obj1, Vector3f(p.x, p.y, p.z), Vector3f(0,0,1), 0.0f);
                     thread_pen_contacts.push_back(contact);
+                    //Mark the two objects as being in contact
+                    thread_contacted_objects.push_back(make_pair(id_obj0, id_obj1));
                 }
 
                 //The collision is between two gridcells
@@ -219,6 +221,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                         Contact contact(obj0, obj1, Vector3f(p[0], p[1], p[2]), Vector3f(0,0,1), 0.0f);
                         thread_contacts.push_back(contact);
                     }
+                    //Mark the two objects as being in contact
                     thread_contacted_objects.push_back(make_pair(id_obj0, id_obj1));
                 }
             }
@@ -447,10 +450,11 @@ set<string> Scene::get_contacted_objects(string target_object)
     return contacted_objects;
 }
 
-/// @brief Get the contact points between two objects.
+/// @brief Get the contact points between two objects that are not penetrating.
 /// @param id1 id of the first object
 /// @param id2 id of the second object
 /// @return Nx3 matrix representing the contact points between the two objects
+/// @note If id2 is set to an empty string, returns all contact points involving id1.
 MatrixX3f Scene::get_contact_points(string id1, string id2)
 {
     //If there are no contacts, step the simulation by a small amount
@@ -459,14 +463,17 @@ MatrixX3f Scene::get_contact_points(string id1, string id2)
         this->step_simulation(1/1000.0f);
     }
 
+    //If id2 is set to an empty string, we return all contact points involving id1
+    bool return_all_contact_points = (id2 == "");
+
     //Iterate over gContacts and find the contact points between the two objects
     vector<Vector3f> contact_points;
     for (int i = 0; i < gContacts.size(); i++)
     {
         pair<string, string> object_ids = gContacts[i].get_object_ids();
-        if (object_ids.first == id1 && object_ids.second == id2)
+        if (object_ids.first == id1 && (return_all_contact_points || object_ids.second == id2))
             contact_points.push_back(gContacts[i].get_position());
-        if (object_ids.first == id2 && object_ids.second == id1)
+        if (object_ids.second == id1 && (return_all_contact_points || object_ids.first == id2))
             contact_points.push_back(gContacts[i].get_position());
     }
 
@@ -480,10 +487,11 @@ MatrixX3f Scene::get_contact_points(string id1, string id2)
     return contact_points_matrix;
 }
 
-/// @brief Get the contact points between two objects.
+/// @brief Get the contact points between two objects that are penetrating.
 /// @param id1 id of the first object
 /// @param id2 id of the second object
 /// @return Nx3 matrix representing the contact points between the two objects
+/// @note If id2 is set to an empty string, returns all contact points involving id1.
 MatrixX3f Scene::get_penetrating_contact_points(string id1, string id2)
 {
     //If there are no contacts, step the simulation by a small amount
@@ -492,14 +500,17 @@ MatrixX3f Scene::get_penetrating_contact_points(string id1, string id2)
         this->step_simulation(1/1000.0f);
     }
 
+    //If id2 is set to an empty string, we return all contact points involving id1
+    bool return_all_contact_points = (id2 == "");
+
     //Iterate over gPenetrationContacts and find the contact points between the two objects
     vector<Vector3f> contact_points;
     for (int i = 0; i < gPenetrationContacts.size(); i++)
     {
         pair<string, string> object_ids = gPenetrationContacts[i].get_object_ids();
-        if (object_ids.first == id1 && object_ids.second == id2)
+        if (object_ids.first == id1 && (return_all_contact_points || object_ids.second == id2))
             contact_points.push_back(gPenetrationContacts[i].get_position());
-        if (object_ids.first == id2 && object_ids.second == id1)
+        if (object_ids.second == id1 && (return_all_contact_points || object_ids.first == id2))
             contact_points.push_back(gPenetrationContacts[i].get_position());
     }
 
@@ -511,6 +522,300 @@ MatrixX3f Scene::get_penetrating_contact_points(string id1, string id2)
         contact_points_matrix.row(i) = contact_points[i].transpose();
     }
     return contact_points_matrix;
+}
+
+/// @brief Get all contact points involving the object with the given id.
+/// @param id Id of the object for which to get the contact points.
+/// @return Nx3 matrix representing the contact points with the scene.
+MatrixX3f Scene::get_all_contact_points(string id)
+{
+    return this->get_contact_points(id, "");
+}
+
+/// @brief Get all penetrating contact points involving the object with the given id.
+/// @param id Id of the object for which to get the contact points.
+/// @return Nx3 matrix representing the contact points with the scene.
+MatrixX3f Scene::get_all_penetrating_contact_points(string id)
+{
+    return this->get_penetrating_contact_points(id, "");
+}
+
+/// @brief Amongst an object's contact points, get those lying on the convex hull.
+/// @param id Id of the object for which to get the contact points.
+/// @return Nx3 matrix representing the subset of contact points lying on the convex hull.
+/// @note A small perturbation is added to each contact point to make sure that the convex hull
+///         is full dimensional. Equivalent to QHull's "QJ" option.
+MatrixX3f Scene::get_contact_convex_hull(string id)
+{
+    MatrixX3f obj_contact_points = this->get_all_contact_points(id);
+
+    PxTolerancesScale scale;
+    PxCookingParams params(scale);
+    PxConvexMeshDesc convexDesc;
+
+    params.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
+    convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX; // | PxConvexFlag::eDISABLE_MESH_VALIDATION | PxConvexFlag::eFAST_INERTIA_COMPUTATION;
+
+    //Amplitude of the perturbation added to each point
+    float perturbation_amplitude = 0.001;
+
+    //Create a convex mesh from the object's contact points
+    PxVec3* vertices = new PxVec3[obj_contact_points.rows()];
+    for(int i=0; i < obj_contact_points.rows(); i++){
+        //Add a random perturbation to the point
+        Vector3f perturbation = perturbation_amplitude*Vector3f::Random();
+        vertices[i] = PxVec3(obj_contact_points(i,0) + perturbation[0], obj_contact_points(i,1) + perturbation[1], obj_contact_points(i,2) + perturbation[2]);
+    }
+
+    convexDesc.points.count = obj_contact_points.rows();
+    convexDesc.points.stride = sizeof(PxVec3);
+    convexDesc.points.data = vertices;
+    convexDesc.vertexLimit = 255;
+
+    PxConvexMesh* convexMesh = PxCreateConvexMesh(params, convexDesc, gPhysics->getPhysicsInsertionCallback());
+
+    //Get the vertices of the convex hull
+    PxU32 numVerts = convexMesh->getNbVertices();
+    const PxVec3* convexVerts = convexMesh->getVertices();
+        
+    //Convert the vertices to a matrix
+    MatrixX3f convex_hull(numVerts, 3);
+    for(int i=0; i < numVerts; i++){
+        convex_hull(i,0) = convexVerts[i].x;
+        convex_hull(i,1) = convexVerts[i].y;
+        convex_hull(i,2) = convexVerts[i].z;
+    }
+
+    return convex_hull;
+}
+
+/// @brief Find the contact point between two objects that is the closest to the given point.
+/// @param id1 Id of the first object in contact.
+/// @param id2 Id of the second object in contact.
+/// @param point 3D query point expressed in the world frame.
+/// @return 3D coordinates of the closest contact point expressed in the world frame.
+/// @note This iterates over contact points and could be improved by using a spatial data structure.
+Vector3f Scene::get_closest_contact_point(string id1, string id2, const Vector3f point)
+{
+
+    //Get the contact points between both objects
+    MatrixX3f contact_points = this->get_contact_points(id1, id2);
+
+    //If there are no contact points, return NAN
+    if(contact_points.rows() == 0){
+        return Vector3f(NAN, NAN, NAN);
+    }
+
+    //Find the closest contact point
+    float min_dist = numeric_limits<float>::infinity();
+    Vector3f closest_contact_point;
+    for(int i=0; i < contact_points.rows(); i++){
+        Vector3f contact_point = contact_points.row(i);
+        float dist = (contact_point - point).squaredNorm();
+        if(dist < min_dist){
+            min_dist = dist;
+            closest_contact_point = contact_point;
+        }
+    }
+
+    return closest_contact_point;
+}
+
+/// @brief Find the three contact points that create the best stable support for an object.
+/// @param id Id of the object for which to get the contact points.
+/// @return 3x3 matrix representing the three contact points that create the best stable support,
+///         with each row representing a contact point.
+/// @note This is computationally very expensive O(n^3).
+Matrix3f Scene::get_three_most_stable_contact_points(string id)
+{
+    //The contact points are expressed in the world frame.
+    MatrixX3f hull_contact_points = get_contact_convex_hull(id);
+
+    //The number of contact points on the convex hull must be at least 3
+    assert(hull_contact_points.rows() >= 3);
+
+    //Create a Triangle for all combinations
+    vector<Triangle<Vector3f>> triangles;
+    for(int i=0; i < hull_contact_points.rows(); i++){
+        for(int j=i+1; j < hull_contact_points.rows(); j++){
+            for(int k=j+1; k < hull_contact_points.rows(); k++){
+                Vector3f p1 = hull_contact_points.row(i);
+                Vector3f p2 = hull_contact_points.row(j);
+                Vector3f p3 = hull_contact_points.row(k);
+                Triangle<Vector3f> triangle(p1, p2, p3);
+                triangles.push_back(triangle);
+            }
+        }
+    }
+
+    Matrix3f contact_points = get_best_contact_triangle(id, triangles, true);
+
+    return contact_points;
+}
+
+/// @brief Find the two points on the contact convex hull that forms the most stable triangle with the given contact point.
+/// @param id Id of the object for which to get the contact points.
+/// @param first_contact_point First contact point expressed in the world frame.
+/// @return 3x3 matrix representing the three contact points that create the best stable support,
+///         with each row representing a contact point.
+/// @note This is computationally quite expensive O(n^2) depending on the number of points on the convex hull.
+Matrix3f Scene::get_other_two_most_stable_contact_points(string id, Vector3f first_contact_point)
+{
+    //The contact points are expressed in the world frame.
+    MatrixX3f hull_contact_points = get_contact_convex_hull(id);
+
+    //The number of contact points on the convex hull must be at least 2
+    assert(hull_contact_points.rows() >= 2);
+
+    //Create a Triangle for all combinations
+    vector<Triangle<Vector3f>> triangles;
+    for(int i=0; i < hull_contact_points.rows(); i++){
+        for(int j=i+1; j < hull_contact_points.rows(); j++){
+            Vector3f p1 = first_contact_point;
+            Vector3f p2 = hull_contact_points.row(i);
+            Vector3f p3 = hull_contact_points.row(j);
+            Triangle<Vector3f> triangle(p1, p2, p3);
+            triangles.push_back(triangle);       
+        }
+    }
+
+    Matrix3f contact_points = get_best_contact_triangle(id, triangles, true);
+
+    return contact_points;
+}
+
+/// @brief Find the point on the contact convex hull that forms the most stable triangle with the two given contact points.
+/// @param id Id of the object for which to get the contact points.
+/// @param first_contact_point  First contact point expressed in the world frame.
+/// @param second_contact_point  Second contact point expressed in the world frame.
+/// @return 3x3 matrix representing the three contact points that create the best stable support,
+///         with each row representing a contact point.
+Matrix3f Scene::get_other_one_most_stable_contact_points(string id, Vector3f first_contact_point, Vector3f second_contact_point)
+{
+    //The contact points are expressed in the world frame.
+    MatrixX3f hull_contact_points = get_contact_convex_hull(id);
+
+    //Create a Triangle for all combinations
+    vector<Triangle<Vector3f>> triangles;
+    for(int i=0; i < hull_contact_points.rows(); i++){
+        Vector3f p1 = first_contact_point;
+        Vector3f p2 = second_contact_point;
+        Vector3f p3 = hull_contact_points.row(i);
+        Triangle<Vector3f> triangle(p1, p2, p3);
+        triangles.push_back(triangle);       
+    }
+
+    Matrix3f contact_points = get_best_contact_triangle(id, triangles, true);
+
+    return contact_points;
+}
+
+/// @brief Amongst the given triangles, find the one that creates the best stable support for an object.
+/// @param id Id of the object for which to get the contact points.
+/// @param triangles List of triangles to consider, with each triangle represented by a tuple of three 3D points.
+/// @param stable If true, the triangle must be stable under gravity. Otherwise, the largest triangle is returned.
+/// @return 3x3 matrix representing the three contact points that create the best stable support,
+///         with each row representing a contact point.
+Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> triangles, bool stable)
+{
+
+    //TODO:
+    // WARNING: This code has not been tested.
+
+    float tol = 1e-6;
+
+    //Sort the triangles by area
+    sort(triangles.begin(), triangles.end(), [](const Triangle<Vector3f>& t1, const Triangle<Vector3f>& t2){
+        return t1.signed_area > t2.signed_area;
+    });
+
+    //Contact points for the best stable support
+    Matrix3f contact_points;
+    contact_points.row(0) = triangles[0].vertex_0;
+    contact_points.row(1) = triangles[0].vertex_1;
+    contact_points.row(2) = triangles[0].vertex_2;
+
+    if(stable){
+        Object* obj = this->get_object_by_id(id);
+        //The centre of mass is expressed in the object frame
+        Vector3f com_o = obj->com;
+        //Express the CoM in the world frame
+        Matrix4f pose_w = obj->pose;
+        Vector3f com_w = pose_w.block<3,3>(0,0)*com_o + pose_w.block<3,1>(0,3);
+        //The gravity direction vector is expressed in the world frame
+        Vector3f g_w = Vector3f(0,0,-1);        
+
+        //Distance between the projected CoM and the closest triangle side
+        // for the currently best stable support. The best stable support
+        // has the largest min_dist.
+        float min_dist = 0;
+
+        //Iterate over the triangles
+        for(auto& tri : triangles){
+            Vector3f p1 = tri.vertex_0;
+            Vector3f p2 = tri.vertex_1;
+            Vector3f p3 = tri.vertex_2;
+
+            Vector3f centroid = (p1 + p2 + p3) / 3;
+            //Compute the distance between the centroid and each triangle side
+            float d1 = (centroid - p1).cross(p2 - p1).norm() / (p2 - p1).norm();
+            float d2 = (centroid - p2).cross(p3 - p2).norm() / (p3 - p2).norm();
+            float d3 = (centroid - p3).cross(p1 - p3).norm() / (p1 - p3).norm();
+            //Distance with the closest triangle side
+            float min_d = min(min(d1, d2), d3);
+
+            //If the distance between the centroid and the closest
+            // triangle side is smaller than the current min_dist, this
+            // triangle cannot become a better stable support.
+            if(min_d < min_dist){
+                continue;
+            }
+
+            //Compute the normal of the triangle
+            Vector3f tri_normal = (p2 - p1).cross(p3 - p1);
+            tri_normal.normalize();
+
+            //Distance between the origin and the plane of the triangle
+            float tri_plane_distance = p1.dot(tri_normal);
+
+            //If the gravity vector is orthogonal to the triangle normal
+            // there is no possible stable support with the selected triangle.
+            if(abs(tri_normal.dot(g_w)) < tol){
+                continue;
+            }
+
+            //Find the intersection poitn between the gravity vector and the plane of the triangle
+            Vector3f intersection_point = line_plane_intersection(com_w, g_w, tri_normal, tri_plane_distance);
+
+            //Check if the triangle contains the intersection point
+            bool tri_contains_point = tri.contains(intersection_point, false);
+
+            //If the CoM projects into the triangle, this triangle is stable.
+            // But is it the best stable support?
+            if(tri_contains_point){
+
+                //Compute the distance between the projected CoM and each triangle side
+                float d1 = (intersection_point - p1).cross(p2 - p1).norm() / (p2 - p1).norm();
+                float d2 = (intersection_point - p2).cross(p3 - p2).norm() / (p3 - p2).norm();
+                float d3 = (intersection_point - p3).cross(p1 - p3).norm() / (p1 - p3).norm();
+                //Distance with the closest triangle side
+                float min_d = min(min(d1, d2), d3);
+
+                //If the distance between the projected CoM and the closest
+                // triangle side is larger than the current min_dist, this
+                // triangle is the best stable support.
+                if(min_d > min_dist){
+                    min_dist = min_d;
+                    contact_points.row(0) = p1;
+                    contact_points.row(1) = p2;
+                    contact_points.row(2) = p3;
+                }
+            }
+        }
+        //If we get here, we did not find any stable support
+        cout << "No stable support found" << endl;
+    }
+    return contact_points;
 }
 
 /// @brief Compare each pair of contact points and merge them if they are close enough.

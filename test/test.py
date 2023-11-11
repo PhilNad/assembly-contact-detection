@@ -11,7 +11,7 @@ obj2_name = "cone"
 obj_names = [obj1_name, obj2_name]
 object_geometries = []
 
-SHOW_VOXELS = True
+SHOW_VOXELS = False
 
 if "cube1" in obj_names:
     cube1 = o3d.geometry.TriangleMesh.create_box(width=1.0, height=1.0, depth=1.0)
@@ -32,7 +32,6 @@ if "cube3" in obj_names:
 
 if "cone" in obj_names:
     cone = o3d.geometry.TriangleMesh.create_cone(radius=0.5, height=1.0)
-    cone.translate((0.5, 0.5, 1))
 
 
 start_time = time.time()
@@ -63,15 +62,17 @@ if "cube1" in obj_names:
 
 if "cone" in obj_names:
     start_time = time.time()
+    pose = np.identity(4)
+    pose[0:3, 3] = np.array([0.5, 0.5, 1])
     physxScene.add_object("cone",
-                            np.identity(4),
+                            pose,
                             np.asarray(cone.vertices),
                             np.asarray(cone.triangles),
                             30,
                             True,
                             False,
                             1.0,
-                            np.array([0, 0, 0]), #CoM is expressed wrt local frame 
+                            np.array([0, 0, 0.5]), #CoM is expressed wrt local frame 
                             "wood")
     print("Cone added in: ", time.time() - start_time)
     cone_vertices = physxScene.get_tri_vertices("cone")
@@ -83,8 +84,8 @@ if "cone" in obj_names:
 
     cone_pose = physxScene.get_object_pose("cone")
     #Translate the cone to the right
-    cone_pose[0, 3] += 0.5
-    cone_pose[2, 3] -= 0.1
+    cone_pose[0, 3] += 0.25
+    #cone_pose[2, 3] -= 0.1
     start_time = time.time()
     physxScene.set_object_pose("cone", cone_pose)
     cone_pose = physxScene.get_object_pose("cone")
@@ -182,7 +183,32 @@ pen_contact_point_cloud = o3d.geometry.PointCloud()
 pen_contact_point_cloud.points = o3d.utility.Vector3dVector(pen_contact_points)
 pen_contact_point_cloud.paint_uniform_color([1, 0, 0])
 
-geometries = object_geometries + [contact_point_cloud, pen_contact_point_cloud]
+hull_contact_points = physxScene.get_contact_convex_hull(obj1_name)
+print("Number of hull contact points: ", len(hull_contact_points))
+
+hull_contact_point_cloud = o3d.geometry.PointCloud()
+hull_contact_point_cloud.points = o3d.utility.Vector3dVector(hull_contact_points)
+hull_contact_point_cloud.paint_uniform_color([0, 1, 0])
+
+#Watchout: this can become very slow when hull_contact_point_cloud is large
+stable_contact_points = physxScene.get_three_most_stable_contact_points("cone")
+
+#Create a red sphere for each stable contact point
+stable_contact_point_spheres = []
+for i in range(len(stable_contact_points)):
+    sphere = o3d.geometry.TriangleMesh.create_sphere(radius=0.01)
+    sphere.translate(stable_contact_points[i])
+    sphere.paint_uniform_color([1, 0, 0])
+    stable_contact_point_spheres.append(sphere)
+
+geometries = [contact_point_cloud, pen_contact_point_cloud, hull_contact_point_cloud] + stable_contact_point_spheres
+#Add object geometries as linesets
+for geo in object_geometries:
+    #Create lineset from trianglemesh
+    lineset = o3d.geometry.LineSet.create_from_triangle_mesh(geo)
+    lineset.paint_uniform_color([0, 0, 0])
+    geometries.append(lineset)
+
 obj1 = object_geometries[0]
 obj2 = object_geometries[1]
 

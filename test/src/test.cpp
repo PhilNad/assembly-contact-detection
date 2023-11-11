@@ -345,13 +345,16 @@ int main(int argc, char** argv) {
     cout << endl;
 
     // Get the contact points between the two objects
-    MatrixX3f contact_points = scene.get_contact_points("cube2", "cube3");
+    MatrixX3f contact_points = scene.get_all_contact_points("cube2");
     cout << "Found " << contact_points.rows() << " contact points." << endl;
-    contact_points = scene.get_penetrating_contact_points("cube2", "cube3");
+    contact_points = scene.get_all_penetrating_contact_points("cube2");
     cout << "Found " << contact_points.rows() << " penetrating points." << endl;
     for (int i = 0; i < contact_points.rows(); i++) {
         //cout << contact_points.row(i) << endl;
     }
+
+    MatrixX3f hull_contacts = scene.get_contact_convex_hull("cube2");
+    cout << "Found " << hull_contacts.rows() << " hull contact points." << endl;
 
     return 0;
 }

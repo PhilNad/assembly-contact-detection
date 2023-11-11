@@ -36,32 +36,6 @@ PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::s
     Convex2DPolygon poly_triangle1 = Convex2DPolygon(t1_proj);
     Convex2DPolygon poly_triangle2 = Convex2DPolygon(t2_proj);
 
-    // //Unproject the vertices of the edges of the three shapes
-    // cout << "Rectangle: ";
-    // for(auto& edge : poly_rectangle.edges()){
-    //     Vector3f p3d = aarec.unproject_point(edge.first);
-    //     cout << "(" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")--";
-    //     p3d = aarec.unproject_point(edge.second);
-    //     cout << "(" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")  ";
-    // }
-    // cout << endl;
-    // cout << "Triangle 1:";
-    // for(auto& edge : poly_triangle1.edges()){
-    //     Vector3f p3d = aarec.unproject_point(edge.first);
-    //     cout << "(" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")--";
-    //     p3d = aarec.unproject_point(edge.second);
-    //     cout << "(" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")  ";
-    // }
-    // cout << endl;
-    // cout << "Triangle 2:";
-    // for(auto& edge : poly_triangle2.edges()){
-    //     Vector3f p3d = aarec.unproject_point(edge.first);
-    //     cout << "(" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")--";
-    //     p3d = aarec.unproject_point(edge.second);
-    //     cout << "(" << p3d[0] << ", " << p3d[1] << ", " << p3d[2] << ")  ";
-    // }
-    // cout << endl;
-
     // //Print areas of the three shapes
     // cout << "  Rectangle area: " << poly_rectangle.get_area() << endl;
     // cout << "  Triangle 1 area: " << poly_triangle1.get_area() << endl;
@@ -126,6 +100,33 @@ PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::s
     // }
 
     return all_3d_intersections;
+}
+
+/// @brief Computes the intersection point between a line vector and a plane.
+/// @param vector_start Start point of the line vector (3D).
+/// @param vector_dir Normalized direction of the line vector (3D).
+/// @param plane_normal Normalized normal vector of the plane (3D).
+/// @param plane_distance Distance between the plane and the origin.
+/// @return Coordinates (3D) of the intersection point between the line vector and the plane.
+/// @note See: Real-Time Collision Detection page 175.
+Vector3f line_plane_intersection(const Vector3f vector_start, const Vector3f vector_dir, const Vector3f plane_normal, const float plane_distance)
+{
+    //If vector_dir and plane_normal are orthogonal, there is no intersection
+    if(abs(vector_dir.dot(plane_normal))  == 0){
+        return Vector3f(NAN, NAN, NAN);
+    }
+
+    //Shortest distance between the start of the line vector and the plane
+    // This assumes that vector_dir and plane_normal are normalized.
+    float t = plane_distance - plane_normal.dot(vector_start);
+
+    //If the intersection is in the right direction according to vector_dir
+    if(t > 0){
+        Vector3f intersection_point = vector_start + t * vector_dir;
+        return intersection_point;
+    }else{
+        return Vector3f(NAN, NAN, NAN);
+    }
 }
 
 /// @brief Find up to two intersection points between a line segment and a rectangle in 2D.
