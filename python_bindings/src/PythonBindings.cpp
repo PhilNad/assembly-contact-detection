@@ -34,14 +34,14 @@ PYBIND11_MODULE(assembly_cd, m) {
                 py::arg("dt"))
         .def("get_contacted_objects", &Scene::get_contacted_objects, "Get the list of objects in contact with a given object.",
                 py::arg("target_object"))
-        .def("get_contact_points", &Scene::get_contact_points, "Get the contact points between two objects.",
+        .def("get_contact_point_positions", &Scene::get_contact_points_positions, "Get the positions of the contact points between two objects.",
                 py::arg("id1"), 
                 py::arg("id2"))
         .def("get_closest_contact_point", &Scene::get_closest_contact_point, "Get the closest contact point between two objects and a given point.",
                 py::arg("id1"), 
                 py::arg("id2"), 
                 py::arg("point"))
-        .def("get_penetrating_contact_points", &Scene::get_penetrating_contact_points, "Get the penetrating contact points between two objects.",
+        .def("get_penetrating_contact_point_positions", &Scene::get_penetrating_contact_point_positions, "Get the penetrating contact points between two objects.",
                 py::arg("id1"), 
                 py::arg("id2"))
         .def("get_all_contact_points", &Scene::get_all_contact_points, "Get the contact points between an object and all other objects.",
@@ -49,9 +49,11 @@ PYBIND11_MODULE(assembly_cd, m) {
         .def("get_all_penetrating_contact_points", &Scene::get_all_penetrating_contact_points, "Get the penetrating contact points between an object and all other objects.",
                 py::arg("id"))
         .def("get_contact_convex_hull", &Scene::get_contact_convex_hull, "Get the convex hull of the contact points on an object.",
-                py::arg("id"))
+                py::arg("id"),
+                py::arg("vertex_limit") = 255)
         .def("get_three_most_stable_contact_points", &Scene::get_three_most_stable_contact_points, "Get the three most stable contact points on an object.",
-                py::arg("id"))
+                py::arg("id"),
+                py::arg("hull_max_size") = 255)
         .def("get_other_two_most_stable_contact_points", &Scene::get_other_two_most_stable_contact_points, "Get the other two most stable contact points on an object.",
                 py::arg("id"), 
                 py::arg("first_contact_point"))

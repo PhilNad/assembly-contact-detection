@@ -356,5 +356,7 @@ int main(int argc, char** argv) {
     MatrixX3f hull_contacts = scene.get_contact_convex_hull("cube2");
     cout << "Found " << hull_contacts.rows() << " hull contact points." << endl;
 
+    vector<pair<string, Vector3f>> stable_contact_points = scene.get_three_most_stable_contact_points("cube2");
+
     return 0;
 }

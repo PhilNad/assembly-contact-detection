@@ -452,10 +452,10 @@ set<string> Scene::get_contacted_objects(string target_object)
 
 /// @brief Get the contact points between two objects that are not penetrating.
 /// @param id1 id of the first object
-/// @param id2 id of the second object
-/// @return Nx3 matrix representing the contact points between the two objects
+/// @param id2 id of the second object or empty string to get all contact points involving id1
+/// @return A vector of Contact objects representing the contact points between the two objects.
 /// @note If id2 is set to an empty string, returns all contact points involving id1.
-MatrixX3f Scene::get_contact_points(string id1, string id2)
+vector<Contact> Scene::get_contact_points(string id1, string id2)
 {
     //If there are no contacts, step the simulation by a small amount
     // to make sure that the collision detection is performed.
@@ -467,22 +467,35 @@ MatrixX3f Scene::get_contact_points(string id1, string id2)
     bool return_all_contact_points = (id2 == "");
 
     //Iterate over gContacts and find the contact points between the two objects
-    vector<Vector3f> contact_points;
+    vector<Contact> contact_points;
     for (int i = 0; i < gContacts.size(); i++)
     {
         pair<string, string> object_ids = gContacts[i].get_object_ids();
         if (object_ids.first == id1 && (return_all_contact_points || object_ids.second == id2))
-            contact_points.push_back(gContacts[i].get_position());
+            contact_points.push_back(gContacts[i]);
         if (object_ids.second == id1 && (return_all_contact_points || object_ids.first == id2))
-            contact_points.push_back(gContacts[i].get_position());
+            contact_points.push_back(gContacts[i]);
     }
 
+    return contact_points;
+}
+
+/// @brief Get the contact points between two objects that are not penetrating.
+/// @param id1 id of the first object
+/// @param id2 id of the second object
+/// @return Nx3 matrix representing the contact points between the two objects
+/// @note If id2 is set to an empty string, returns all contact points involving id1.
+MatrixX3f Scene::get_contact_points_positions(string id1, string id2)
+{
+    //Get the vector of Contact objects
+    vector<Contact> contacts = get_contact_points(id1, id2);
+
     //Convert the vector of contact points to a matrix
-    MatrixX3f contact_points_matrix(contact_points.size(), 3);
-    for (int i = 0; i < contact_points.size(); i++)
+    MatrixX3f contact_points_matrix(contacts.size(), 3);
+    for (int i = 0; i < contacts.size(); i++)
     {
         //The contact point is a column vector, but we want to store it as a row vector.
-        contact_points_matrix.row(i) = contact_points[i].transpose();
+        contact_points_matrix.row(i) = contacts[i].get_position().transpose();
     }
     return contact_points_matrix;
 }
@@ -490,9 +503,9 @@ MatrixX3f Scene::get_contact_points(string id1, string id2)
 /// @brief Get the contact points between two objects that are penetrating.
 /// @param id1 id of the first object
 /// @param id2 id of the second object
-/// @return Nx3 matrix representing the contact points between the two objects
+/// @return Vector of Contact objects representing the penetrating contact points between the two objects.
 /// @note If id2 is set to an empty string, returns all contact points involving id1.
-MatrixX3f Scene::get_penetrating_contact_points(string id1, string id2)
+vector<Contact> Scene::get_penetrating_contact_points(string id1, string id2)
 {
     //If there are no contacts, step the simulation by a small amount
     // to make sure that the collision detection is performed.
@@ -504,22 +517,35 @@ MatrixX3f Scene::get_penetrating_contact_points(string id1, string id2)
     bool return_all_contact_points = (id2 == "");
 
     //Iterate over gPenetrationContacts and find the contact points between the two objects
-    vector<Vector3f> contact_points;
+    vector<Contact> contact_points;
     for (int i = 0; i < gPenetrationContacts.size(); i++)
     {
         pair<string, string> object_ids = gPenetrationContacts[i].get_object_ids();
         if (object_ids.first == id1 && (return_all_contact_points || object_ids.second == id2))
-            contact_points.push_back(gPenetrationContacts[i].get_position());
+            contact_points.push_back(gPenetrationContacts[i]);
         if (object_ids.second == id1 && (return_all_contact_points || object_ids.first == id2))
-            contact_points.push_back(gPenetrationContacts[i].get_position());
+            contact_points.push_back(gPenetrationContacts[i]);
     }
 
+    return contact_points;
+}
+
+/// @brief Get the contact points between two objects that are penetrating.
+/// @param id1 id of the first object
+/// @param id2 id of the second object
+/// @return Nx3 matrix representing the contact points between the two objects
+/// @note If id2 is set to an empty string, returns all contact points involving id1.
+MatrixX3f Scene::get_penetrating_contact_point_positions(string id1, string id2)
+{
+    //Get the vector of Contact objects
+    vector<Contact> contacts = get_penetrating_contact_points(id1, id2);
+
     //Convert the vector of contact points to a matrix
-    MatrixX3f contact_points_matrix(contact_points.size(), 3);
-    for (int i = 0; i < contact_points.size(); i++)
+    MatrixX3f contact_points_matrix(contacts.size(), 3);
+    for (int i = 0; i < contacts.size(); i++)
     {
         //The contact point is a column vector, but we want to store it as a row vector.
-        contact_points_matrix.row(i) = contact_points[i].transpose();
+        contact_points_matrix.row(i) = contacts[i].get_position().transpose();
     }
     return contact_points_matrix;
 }
@@ -529,7 +555,7 @@ MatrixX3f Scene::get_penetrating_contact_points(string id1, string id2)
 /// @return Nx3 matrix representing the contact points with the scene.
 MatrixX3f Scene::get_all_contact_points(string id)
 {
-    return this->get_contact_points(id, "");
+    return this->get_contact_points_positions(id, "");
 }
 
 /// @brief Get all penetrating contact points involving the object with the given id.
@@ -537,16 +563,23 @@ MatrixX3f Scene::get_all_contact_points(string id)
 /// @return Nx3 matrix representing the contact points with the scene.
 MatrixX3f Scene::get_all_penetrating_contact_points(string id)
 {
-    return this->get_penetrating_contact_points(id, "");
+    return this->get_penetrating_contact_point_positions(id, "");
 }
 
 /// @brief Amongst an object's contact points, get those lying on the convex hull.
 /// @param id Id of the object for which to get the contact points.
+/// @param vertex_limit Maximum number of vertices of the convex hull (default: 255)
 /// @return Nx3 matrix representing the subset of contact points lying on the convex hull.
 /// @note A small perturbation is added to each contact point to make sure that the convex hull
 ///         is full dimensional. Equivalent to QHull's "QJ" option.
-MatrixX3f Scene::get_contact_convex_hull(string id)
+MatrixX3f Scene::get_contact_convex_hull(string id, int vertex_limit)
 {
+
+    //With ePLANE_SHIFTING, the minimum vertex_limit is 4
+    if(vertex_limit < 4){
+        vertex_limit = 4;
+    }
+
     MatrixX3f obj_contact_points = this->get_all_contact_points(id);
 
     PxTolerancesScale scale;
@@ -554,7 +587,10 @@ MatrixX3f Scene::get_contact_convex_hull(string id)
     PxConvexMeshDesc convexDesc;
 
     params.convexMeshCookingType = PxConvexMeshCookingType::eQUICKHULL;
-    convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX; // | PxConvexFlag::eDISABLE_MESH_VALIDATION | PxConvexFlag::eFAST_INERTIA_COMPUTATION;
+    convexDesc.flags = PxConvexFlag::eCOMPUTE_CONVEX | 
+                        PxConvexFlag::ePLANE_SHIFTING | 
+                        PxConvexFlag::eDISABLE_MESH_VALIDATION | 
+                        PxConvexFlag::eFAST_INERTIA_COMPUTATION;
 
     //Amplitude of the perturbation added to each point
     float perturbation_amplitude = 0.001;
@@ -570,7 +606,7 @@ MatrixX3f Scene::get_contact_convex_hull(string id)
     convexDesc.points.count = obj_contact_points.rows();
     convexDesc.points.stride = sizeof(PxVec3);
     convexDesc.points.data = vertices;
-    convexDesc.vertexLimit = 255;
+    convexDesc.vertexLimit = vertex_limit;
 
     PxConvexMesh* convexMesh = PxCreateConvexMesh(params, convexDesc, gPhysics->getPhysicsInsertionCallback());
 
@@ -599,7 +635,7 @@ Vector3f Scene::get_closest_contact_point(string id1, string id2, const Vector3f
 {
 
     //Get the contact points between both objects
-    MatrixX3f contact_points = this->get_contact_points(id1, id2);
+    MatrixX3f contact_points = this->get_contact_points_positions(id1, id2);
 
     //If there are no contact points, return NAN
     if(contact_points.rows() == 0){
@@ -615,21 +651,97 @@ Vector3f Scene::get_closest_contact_point(string id1, string id2, const Vector3f
         if(dist < min_dist){
             min_dist = dist;
             closest_contact_point = contact_point;
+            if(min_dist == 0){
+                break;
+            }
         }
     }
 
     return closest_contact_point;
 }
 
+//TODO: Modify get_contact_points and get_penetration_points to return a list of Contact objects instead of a matrix of points.
+//      and add new functions that return only the positions.
+//      Then, modify other functions to associate objects to points on the convex hull, etc.
+
+
+/// @brief Find the ID of the object that is in contact at the given point with the object whose ID is given.
+/// @param point 3D query point expressed in the world frame.
+/// @return Object ID of the object in contact at the given point or empty string if no object could be found.
+/// @note The function is mainly used after a convex hull computation that looses object IDs.
+string Scene::get_contact_id_at_point(string id, Vector3f point)
+{
+    //Get the objects in contact with the given object
+    set<string> contacted_objects = this->get_contacted_objects(id);
+
+    //If there is no object in contact, return an empty string
+    if(contacted_objects.size() == 0){
+        return "";
+    }
+
+    //If there is a single object in contact, return its ID
+    if(contacted_objects.size() == 1){
+        return *contacted_objects.begin();
+    }
+
+    //Iterate over object's OccupancyGrid and check if the grid has a voxel which contains the point
+    vector<string> candidate_objects;
+    for(auto& obj_id : contacted_objects){
+        Object* obj = this->get_object_by_id(obj_id);
+        if(obj->occupancy_grid->is_cell_occupied(point)){
+            candidate_objects.push_back(obj_id);
+        }
+    }
+
+    //If no occupied voxel contains the query point, return an empty string
+    if(candidate_objects.size() == 0){
+        return "";
+    }
+
+    //Iterate over the candidate objects and find the one that has the query point
+    for(auto& obj_id : candidate_objects){
+        //Get the contact points between both objects
+        vector<Contact> contacts = this->get_contact_points(id, obj_id);
+
+        //Iterate over the contact points and find the one that is equal to the query point
+        for(int i=0; i < contacts.size(); i++){
+            Vector3f contact_point = contacts[i].get_position();
+            if(contact_point == point){
+                //Return the object ID
+                pair<string, string> id_pair = contacts[i].get_object_ids();
+                if(id_pair.first == id){
+                    return id_pair.second;
+                }else{
+                    return id_pair.first;
+                }
+            }
+        }
+    }
+    //If we get here, we might want to add a tolerance for the point equality check.
+    cout << "Consider adding tolerance for point equality check in get_contact_id_at_point()." << endl;
+    return "";
+}
+
 /// @brief Find the three contact points that create the best stable support for an object.
 /// @param id Id of the object for which to get the contact points.
+/// @param hull_max_size Maximum number of points on the convex hull (default: 255)
 /// @return 3x3 matrix representing the three contact points that create the best stable support,
 ///         with each row representing a contact point.
-/// @note This is computationally very expensive O(n^3).
-Matrix3f Scene::get_three_most_stable_contact_points(string id)
+/// @note This is computationally very expensive with worst case O(hull_max_size^3)
+vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(string id, int hull_max_size)
 {
+
+    auto t1 = std::chrono::high_resolution_clock::now();
+
+    //The maximum number of points on the convex hull must be between [4-255]
+    if(hull_max_size < 4){
+        hull_max_size = 4;
+    }else if(hull_max_size > 255){
+        hull_max_size = 255;
+    }
+
     //The contact points are expressed in the world frame.
-    MatrixX3f hull_contact_points = get_contact_convex_hull(id);
+    MatrixX3f hull_contact_points = get_contact_convex_hull(id, hull_max_size);
 
     //The number of contact points on the convex hull must be at least 3
     assert(hull_contact_points.rows() >= 3);
@@ -650,7 +762,40 @@ Matrix3f Scene::get_three_most_stable_contact_points(string id)
 
     Matrix3f contact_points = get_best_contact_triangle(id, triangles, true);
 
-    return contact_points;
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
+    cout << "Got three most stable contact points in " << duration << " ms" << endl;
+
+    //Find the object ID of the other object in contact at each contact point
+    // and make a vector of pairs of object IDs and contact points.
+
+    //If any element of the position is NAN, set the id to an empty string
+    Vector3f contact_point0 = contact_points.row(0);
+    Vector3f contact_point1 = contact_points.row(1);
+    Vector3f contact_point2 = contact_points.row(2);
+
+    string id0 = "";
+    string id1 = "";
+    string id2 = "";
+
+    if(!contact_point0.hasNaN()){
+        id0 = this->get_contact_id_at_point(id, contact_points.row(0));
+    }
+
+    if(!contact_point1.hasNaN()){
+        id1 = this->get_contact_id_at_point(id, contact_points.row(1));
+    }
+
+    if(!contact_point2.hasNaN()){
+        id2 = this->get_contact_id_at_point(id, contact_points.row(2));
+    }
+
+    vector<pair<string, Vector3f>> contact_points_with_ids;
+    contact_points_with_ids.push_back(make_pair(id0, contact_points.row(0)));
+    contact_points_with_ids.push_back(make_pair(id1, contact_points.row(1)));
+    contact_points_with_ids.push_back(make_pair(id2, contact_points.row(2)));
+
+    return contact_points_with_ids;
 }
 
 /// @brief Find the two points on the contact convex hull that forms the most stable triangle with the given contact point.
@@ -731,9 +876,9 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
 
     //Contact points for the best stable support
     Matrix3f contact_points;
-    contact_points.row(0) = triangles[0].vertex_0;
-    contact_points.row(1) = triangles[0].vertex_1;
-    contact_points.row(2) = triangles[0].vertex_2;
+    contact_points.row(0) = Vector3f(NAN, NAN, NAN);
+    contact_points.row(1) = Vector3f(NAN, NAN, NAN);
+    contact_points.row(2) = Vector3f(NAN, NAN, NAN);
 
     if(stable){
         Object* obj = this->get_object_by_id(id);
@@ -812,8 +957,11 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
                 }
             }
         }
-        //If we get here, we did not find any stable support
-        cout << "No stable support found" << endl;
+    }else{
+        //If stability is not required, return the largest triangle
+        contact_points.row(0) = triangles[0].vertex_0;
+        contact_points.row(1) = triangles[0].vertex_1;
+        contact_points.row(2) = triangles[0].vertex_2;
     }
     return contact_points;
 }

@@ -169,14 +169,14 @@ o3d.visualization.draw([tm]+voxels)
 '''
 
 
-contact_points = physxScene.get_contact_points(obj1_name, obj2_name)
+contact_points = physxScene.get_contact_point_positions(obj1_name, obj2_name)
 print("Number of contact points: ", len(contact_points))
 
 contact_point_cloud = o3d.geometry.PointCloud()
 contact_point_cloud.points = o3d.utility.Vector3dVector(contact_points)
 contact_point_cloud.paint_uniform_color([0, 0, 1])
 
-pen_contact_points = physxScene.get_penetrating_contact_points(obj1_name, obj2_name)
+pen_contact_points = physxScene.get_penetrating_contact_point_positions(obj1_name, obj2_name)
 print("Number of penetrating contact points: ", len(pen_contact_points))
 
 pen_contact_point_cloud = o3d.geometry.PointCloud()
@@ -191,13 +191,13 @@ hull_contact_point_cloud.points = o3d.utility.Vector3dVector(hull_contact_points
 hull_contact_point_cloud.paint_uniform_color([0, 1, 0])
 
 #Watchout: this can become very slow when hull_contact_point_cloud is large
-stable_contact_points = physxScene.get_three_most_stable_contact_points("cone")
+stable_contact_points = physxScene.get_three_most_stable_contact_points(obj2_name)
 
 #Create a red sphere for each stable contact point
 stable_contact_point_spheres = []
 for i in range(len(stable_contact_points)):
     sphere = o3d.geometry.TriangleMesh.create_sphere(radius=0.01)
-    sphere.translate(stable_contact_points[i])
+    sphere.translate(stable_contact_points[i][1])
     sphere.paint_uniform_color([1, 0, 0])
     stable_contact_point_spheres.append(sphere)
 
