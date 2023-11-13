@@ -1219,6 +1219,7 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
     t1 = chrono::high_resolution_clock::now();
     //For each vertex flagged as inside the volume, create a sphere
     PxArray<PxShape*> spheres;
+    vector<Vector3f> sphere_positions;
     for(int i = 0; i < inside_volume.size(); i++){
         if(inside_volume[i] > 0){
             //Create a sphere at the voxel vertex
@@ -1228,6 +1229,7 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
                 throw runtime_error("Error creating shape");
             //Set the position of the sphere. The voxel vertices are in the object frame here.
             Vector3f pos = voxel_vertices_matrix.col(i);
+            sphere_positions.push_back(pos);
             sphere->setLocalPose(PxTransform(PxVec3(pos[0], pos[1], pos[2])));
             sphere->setRestOffset(0);
             sphere->setContactOffset(1e-6);
@@ -1235,6 +1237,14 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
             spheres.pushBack(sphere);
         }
     }
+
+    //Record the sphere positions in the object
+    MatrixX3f canary_sphere_positions(sphere_positions.size(), 3);
+    for(int i=0; i < sphere_positions.size(); i++){
+        canary_sphere_positions.row(i) = sphere_positions[i];
+    }
+    obj->canary_sphere_positions = canary_sphere_positions;
+
     t2 = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
     cout << "Created " << spheres.size() << " spheres for object " << obj->id << " in " << duration << " ms" << endl;
@@ -1375,7 +1385,6 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
 
     //Record the triangle mesh in the object
     obj->set_tri_mesh(vertices, triangles);
-    //obj->remesh_surface_trimesh();
 
     //Create a occupancy grid
     auto t1 = chrono::high_resolution_clock::now();
@@ -1666,6 +1675,17 @@ MatrixX3f Scene::get_tri_vertices(string id)
     Object* obj = get_object_by_id(id);
     if(obj != nullptr)
         return obj->tri_vertices;
+    return MatrixX3f::Zero(0, 3);
+}
+
+/// @brief Get the positions of the canary spheres embedded in the volume of an object for interpenetration detection.
+/// @param id Unique identifier for the object.
+/// @return Nx3 matrix with each row representing the 3D position of a sphere.
+MatrixX3f Scene::get_canary_sphere_positions(string id)
+{
+    Object* obj = get_object_by_id(id);
+    if(obj != nullptr)
+        return obj->canary_sphere_positions;
     return MatrixX3f::Zero(0, 3);
 }
 

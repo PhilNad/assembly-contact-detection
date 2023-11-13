@@ -230,8 +230,7 @@ bool Object::validate_mesh(PxSimpleTriangleMesh& surfaceMesh)
         if(results.isSet(PxTriangleMeshAnalysisResult::eMESH_IS_PROBLEMATIC))
             cout << "Mesh is problematic, the result might not be optimal even with remeshing." << endl;
         if(results.isSet(PxTriangleMeshAnalysisResult::eMESH_IS_INVALID))
-            throw runtime_error("Mesh is invalid, cannot process this mesh.");
-        return false;
+            return false;
     }
     return true;
 }
@@ -417,26 +416,35 @@ void Object::remesh_surface_trimesh()
         triIndices.pushBack(in_triangles(i, 2));
     }
 
-    PxTetMaker::remeshTriangleMesh(triVerts, triIndices, PxU32(10), remeshVerts, remeshIndices);
+    PxTetMaker::remeshTriangleMesh(triVerts, triIndices, PxU32(100), remeshVerts, remeshIndices);
     
     //Remeshing creates a lot of vertices and triangles. We can simplify the mesh to reduce the number of vertices and triangles.
     // It can also alleviate the problem of eCONTAINS_ACUTE_ANGLED_TRIANGLES.
-    PxTetMaker::simplifyTriangleMesh(remeshVerts, remeshIndices, 100, 0, simplifiedVerts, simplifiedIndices);
+    PxTetMaker::simplifyTriangleMesh(remeshVerts, remeshIndices, 
+        100,                //targetTriangleCount
+        0,                  //targetVertexCount 0 = infinity
+        simplifiedVerts,    //outputVertices
+        simplifiedIndices,   //outputIndices
+        NULL,
+        0.1f,               //edgeLengthCostWeight
+        0.01f,              //flatnessDetectionThreshold
+        true,               //projectSimplifiedPointOnInputMeshSurface
+        NULL,               //outputVectexToInputTriangle
+        true                //removeDisconnectedPatches
+        );
 
-    //Overwrite the old triangle mesh with the new one
-    this->tri_vertices.resize(simplifiedVerts.size(), 3);
-    for (int i = 0; i < simplifiedVerts.size(); i++) {
-        this->tri_vertices(i, 0) = simplifiedVerts[i].x;
-        this->tri_vertices(i, 1) = simplifiedVerts[i].y;
-        this->tri_vertices(i, 2) = simplifiedVerts[i].z;
-    }
+    //Create a PxSimpleTriangleMesh from the simplified vertices and indices
+    PxSimpleTriangleMesh simpleTriMesh;
+    simpleTriMesh.points.count     = simplifiedVerts.size();
+    simpleTriMesh.points.stride    = sizeof(PxVec3);
+    simpleTriMesh.points.data      = simplifiedVerts.begin();
+    simpleTriMesh.triangles.count  = simplifiedIndices.size()/3;
+    simpleTriMesh.triangles.stride = 3*sizeof(PxU32);
+    simpleTriMesh.triangles.data   = simplifiedIndices.begin();
 
-    this->tri_triangles.resize(simplifiedIndices.size()/3, 3);
-    for (int i = 0; i < simplifiedIndices.size()/3; i++) {
-        this->tri_triangles(i, 0) = simplifiedIndices[i*3+0];
-        this->tri_triangles(i, 1) = simplifiedIndices[i*3+1];
-        this->tri_triangles(i, 2) = simplifiedIndices[i*3+2];
-    }
+    //Overwrite the current triangle mesh
+    this->set_tri_mesh(simpleTriMesh);
+
 }
 
 /// @brief Perform the tetrahedralization of the surface mesh.
@@ -447,8 +455,20 @@ void Object::remesh_surface_trimesh()
 bool Object::create_tetra_mesh(PxSimpleTriangleMesh& triSurfaceMesh, PxArray<PxVec3>& tetMeshVertices, PxArray<PxU32>& tetMeshIndices)
 {
     //Verify that the mesh is valid for tetrahedralization
-    // If the mesh is invalid, an exception will be thrown
-    this->validate_mesh(triSurfaceMesh);
+    bool is_valid = this->validate_mesh(triSurfaceMesh);
+
+    //If the mesh is invalid, try remeshing it
+    if(is_valid == false){
+        cout << "Invalid mesh, remeshing..." << endl;
+        this->remesh_surface_trimesh();
+        //Verify that the mesh is valid for tetrahedralization
+        PxSimpleTriangleMesh triSurfaceMesh = *this->tri_mesh;
+        is_valid = this->validate_mesh(triSurfaceMesh);
+        if(is_valid == false){
+            cout << "Invalid mesh, remeshing failed." << endl;
+            return false;
+        }
+    }
 
     //Create a tetrahedron mesh from the surface mesh
     bool success = PxTetMaker::createConformingTetrahedronMesh(triSurfaceMesh, tetMeshVertices, tetMeshIndices);

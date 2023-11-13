@@ -76,4 +76,5 @@ class Scene
         MatrixX4i get_tetra_indices(string id);
         MatrixX3f get_voxel_centres(string id);
         Vector3f get_voxel_side_lengths(string id);
+        MatrixX3f get_canary_sphere_positions(string id);
 };

@@ -29,6 +29,7 @@ class Object
         MatrixX3i tri_triangles;
         MatrixX3f tetra_vertices;
         MatrixX4i tetra_indices;
+        MatrixX3f canary_sphere_positions;
         bool is_volumetric;
         bool is_fixed;
         float mass;
