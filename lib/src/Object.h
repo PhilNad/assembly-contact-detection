@@ -52,12 +52,16 @@ class Object
             string material_name
         );
         ~Object();
+        bool has_tri_mesh();
+        bool has_tetra_mesh();
+        bool has_canary_spheres();
         MatrixX3f get_voxel_centres();
         Vector3f get_voxel_side_lengths();
         int get_grid_resolution();
         void set_max_separation(float max_separation);
         void reset_pose(Matrix4f new_pose);
         bool is_valid_pose_matrix(Matrix4f matrix);
+        void set_tetra_mesh(MatrixX3f vertices, MatrixX4i indices);
         void set_tetra_mesh(PxArray<PxVec3> vertices, PxArray<PxU32> indices);
         void set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh);
         void set_tri_mesh(MatrixX3f& vertices, MatrixX3i& triangles);

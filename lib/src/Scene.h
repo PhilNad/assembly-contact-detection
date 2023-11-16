@@ -25,6 +25,7 @@ class Scene
         void startupPhysics();
         void cleanupPhysics();
         void clear_contacts();
+        void create_object_shapes(Object* obj, Matrix4f pose, int resolution, bool is_volumetric, bool is_fixed, float mass, Vector3f com);
         PxRigidActor* get_actor(string name);
         vector<PxShape*> get_actor_shapes(PxRigidActor* actor);
         PxArray<PxShape*> make_tetmesh(Object* obj);
@@ -41,13 +42,27 @@ class Scene
         float max_distance_factor = 0.2;
         Scene();
         ~Scene();
+        void add_volumetric_object(
+            string id, 
+            Matrix4f pose, 
+            MatrixX3f tri_vertices, 
+            MatrixX3i tri_indices,
+            MatrixX3f tetra_vertices,
+            MatrixX4i tetra_indices,
+            MatrixX3f canary_sphere_positions,
+            int resolution = 15,
+            bool is_fixed = false,
+            float mass = 1,
+            Vector3f com = Vector3f::Zero(),
+            string material_name = "wood"
+            );
         void add_object(
             string id, 
             Matrix4f pose, 
-            MatrixX3f vertices, 
-            MatrixX3i triangles,
+            MatrixX3f tri_vertices, 
+            MatrixX3i tri_indices,
             int resolution = 15,
-            bool is_volumetric = true,
+            bool compute_volume = false,
             bool is_fixed = false,
             float mass = 1,
             Vector3f com = Vector3f::Zero(),
@@ -77,4 +92,7 @@ class Scene
         MatrixX3f get_voxel_centres(string id);
         Vector3f get_voxel_side_lengths(string id);
         MatrixX3f get_canary_sphere_positions(string id);
+        void set_tetra_mesh(string id, MatrixX3f vertices, MatrixX4i indices);
+        void set_canary_sphere_positions(string id, MatrixX3f canary_sphere_positions);
+        
 };

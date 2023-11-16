@@ -3,7 +3,7 @@
 /// @brief Define an object in the scene with the following properties
 /// @param id unique identifier for the object
 /// @param pose 4x4 matrix representing the pose of the object
-/// @param vertices Nx3 matrix representing the vertices of the object
+/// @param vertices Nx3 matrix representing the vertices of the object expressed in the object/local frame
 /// @param triangles Mx3 matrix representing the triangles of the object
 /// @param is_fixed boolean representing whether the object is fixed in space (default: false)
 /// @param mass mass of the object (default: 1)
@@ -29,8 +29,47 @@ Object::Object(Scene* scene, string id, Matrix4f pose, MatrixX3f vertices, Matri
 {
     //Store a pointer to the scene for access from within the contact callback
     this->scene = scene;
+
+    //Initialize the triangle mesh and builds a PxSimpleTriangleMesh
+    this->set_tri_mesh(vertices, triangles);
+
+    //Initialize matrices as empty
+    this->tetra_vertices = MatrixX3f(0, 3);
+    this->tetra_indices  = MatrixX4i(0, 4);
+    this->canary_sphere_positions = MatrixX3f(0, 3);
 }
 Object::~Object(){}
+
+/// @brief Check if the object has a triangle mesh associated with it.
+/// @return True if the object has a triangle mesh, false otherwise.
+bool Object::has_tri_mesh()
+{
+    return this->tri_mesh != nullptr;
+}
+
+/// @brief Check if the object has a tetrahedral mesh associated with it.
+/// @return True if the object has a tetrahedral mesh, false otherwise.
+bool Object::has_tetra_mesh()
+{
+    return this->tetra_vertices.size() > 0 && this->tetra_indices.size() > 0;
+}
+
+/// @brief Check if the object has canary spheres associated with it.
+/// @return True if the object has canary spheres, false otherwise.
+bool Object::has_canary_spheres()
+{
+    return this->canary_sphere_positions.size() > 0;
+}
+
+
+/// @brief Record the description of the tetrahedral mesh that represents the volume of the object
+/// @param vertices Vertices of the mesh
+/// @param indices Indices of the mesh, referring to the vertices, 4 per tetrahedron
+void Object::set_tetra_mesh(MatrixX3f vertices, MatrixX4i indices)
+{
+    this->tetra_vertices = vertices;
+    this->tetra_indices  = indices;
+}
 
 /// @brief Record the description of the tetrahedral mesh that represents the volume of the object
 /// @param vertices Vertices of the mesh

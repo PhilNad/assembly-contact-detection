@@ -420,8 +420,14 @@ void Scene::step_simulation(float dt)
     //Clear the list of contacted objects and contact points
     clear_contacts();
 
+    auto t1 = std::chrono::high_resolution_clock::now();
+
     gScene->simulate(dt);
     gScene->fetchResults(true);
+
+    auto t2 = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
+    cout << "Simulation step took " << duration << " ms" << endl;
 }
 
 /// @brief Get the list of objects in contact with a given object.
@@ -1123,112 +1129,133 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
     //Surface voxels information
     MatrixX3f voxel_centres = obj->get_voxel_centres();
     Vector3f voxel_side_lengths = obj->get_voxel_side_lengths();
-
-    auto t1 = chrono::high_resolution_clock::now();
-
-    //Get the half-extents of the voxel
-    Vector3f voxel_half_extents = voxel_side_lengths/2;
-
-    //A 3xN matrix of the vertices of the voxels where N is the number of voxels
-    Matrix3Xf voxel_vertices_matrix(3, voxel_centres.rows()*2);
-
-    //Generate a point at the two extremities of each voxel
-    Matrix3Xf batch = (voxel_centres.rowwise() + RowVector3f(voxel_half_extents[0], voxel_half_extents[1], voxel_half_extents[2])).transpose();
-    voxel_vertices_matrix.block(0, 0, 3, batch.cols()) = batch;
-    batch = (voxel_centres.rowwise() - RowVector3f(voxel_half_extents[0], voxel_half_extents[1], voxel_half_extents[2])).transpose();
-    voxel_vertices_matrix.block(0, batch.cols(), 3, batch.cols()) = batch;
-
-    //The voxels are defined in the world frame but the tetrahedra are defined in the object frame
-    // and the position of the spheres will be set in the object frame. Therefore, we need to transform
-    // the voxel vertices to the object frame.
-    Matrix4f pose_inv = obj->pose.inverse();
-    Matrix3f T_R = pose_inv.block(0,0,3,3);
-    Vector3f T_t = pose_inv.block(0,3,3,1);
-    voxel_vertices_matrix = (T_R*voxel_vertices_matrix).colwise() + T_t;
-
-
-    auto t2 = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
-    cout << "Generated voxel vertices in " << duration << " ms" << endl;
-
-    t1 = chrono::high_resolution_clock::now();
-
-    //Create a list of tetrahedron
-    vector<vector<Vector3f>> tetra_vertices_list;
-    for(int i = 0; i < tetConvexShapes.size(); i++){
-        PxShape* tetConvexShape = tetConvexShapes[i];
-        const PxConvexMeshGeometry& convexMeshGeometry = static_cast<const PxConvexMeshGeometry&>(tetConvexShape->getGeometry());
-        PxConvexMesh* convexMesh = convexMeshGeometry.convexMesh;
-        //Get the vertices
-        const PxVec3* vertices = convexMesh->getVertices();
-        Vector3f v1(vertices[0].x, vertices[0].y, vertices[0].z);
-        Vector3f v2(vertices[1].x, vertices[1].y, vertices[1].z);
-        Vector3f v3(vertices[2].x, vertices[2].y, vertices[2].z);
-        Vector3f v4(vertices[3].x, vertices[3].y, vertices[3].z);
-        //Vector of vertices
-        vector<Vector3f> tetra_vertices = {v1, v2, v3, v4};
-        tetra_vertices_list.push_back(tetra_vertices);
-    }
-
-    //Iterate over tetrahedra and flag the points that are inside the volume
-    VectorXd inside_volume = VectorXd::Zero(voxel_vertices_matrix.cols());
-
-    //In debug, we only use one thread to make debugging easier
-    #ifndef NDEBUG
-    const int num_threads = 1;
-    cout << "Using only one thread for debugging" << endl;
-    #else
-    //Maximum number of threads to use (can be zero), at most the number of tetrahedra
-    const int num_threads = min(tetConvexShapes.size(), std::thread::hardware_concurrency());
-    #endif
-
-    if(num_threads > 1){
-        //List of threads
-        std::vector<std::thread> threads(num_threads);
-        //List of output vectors
-        std::vector<VectorXd> thread_output(num_threads);
-        for(int thread_i = 0; thread_i < num_threads; thread_i++){
-            //Get the number of tetrahedron to process in this thread
-            int nb_tet_per_thread = tetConvexShapes.size() / num_threads;
-            //Get the index of the first tet to process in this thread
-            int first_tet_index = thread_i*nb_tet_per_thread;
-            //Get the index of the last tet to process in this thread
-            int last_tet_index = (thread_i == num_threads - 1) ? tetConvexShapes.size() : (thread_i+1)*nb_tet_per_thread;
-            //Initialize the thread output
-            thread_output[thread_i] = VectorXd::Zero(voxel_vertices_matrix.cols());
-            //Launch the thread
-            threads[thread_i] = std::thread(&Scene::points_in_tetrahedron, this, 
-                voxel_vertices_matrix, tetra_vertices_list, first_tet_index, last_tet_index, 
-                std::ref(thread_output[thread_i]));
-        }
-        //Join the threads
-        for(auto& thread : threads){
-            thread.join();
-        }
-        //Merge the outputs
-        for(auto& output : thread_output){
-            inside_volume += output;
-        }
-    }else{
-        points_in_tetrahedron(voxel_vertices_matrix, tetra_vertices_list, 0, tetra_vertices_list.size(), inside_volume);
-    }
-    t2 = chrono::high_resolution_clock::now();
-    duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
-    cout << "Iterated over " << tetConvexShapes.size() << " tetrahedra in " << duration << " ms" << endl;
-
-    t1 = chrono::high_resolution_clock::now();
-    //For each vertex flagged as inside the volume, create a sphere
+    //Array of sphere, each with the same radius
     PxArray<PxShape*> spheres;
     vector<Vector3f> sphere_positions;
-    for(int i = 0; i < inside_volume.size(); i++){
-        if(inside_volume[i] > 0){
-            //Create a sphere at the voxel vertex
-            PxSphereGeometry sphereGeometry = PxSphereGeometry(voxel_side_lengths.minCoeff()/10);
+    PxReal sphere_radius = voxel_side_lengths.minCoeff() / 10;
+
+    if(!obj->has_canary_spheres()){
+
+        auto t1 = chrono::high_resolution_clock::now();
+
+        //Get the half-extents of the voxel
+        Vector3f voxel_half_extents = voxel_side_lengths/2;
+
+        //A 3xN matrix of the vertices of the voxels where N is the number of voxels
+        Matrix3Xf voxel_vertices_matrix(3, voxel_centres.rows()*2);
+
+        //Generate a point at the two extremities of each voxel
+        Matrix3Xf batch = (voxel_centres.rowwise() + RowVector3f(voxel_half_extents[0], voxel_half_extents[1], voxel_half_extents[2])).transpose();
+        voxel_vertices_matrix.block(0, 0, 3, batch.cols()) = batch;
+        batch = (voxel_centres.rowwise() - RowVector3f(voxel_half_extents[0], voxel_half_extents[1], voxel_half_extents[2])).transpose();
+        voxel_vertices_matrix.block(0, batch.cols(), 3, batch.cols()) = batch;
+
+        //The voxels are defined in the world frame but the tetrahedra are defined in the object frame
+        // and the position of the spheres will be set in the object frame. Therefore, we need to transform
+        // the voxel vertices to the object frame.
+        Matrix4f pose_inv = obj->pose.inverse();
+        Matrix3f T_R = pose_inv.block(0,0,3,3);
+        Vector3f T_t = pose_inv.block(0,3,3,1);
+        voxel_vertices_matrix = (T_R*voxel_vertices_matrix).colwise() + T_t;
+
+
+        auto t2 = chrono::high_resolution_clock::now();
+        auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+        cout << "Generated voxel vertices in " << duration << " ms" << endl;
+
+        t1 = chrono::high_resolution_clock::now();
+
+        //Create a list of tetrahedron
+        vector<vector<Vector3f>> tetra_vertices_list;
+        for(int i = 0; i < tetConvexShapes.size(); i++){
+            PxShape* tetConvexShape = tetConvexShapes[i];
+            const PxConvexMeshGeometry& convexMeshGeometry = static_cast<const PxConvexMeshGeometry&>(tetConvexShape->getGeometry());
+            PxConvexMesh* convexMesh = convexMeshGeometry.convexMesh;
+            //Get the vertices
+            const PxVec3* vertices = convexMesh->getVertices();
+            Vector3f v1(vertices[0].x, vertices[0].y, vertices[0].z);
+            Vector3f v2(vertices[1].x, vertices[1].y, vertices[1].z);
+            Vector3f v3(vertices[2].x, vertices[2].y, vertices[2].z);
+            Vector3f v4(vertices[3].x, vertices[3].y, vertices[3].z);
+            //Vector of vertices
+            vector<Vector3f> tetra_vertices = {v1, v2, v3, v4};
+            tetra_vertices_list.push_back(tetra_vertices);
+        }
+
+        //Iterate over tetrahedra and flag the points that are inside the volume
+        VectorXd inside_volume = VectorXd::Zero(voxel_vertices_matrix.cols());
+
+        //In debug, we only use one thread to make debugging easier
+        #ifndef NDEBUG
+        const int num_threads = 1;
+        cout << "Using only one thread for debugging" << endl;
+        #else
+        //Maximum number of threads to use (can be zero), at most the number of tetrahedra
+        const int num_threads = min(tetConvexShapes.size(), std::thread::hardware_concurrency());
+        #endif
+
+        if(num_threads > 1){
+            //List of threads
+            std::vector<std::thread> threads(num_threads);
+            //List of output vectors
+            std::vector<VectorXd> thread_output(num_threads);
+            for(int thread_i = 0; thread_i < num_threads; thread_i++){
+                //Get the number of tetrahedron to process in this thread
+                int nb_tet_per_thread = tetConvexShapes.size() / num_threads;
+                //Get the index of the first tet to process in this thread
+                int first_tet_index = thread_i*nb_tet_per_thread;
+                //Get the index of the last tet to process in this thread
+                int last_tet_index = (thread_i == num_threads - 1) ? tetConvexShapes.size() : (thread_i+1)*nb_tet_per_thread;
+                //Initialize the thread output
+                thread_output[thread_i] = VectorXd::Zero(voxel_vertices_matrix.cols());
+                //Launch the thread
+                threads[thread_i] = std::thread(&Scene::points_in_tetrahedron, this, 
+                    voxel_vertices_matrix, tetra_vertices_list, first_tet_index, last_tet_index, 
+                    std::ref(thread_output[thread_i]));
+            }
+            //Join the threads
+            for(auto& thread : threads){
+                thread.join();
+            }
+            //Merge the outputs
+            for(auto& output : thread_output){
+                inside_volume += output;
+            }
+        }else{
+            points_in_tetrahedron(voxel_vertices_matrix, tetra_vertices_list, 0, tetra_vertices_list.size(), inside_volume);
+        }
+        t2 = chrono::high_resolution_clock::now();
+        duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+        cout << "Iterated over " << tetConvexShapes.size() << " tetrahedra in " << duration << " ms" << endl;
+
+        //For each vertex flagged as inside the volume, create a sphere
+        for(int i = 0; i < inside_volume.size(); i++){
+            if(inside_volume[i] > 0){
+                //Create a sphere at the voxel vertex
+                PxSphereGeometry sphereGeometry = PxSphereGeometry(sphere_radius);
+                PxShape* sphere = gPhysics->createShape(sphereGeometry, *gMaterial, true);
+                if(!sphere)
+                    throw runtime_error("Error creating shape");
+                //Set the position of the sphere. The voxel vertices are in the object frame here.
+                Vector3f pos = voxel_vertices_matrix.col(i);
+                sphere_positions.push_back(pos);
+                sphere->setLocalPose(PxTransform(PxVec3(pos[0], pos[1], pos[2])));
+                sphere->setRestOffset(0);
+                sphere->setContactOffset(1e-6);
+                //Add the sphere to the list
+                spheres.pushBack(sphere);
+            }
+        }
+    }else{
+        //The object already has canary sphere positions, so we just need to create the spheres
+        for(int i = 0; i < obj->canary_sphere_positions.rows(); i++){
+            //Create a sphere with the predefined radius
+            PxSphereGeometry sphereGeometry = PxSphereGeometry(sphere_radius);
             PxShape* sphere = gPhysics->createShape(sphereGeometry, *gMaterial, true);
             if(!sphere)
                 throw runtime_error("Error creating shape");
-            //Set the position of the sphere. The voxel vertices are in the object frame here.
-            Vector3f pos = voxel_vertices_matrix.col(i);
+            //Set the position of the sphere.
+            Vector3f pos = obj->canary_sphere_positions.row(i);
             sphere_positions.push_back(pos);
             sphere->setLocalPose(PxTransform(PxVec3(pos[0], pos[1], pos[2])));
             sphere->setRestOffset(0);
@@ -1245,9 +1272,6 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
     }
     obj->canary_sphere_positions = canary_sphere_positions;
 
-    t2 = chrono::high_resolution_clock::now();
-    duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
-    cout << "Created " << spheres.size() << " spheres for object " << obj->id << " in " << duration << " ms" << endl;
     return spheres;
 }
 
@@ -1319,24 +1343,37 @@ PxArray<PxShape*> Scene::make_tetmesh(Object* obj)
     PxArray<PxVec3> tetMeshVertices;
     PxArray<PxU32> tetMeshIndices;
 
-    shared_ptr<PxSimpleTriangleMesh> triSurfaceMesh_ptr = obj->tri_mesh;
-    PxSimpleTriangleMesh triSurfaceMesh = *triSurfaceMesh_ptr;
+    if(!obj->has_tetra_mesh()){
+        shared_ptr<PxSimpleTriangleMesh> triSurfaceMesh_ptr = obj->tri_mesh;
+        PxSimpleTriangleMesh triSurfaceMesh = *triSurfaceMesh_ptr;
 
-    //Create a tetrahedral mesh from the triangle mesh
-    bool result = obj->create_tetra_mesh(triSurfaceMesh, tetMeshVertices, tetMeshIndices);
+        //Create a tetrahedral mesh from the triangle mesh
+        bool result = obj->create_tetra_mesh(triSurfaceMesh, tetMeshVertices, tetMeshIndices);
 
-    if(!result)
-        throw runtime_error("Error creating tetrahedral mesh");
-    
+        if(!result)
+            throw runtime_error("Error creating tetrahedral mesh");
+
+        //Record the tetrahedral mesh in the object
+        obj->set_tetra_mesh(tetMeshVertices, tetMeshIndices);
+    }else{
+        //Get the tetrahedral mesh from the object
+        // and make PxArrays from the Eigen matrices
+        PxArray<PxVec3> tetMeshVertices(obj->tetra_vertices.rows());
+        PxArray<PxU32> tetMeshIndices(obj->tetra_indices.rows());
+        for(int i=0; i < obj->tetra_vertices.rows(); i++){
+            tetMeshVertices[i] = PxVec3(obj->tetra_vertices(i,0), obj->tetra_vertices(i,1), obj->tetra_vertices(i,2));
+        }
+        for(int i=0; i < obj->tetra_indices.rows(); i++){
+            tetMeshIndices[i] = PxU32(obj->tetra_indices(i,0));
+        }
+    }
+
     //For each tetrahedron, create a convex mesh.
     PxArray<PxConvexMeshDesc> convexMeshDescs;
-    result = obj->create_tetra_convex_set(tetMeshVertices, tetMeshIndices, convexMeshDescs);
+    bool result = obj->create_tetra_convex_set(tetMeshVertices, tetMeshIndices, convexMeshDescs);
 
     if(!result)
         throw runtime_error("Error creating convex mesh");
-
-    //Record the tetrahedral mesh in the object
-    obj->set_tetra_mesh(tetMeshVertices, tetMeshIndices);
 
     PxArray<PxShape*> convexShapes;
     //For each convex mesh, create a shape
@@ -1358,34 +1395,8 @@ PxArray<PxShape*> Scene::make_tetmesh(Object* obj)
     return convexShapes;
 }
 
-/// @brief Add an object to the scene
-/// @param id unique identifier for the object
-/// @param pose 4x4 matrix representing the pose of the object
-/// @param vertices Nx3 matrix representing the vertices of the object WRT the object frame
-/// @param triangles Mx3 matrix representing the triangles of the object
-/// @param resolution resolution of the occupancy grid (default: 15)
-/// @param is_volumetric boolean representing whether the object is volumetric (default: true)
-/// @param is_fixed boolean representing whether the object is fixed in space (default: false)
-/// @param mass mass of the object (default: 1)
-/// @param com 3x1 vector representing the center of mass of the object WRT the object frame (default: [0, 0, 0])
-/// @param material_name name of the material of the object (default: wood)
-void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i triangles, int resolution, bool is_volumetric, bool is_fixed, float mass, Vector3f com, string material_name)
+void Scene::create_object_shapes(Object* obj, Matrix4f pose, int resolution, bool is_volumetric, bool is_fixed, float mass, Vector3f com)
 {
-    assert(vertices.rows() > 0);
-    assert(triangles.rows() > 0);
-    assert(resolution > 0);
-    assert(mass > 0);
-
-    //Create an object instance and add it to the scene
-    // When adding an element to the vector, the vector may reallocate memory and move the elements which will change their addresses.
-    // However, we need to supply the callback with a persistent pointer to the object.
-    // Therefore, we store pointers to preallocated objects in the vector instead of the objects themselves.
-    shared_ptr<Object> obj = make_shared<Object>(this, id, pose, vertices, triangles, is_volumetric, is_fixed, mass, com, material_name);
-    object_ptrs.push_back(obj);
-
-    //Record the triangle mesh in the object
-    obj->set_tri_mesh(vertices, triangles);
-
     //Create a occupancy grid
     auto t1 = chrono::high_resolution_clock::now();
     shared_ptr<OccupancyGrid> grid = obj->create_occupancy_grid(resolution, OccupancyGrid::sampling_method::random);
@@ -1416,7 +1427,7 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
     if(is_volumetric){
         t1 = chrono::high_resolution_clock::now();
         //Create the tetrahedral mesh built from the triangle mesh.
-        PxArray<PxShape*> tetConvexShapes = make_tetmesh(obj.get());
+        PxArray<PxShape*> tetConvexShapes = make_tetmesh(obj);
         //Augment convexShapes with the shapes
         for(auto& shape : tetConvexShapes){
             convexShapes.pushBack(shape);
@@ -1427,7 +1438,7 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
 
         t1 = chrono::high_resolution_clock::now();
         //Create spheres embedded in the volume of the object that can be used to detect interpenetration.
-        PxArray<PxShape*> sphereShapes = make_canary_spheres(obj.get(), tetConvexShapes);
+        PxArray<PxShape*> sphereShapes = make_canary_spheres(obj, tetConvexShapes);
         //Augment convexShapes with the shapes
         for(auto& shape : sphereShapes){
             convexShapes.pushBack(shape);
@@ -1457,7 +1468,7 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
         gScene->addActor(*actor);
         actor->setGlobalPose(pxPose);
         actor->setName(obj->id.c_str());
-        actor->userData = obj.get();
+        actor->userData = obj;
     }
     else{
         PxRigidDynamic* actor = gPhysics->createRigidDynamic(pxPose);
@@ -1481,11 +1492,82 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f vertices, MatrixX3i t
         actor->setGlobalPose(pxPose);
         actor->setKinematicTarget(pxPose);
         actor->setName(obj->id.c_str());
-        actor->userData = obj.get();
+        actor->userData = obj;
     }
 
     //The contacts are no longer valid, so clear them
     clear_contacts();
+}
+
+/// @brief Add a volumetric object to the scene defined by its triangular surface mesh, its tetrahedral volume mesh, and its canary spheres.
+///         If the tetrahedral mesh and the canary spheres matrices are empty, they will be generated.
+/// @param id unique identifier for the object
+/// @param pose 4x4 matrix representing the pose of the object
+/// @param vertices Nx3 matrix representing the vertices of the object expressed in the local/object frame
+/// @param triangles Mx3 matrix representing the triangles of the object
+/// @param tetra_vertices (Optional) Nx3 matrix representing the vertices of the tetrahedra of the object expressed in the local/object frame
+/// @param tetra_indices (Optional) Mx4 matrix representing the indices of the vertices of the tetrahedra of the object
+/// @param canary_sphere_positions (Optional) Nx3 matrix representing the positions of the canary spheres of the object expressed in the local/object frame
+/// @param resolution resolution of the occupancy grid (default: 15)
+/// @param is_fixed boolean representing whether the object is fixed in space (default: false)
+/// @param mass mass of the object (default: 1)
+/// @param com 3x1 vector representing the center of mass of the object WRT the object frame (default: [0, 0, 0])
+/// @param material_name name of the material of the object (default: wood)
+void Scene::add_volumetric_object(string id, Matrix4f pose, 
+            MatrixX3f tri_vertices, MatrixX3i tri_indices,
+            MatrixX3f tetra_vertices,MatrixX4i tetra_indices,
+            MatrixX3f canary_sphere_positions,
+            int resolution, bool is_fixed, float mass, Vector3f com, string material_name)
+{
+    assert(tri_vertices.rows() > 0);
+    assert(tri_indices.rows() > 0);
+    assert(resolution > 0);
+    assert(mass > 0);
+
+    shared_ptr<Object> obj = make_shared<Object>(this, id, pose, tri_vertices, tri_indices, true, is_fixed, mass, com, material_name);
+    object_ptrs.push_back(obj);
+
+    //Record the triangle mesh in the object
+    obj->set_tri_mesh(tri_vertices, tri_indices);
+    //Record the tetrahedral mesh in the object
+    obj->set_tetra_mesh(tetra_vertices, tetra_indices);
+    //Record the canary sphere positions in the object
+    obj->canary_sphere_positions = canary_sphere_positions;
+
+    //Create the shapes (oocupancy grid, tetrahedral mesh, canary spheres) and attach them to an actor for the object
+    create_object_shapes(obj.get(), pose, resolution, true, is_fixed, mass, com);
+}
+
+/// @brief Add an object to the scene
+/// @param id unique identifier for the object
+/// @param pose 4x4 matrix representing the pose of the object
+/// @param tri_vertices Nx3 matrix representing the vertices of the object expressed in the local/object frame
+/// @param tri_indices Mx3 matrix representing the triangles of the object
+/// @param resolution resolution of the occupancy grid (default: 15)
+/// @param compute_volume boolean Expressing if the volume of the object should be computed, which requires a watertight surface mesh (default: false)
+/// @param is_fixed boolean representing whether the object is fixed in space (default: false)
+/// @param mass mass of the object (default: 1)
+/// @param com 3x1 vector representing the center of mass of the object WRT the object frame (default: [0, 0, 0])
+/// @param material_name name of the material of the object (default: wood)
+void Scene::add_object(string id, Matrix4f pose, MatrixX3f tri_vertices, MatrixX3i tri_indices, int resolution, bool compute_volume, bool is_fixed, float mass, Vector3f com, string material_name)
+{
+    assert(vertices.rows() > 0);
+    assert(triangles.rows() > 0);
+    assert(resolution > 0);
+    assert(mass > 0);
+
+    //Create an object instance and add it to the scene
+    // When adding an element to the vector, the vector may reallocate memory and move the elements which will change their addresses.
+    // However, we need to supply the callback with a persistent pointer to the object.
+    // Therefore, we store pointers to preallocated objects in the vector instead of the objects themselves.
+    shared_ptr<Object> obj = make_shared<Object>(this, id, pose, tri_vertices, tri_indices, compute_volume, is_fixed, mass, com, material_name);
+    object_ptrs.push_back(obj);
+
+    //Record the triangle mesh in the object
+    obj->set_tri_mesh(tri_vertices, tri_indices);
+
+    //Create the shapes (ocupancy grid, possibly tetrahedral mesh and canary spheres) and attach them to an actor for the object
+    create_object_shapes(obj.get(), pose, resolution, compute_volume, is_fixed, mass, com);
 }
 
 /// @brief Get the actor with a specified name from the scene
@@ -1667,7 +1749,7 @@ Matrix4f Scene::get_object_pose(string id)
     return Matrix4f::Identity();
 }
 
-/// @brief Get the vertices of the triangle mesh of an object
+/// @brief Get the vertices of the triangle mesh of an object expressed in the local/object frame
 /// @param id unique identifier for the object
 /// @return Nx3 matrix representing the vertices of the object
 MatrixX3f Scene::get_tri_vertices(string id)
@@ -1678,7 +1760,7 @@ MatrixX3f Scene::get_tri_vertices(string id)
     return MatrixX3f::Zero(0, 3);
 }
 
-/// @brief Get the positions of the canary spheres embedded in the volume of an object for interpenetration detection.
+/// @brief Get the positions of the canary spheres embedded in the volume of an object for interpenetration detection, expressed in the object frame.
 /// @param id Unique identifier for the object.
 /// @return Nx3 matrix with each row representing the 3D position of a sphere.
 MatrixX3f Scene::get_canary_sphere_positions(string id)
@@ -1700,7 +1782,7 @@ MatrixX3i Scene::get_tri_triangles(string id)
     return MatrixX3i::Zero(0, 3);
 }
 
-/// @brief Get the vertices of the tetrahedral mesh of an object
+/// @brief Get the vertices of the tetrahedral mesh of an object expressed in the local/object frame
 /// @param id unique identifier for the object
 /// @return Nx3 matrix representing the vertices of the object
 MatrixX3f Scene::get_tetra_vertices(string id)
@@ -1722,7 +1804,7 @@ MatrixX4i Scene::get_tetra_indices(string id)
     return MatrixX4i::Zero(0, 4);
 }
 
-/// @brief Get the voxel centres of the occupied voxels of an object
+/// @brief Get the voxel centres of the occupied voxels of an object expressed in the world frame
 /// @param id unique identifier for the object
 /// @return Nx3 matrix representing the voxel centres of the object
 MatrixX3f Scene::get_voxel_centres(string id)

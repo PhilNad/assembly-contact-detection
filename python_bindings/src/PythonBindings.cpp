@@ -13,10 +13,23 @@ PYBIND11_MODULE(assembly_cd, m) {
         .def("add_object", &Scene::add_object, "Add an object to the scene.",
                 py::arg("id"), 
                 py::arg("pose"), 
-                py::arg("vertices"),
-                py::arg("triangles"),
+                py::arg("tri_vertices"),
+                py::arg("tri_indices"),
                 py::arg("resolution") = 15,
                 py::arg("is_volumetric") = true,  
+                py::arg("is_fixed") = false,
+                py::arg("mass") = 1.0f, 
+                py::arg("com") = (Vector3f() << 0.0f, 0.0f, 0.0f).finished(),
+                py::arg("material_name") = "wood")
+        .def("add_volumetric_object", &Scene::add_volumetric_object, "Add a volumetric object to the scene.",
+                py::arg("id"), 
+                py::arg("pose"), 
+                py::arg("tri_vertices"),
+                py::arg("tri_indices"),
+                py::arg("tetra_vertices"),
+                py::arg("tetra_indices"),
+                py::arg("canary_sphere_positions"),
+                py::arg("resolution") = 15,
                 py::arg("is_fixed") = false,
                 py::arg("mass") = 1.0f, 
                 py::arg("com") = (Vector3f() << 0.0f, 0.0f, 0.0f).finished(),
@@ -68,6 +81,8 @@ PYBIND11_MODULE(assembly_cd, m) {
         .def("get_tetra_vertices", &Scene::get_tetra_vertices, "Get the tetrahedron vertices of an object.",
                 py::arg("id"))
         .def("get_tetra_indices", &Scene::get_tetra_indices, "Get the tetrahedron indices of an object.",
+                py::arg("id"))
+        .def("get_canary_sphere_positions", &Scene::get_canary_sphere_positions, "Get the canary sphere positions of an object.",
                 py::arg("id"))
         .def("get_voxel_centres", &Scene::get_voxel_centres, "Get the occupied voxel centres of an object.",
                 py::arg("id"))
