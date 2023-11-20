@@ -104,6 +104,16 @@ if "cube2" in obj_names:
                             1.0, 
                             np.array([0, 0, 0]), #CoM is expressed wrt local frame 
                             "wood")
+    physxScene.add_object("cube2", 
+                            np.identity(4), 
+                            np.asarray(cube2.vertices), 
+                            np.asarray(cube2.triangles),
+                            30, 
+                            True,
+                            False, 
+                            1.0, 
+                            np.array([0, 0, 0]), #CoM is expressed wrt local frame 
+                            "wood")
     print("Cube2 added in: ", time.time() - start_time)
     cube2_vertices = physxScene.get_tri_vertices("cube2")
     cube2_triangles = physxScene.get_tri_triangles("cube2")

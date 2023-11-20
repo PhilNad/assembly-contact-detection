@@ -1572,6 +1572,13 @@ void Scene::add_volumetric_object(string id, Matrix4f pose,
     assert(resolution > 0);
     assert(mass > 0);
 
+    //Verify that the object does not exists already. If it does, remove it first.
+    Object* existing_obj = get_object_by_id(id);
+    if(existing_obj != nullptr){
+        cout << "Object with id " << id << " already exists. Removing it first." << endl;
+        remove_object(id);
+    }
+
     shared_ptr<Object> obj = make_shared<Object>(this, id, pose, tri_vertices, tri_indices, true, is_fixed, mass, com, material_name);
     object_ptrs.push_back(obj);
 
@@ -1604,7 +1611,12 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f tri_vertices, MatrixX
     assert(resolution > 0);
     assert(mass > 0);
 
-    //TODO: Verify that the object does not exists already. If it does, remove it first.
+    //Verify that the object does not exists already. If it does, remove it first.
+    Object* existing_obj = get_object_by_id(id);
+    if(existing_obj != nullptr){
+        cout << "Object with id " << id << " already exists. Removing it first." << endl;
+        remove_object(id);
+    }
 
     //Create an object instance and add it to the scene
     // When adding an element to the vector, the vector may reallocate memory and move the elements which will change their addresses.
@@ -1789,7 +1801,6 @@ Object* Scene::get_object_by_id(string id)
     for(const auto& obj : this->object_ptrs)
         if(obj->id == id)
             return obj.get();
-    cout << "Object with id " << id << " not found" << endl;
     return nullptr;
 }
 
