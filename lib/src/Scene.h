@@ -73,6 +73,7 @@ class Scene
         Matrix4f get_object_pose(string id);
         void set_object_pose(string id, Matrix4f pose);
         void step_simulation(float dt);
+        vector<string> get_all_object_ids();
         set<string> get_contacted_objects(string target_object);
         MatrixX3f get_contact_points_positions(string id1, string id2);
         Vector3f get_closest_contact_point(string id1, string id2, const Vector3f point);

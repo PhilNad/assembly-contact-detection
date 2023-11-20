@@ -609,6 +609,8 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
             }
         }
     }
+    #ifndef NDEBUG
     cout << "Total number of sampled points: " << total_sampled_points << endl;
+    #endif
 }
         

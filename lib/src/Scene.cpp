@@ -428,9 +428,15 @@ void Scene::step_simulation(float dt)
 
     #ifndef NDEBUG
     auto t1 = std::chrono::high_resolution_clock::now();
+    cout << "Stepping simulation by " << dt << " seconds" << endl;
     #endif
 
     gScene->simulate(dt);
+
+    #ifndef NDEBUG
+    cout << "Simulation step done. Fetching results." << endl;
+    #endif
+
     gScene->fetchResults(true);
 
     #ifndef NDEBUG
@@ -624,6 +630,10 @@ MatrixX3f Scene::get_contact_convex_hull(string id, int vertex_limit)
     convexDesc.points.data = vertices;
     convexDesc.vertexLimit = vertex_limit;
 
+    #ifndef NDEBUG
+    cout << "Computing convex hull for object #" << id << endl;
+    #endif
+
     PxConvexMesh* convexMesh = PxCreateConvexMesh(params, convexDesc, gPhysics->getPhysicsInsertionCallback());
 
     //Get the vertices of the convex hull
@@ -719,6 +729,10 @@ string Scene::get_contact_id_at_point(string id, Vector3f point)
         //Get the contact points between both objects
         vector<Contact> contacts = this->get_contact_points(id, obj_id);
 
+        #ifndef NDEBUG
+        cout << "Found " << contacts.size() << " contact points between " << id << " and " << obj_id << endl;
+        #endif
+
         //Iterate over the contact points and find the one that is equal to the query point
         for(int i=0; i < contacts.size(); i++){
             Vector3f contact_point = contacts[i].get_position();
@@ -729,6 +743,11 @@ string Scene::get_contact_id_at_point(string id, Vector3f point)
             if(contact_point == point){
                 //Return the object ID
                 pair<string, string> id_pair = contacts[i].get_object_ids();
+
+                #ifndef NDEBUG
+                cout << "Found contact point at " << contact_point.transpose() << " between " << id_pair.first << " and " << id_pair.second << endl;
+                #endif
+
                 if(id_pair.first == id){
                     return id_pair.second;
                 }else{
@@ -745,8 +764,7 @@ string Scene::get_contact_id_at_point(string id, Vector3f point)
 /// @brief Find the three contact points that create the best stable support for an object.
 /// @param id Id of the object for which to get the contact points.
 /// @param hull_max_size Maximum number of points on the convex hull (default: 255)
-/// @return 3x3 matrix representing the three contact points that create the best stable support,
-///         with each row representing a contact point.
+/// @return Vector of pairs of object IDs and contact points positions.
 /// @note This is computationally very expensive with worst case O(hull_max_size^3)
 vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(string id, int hull_max_size)
 {
@@ -1067,6 +1085,11 @@ PxShape* createTetrahedronShape(PxCookingParams params, PxConvexMeshDesc convexM
     //     v = (PxVec3*)(convexMeshDesc.points.data + i*sizeof(PxVec3));
     //     cout << "    " << v->x << ", " << v->y << ", " << v->z << endl;
     // }
+
+    if(!convexMeshDesc.isValid()){
+        cout << "Invalid convex mesh description" << endl;
+        return nullptr;
+    }
 
     //Cooking: Build a convex mesh and output the result in a buffer
     PxConvexMeshCookingResult::Enum result;
@@ -1410,13 +1433,17 @@ PxArray<PxShape*> Scene::make_tetmesh(Object* obj)
         PxCookingParams params(scale);
         PxShape* convexShape = createTetrahedronShape(params, convexMeshDesc);
 
-        //Contacts are genereated when an object is at the contact offset from this shape
-        // which must be positive and slightly larger than the rest offset that defines
-        // the depth of the equilibrium position of the object.
-        convexShape->setRestOffset(0);
-        convexShape->setContactOffset(1e-6);
+        if(convexShape != nullptr){    
+            //Contacts are genereated when an object is at the contact offset from this shape
+            // which must be positive and slightly larger than the rest offset that defines
+            // the depth of the equilibrium position of the object.
+            convexShape->setRestOffset(0);
+            convexShape->setContactOffset(1e-6);
 
-        convexShapes.pushBack(convexShape);
+            convexShapes.pushBack(convexShape);
+        }else{
+            cout << "Null convex shape in Scene.cpp:make_tetmesh()" << endl;
+        }
     }
     return convexShapes;
 }
@@ -1434,8 +1461,6 @@ void Scene::create_object_shapes(Object* obj, Matrix4f pose, int resolution, boo
     cout << "Occupancy grid created in " << duration << " ms" << endl;
     #endif
 
-    PxTolerancesScale scale;
-    PxCookingParams params(scale);
     PxArray<PxShape*> convexShapes;
 
     #ifndef NDEBUG
@@ -1448,8 +1473,12 @@ void Scene::create_object_shapes(Object* obj, Matrix4f pose, int resolution, boo
     for(auto& item : *cells){
         uint32_t index = item.first;
         GridCell* cell  = &item.second;
-        PxShape* voxelShape = create_voxel_shape(cell, pose);
-        convexShapes.pushBack(voxelShape);
+        if(cell != nullptr){
+            PxShape* voxelShape = create_voxel_shape(cell, pose);
+            convexShapes.pushBack(voxelShape);
+        }else{
+            cout << "Null cell in Scene.cpp:create_object_shapes()" << endl;
+        }
     }
 
     #ifndef NDEBUG
@@ -1606,8 +1635,8 @@ void Scene::add_volumetric_object(string id, Matrix4f pose,
 /// @param material_name name of the material of the object (default: wood)
 void Scene::add_object(string id, Matrix4f pose, MatrixX3f tri_vertices, MatrixX3i tri_indices, int resolution, bool compute_volume, bool is_fixed, float mass, Vector3f com, string material_name)
 {
-    assert(vertices.rows() > 0);
-    assert(triangles.rows() > 0);
+    assert(tri_vertices.rows() > 0);
+    assert(tri_indices.rows() > 0);
     assert(resolution > 0);
     assert(mass > 0);
 
@@ -1644,16 +1673,21 @@ PxRigidActor* Scene::get_actor(string name)
     PxActor** actors = new PxActor*[nbActors];
     PxU32 nbActorsReturned = gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, actors, nbActors);
 
+    PxRigidActor* actor = nullptr;
     //Iterate over actors and find the one with the specified name
     for (int i = 0; i < nbActorsReturned; i++)
     {
-        PxRigidActor* actor = static_cast<PxRigidActor*>(actors[i]);
-        if (actor->getName() == name)
+        PxRigidActor* candidate_actor = static_cast<PxRigidActor*>(actors[i]);
+        if (candidate_actor->getName() == name)
         {
-            return actor;
+            actor = candidate_actor;
         }
     }
-    return NULL;
+
+    //Release the actors array
+    delete[] actors;
+
+    return actor;
 }
 
 /// @brief Get the shapes attached to an actor
@@ -1662,8 +1696,20 @@ PxRigidActor* Scene::get_actor(string name)
 vector<PxShape*> Scene::get_actor_shapes(PxRigidActor* actor)
 {
     vector<PxShape*> shapes;
+    if (actor == NULL)
+    {
+        #ifndef NDEBUG
+        cout << "Scene::get_actor_shapes : Actor is NULL" << endl;
+        #endif
+        return shapes;
+    }
     //Get the number of shapes attached to the actor
     PxU32 nbShapes = actor->getNbShapes();
+
+    #ifndef NDEBUG
+    cout << "Scene::get_actor_shapes : Actor has " << nbShapes << " shapes" << endl;
+    #endif
+
     //Get all shapes attached to the actor
     PxShape** shapesArray = new PxShape*[nbShapes];
     PxU32 nbShapesReturned = actor->getShapes(shapesArray, nbShapes);
@@ -1672,6 +1718,14 @@ vector<PxShape*> Scene::get_actor_shapes(PxRigidActor* actor)
     {
         shapes.push_back(shapesArray[i]);
     }
+
+    //Release the shapes array
+    delete[] shapesArray;
+
+    #ifndef NDEBUG
+    cout << "Scene::get_actor_shapes : Returning " << shapes.size() << " shapes" << endl;
+    #endif
+
     return shapes;
 }
 
@@ -1681,23 +1735,29 @@ void Scene::remove_object(string id)
 {
     //Get the actor with the specified name
     PxRigidActor* actor = get_actor(id);
-    if (actor == NULL)
+    if (actor == nullptr)
     {
         cout << "Object with id " << id << " not found" << endl;
         return;
     }
 
-    //Get the shapes attached to the actor
-    vector<PxShape*> shapes = get_actor_shapes(actor);
-    //Remove the shapes from the actor
-    for (int i = 0; i < shapes.size(); i++)
-    {
-        actor->detachShape(*shapes[i]);
-    }
+    #ifndef NDEBUG
+    cout << "Removing object. Found actor " << id << endl;
+    #endif    
+
+    //When the actor is released, the shapes should also be released
+    // if the release() method was called right after the shape was created.
 
     //Remove the actor from the scene
-    gScene->removeActor(*actor);
+    PxActor& actorRef = *actor;
+    gScene->removeActor(actorRef);
+    
+    //Do we need to also release the actor?
     actor->release();
+
+    #ifndef NDEBUG
+    cout << "Removed actor from scene." << endl;
+    #endif
 
     //Remove the object from the list of objects
     for (int i = 0; i < this->object_ptrs.size(); i++)
@@ -1708,6 +1768,10 @@ void Scene::remove_object(string id)
             break;
         }
     }
+
+    #ifndef NDEBUG
+    cout << "Removed object from list of objects." << endl;
+    #endif
 
     //The contacts are no longer valid, so clear them
     clear_contacts();
@@ -1784,18 +1848,32 @@ void Scene::set_object_pose(string id, Matrix4f pose)
             voxelShape->release();
         }
 
-    }
+        #ifndef NDEBUG
+        auto t2 = chrono::high_resolution_clock::now();
+        auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
+        cout << "Moved object " << id << " in " << duration << " ms to pose " << endl << pose << endl;
+        #endif
 
-    #ifndef NDEBUG
-    auto t2 = chrono::high_resolution_clock::now();
-    auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
-    cout << "Moved object " << id << " in " << duration << " ms to pose " << endl << pose << endl;
-    #endif
+    }else{
+        #ifndef NDEBUG
+        cout << "Try creating the object first." << endl;
+        #endif
+    }
+}
+
+/// @brief Return a list of object IDs in the scene.
+/// @return List of object IDs.
+vector<string> Scene::get_all_object_ids()
+{
+    vector<string> ids;
+    for(const auto& obj : this->object_ptrs)
+        ids.push_back(obj->id);
+    return ids;
 }
 
 /// @brief Return the object that has the given ID
 /// @param id unique identifier for the object
-/// @return pointer to the object
+/// @return pointer to the object or nullptr if not found
 Object* Scene::get_object_by_id(string id)
 {
     for(const auto& obj : this->object_ptrs)

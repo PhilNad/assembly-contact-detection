@@ -34,6 +34,7 @@ PYBIND11_MODULE(assembly_cd, m) {
                 py::arg("mass") = 1.0f, 
                 py::arg("com") = (Vector3f() << 0.0f, 0.0f, 0.0f).finished(),
                 py::arg("material_name") = "wood")
+        .def("get_all_object_ids", &Scene::get_all_object_ids, "Get the list of object ids in the scene.")
         .def("remove_object", &Scene::remove_object, "Remove an object from the scene.",
                 py::arg("id"))
         .def("get_object_pose", &Scene::get_object_pose, "Get the pose of an object.",
