@@ -63,7 +63,9 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
         if(nbPairs == 0){
             return;
         }else{
+            #ifndef NDEBUG
             cout << "Contact detected: " << nbPairs << " pairs" << endl;
+            #endif
         }
 
         //In debug, we only use one thread to make debugging easier
@@ -84,7 +86,9 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
             //Each thread will generate a list of contacted objects, all of which will be merged at the end.
             std::vector<std::vector<pair<string, string>>> thread_contacted_objects(num_threads);
 
+            #ifndef NDEBUG
             std::cout << "Using " << num_threads << " threads" << std::endl;
+            #endif
 
             //Iterate over each thread
             for(int thread_i = 0; thread_i < num_threads; thread_i++){
@@ -398,7 +402,9 @@ void Scene::clear_contacts()
     gContactedObjects.clear(); 
     gContactPositions.clear();
 
+    #ifndef NDEBUG
     cout << "Cleared contacts" << endl;
+    #endif
 }
 
 /// @brief Sets a factor that multiplies that maximal distance an intersection point can be from the objects considered in contact.
@@ -420,14 +426,18 @@ void Scene::step_simulation(float dt)
     //Clear the list of contacted objects and contact points
     clear_contacts();
 
+    #ifndef NDEBUG
     auto t1 = std::chrono::high_resolution_clock::now();
+    #endif
 
     gScene->simulate(dt);
     gScene->fetchResults(true);
 
+    #ifndef NDEBUG
     auto t2 = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
     cout << "Simulation step took " << duration << " ms" << endl;
+    #endif
 }
 
 /// @brief Get the list of objects in contact with a given object.
@@ -712,6 +722,10 @@ string Scene::get_contact_id_at_point(string id, Vector3f point)
         //Iterate over the contact points and find the one that is equal to the query point
         for(int i=0; i < contacts.size(); i++){
             Vector3f contact_point = contacts[i].get_position();
+            //Define Point objects to use the equality operator
+            Point3D contact_point_3d(contact_point);
+            Point3D query_point_3d(point);
+            //If the contact point is equal to the query point, return the object ID
             if(contact_point == point){
                 //Return the object ID
                 pair<string, string> id_pair = contacts[i].get_object_ids();
@@ -723,8 +737,8 @@ string Scene::get_contact_id_at_point(string id, Vector3f point)
             }
         }
     }
-    //If we get here, we might want to add a tolerance for the point equality check.
-    cout << "Consider adding tolerance for point equality check in get_contact_id_at_point()." << endl;
+    //Hopefully, we never get here.
+    cout << "Consider increasing the point equality check tolerance. From Scene.cpp:get_contact_id_at_point()." << endl;
     return "";
 }
 
@@ -737,7 +751,9 @@ string Scene::get_contact_id_at_point(string id, Vector3f point)
 vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(string id, int hull_max_size)
 {
 
+    #ifndef NDEBUG
     auto t1 = std::chrono::high_resolution_clock::now();
+    #endif
 
     //The maximum number of points on the convex hull must be between [4-255]
     if(hull_max_size < 4){
@@ -768,9 +784,11 @@ vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(strin
 
     Matrix3f contact_points = get_best_contact_triangle(id, triangles, true);
 
+    #ifndef NDEBUG
     auto t2 = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
     cout << "Got three most stable contact points in " << duration << " ms" << endl;
+    #endif
 
     //Find the object ID of the other object in contact at each contact point
     // and make a vector of pairs of object IDs and contact points.
@@ -1136,7 +1154,9 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
 
     if(!obj->has_canary_spheres()){
 
+        #ifndef NDEBUG
         auto t1 = chrono::high_resolution_clock::now();
+        #endif
 
         //Get the half-extents of the voxel
         Vector3f voxel_half_extents = voxel_side_lengths/2;
@@ -1158,12 +1178,15 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
         Vector3f T_t = pose_inv.block(0,3,3,1);
         voxel_vertices_matrix = (T_R*voxel_vertices_matrix).colwise() + T_t;
 
-
+        #ifndef NDEBUG
         auto t2 = chrono::high_resolution_clock::now();
         auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
         cout << "Generated voxel vertices in " << duration << " ms" << endl;
+        #endif
 
+        #ifndef NDEBUG
         t1 = chrono::high_resolution_clock::now();
+        #endif
 
         //Create a list of tetrahedron
         vector<vector<Vector3f>> tetra_vertices_list;
@@ -1224,9 +1247,12 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
         }else{
             points_in_tetrahedron(voxel_vertices_matrix, tetra_vertices_list, 0, tetra_vertices_list.size(), inside_volume);
         }
+
+        #ifndef NDEBUG
         t2 = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
         cout << "Iterated over " << tetConvexShapes.size() << " tetrahedra in " << duration << " ms" << endl;
+        #endif
 
         //For each vertex flagged as inside the volume, create a sphere
         for(int i = 0; i < inside_volume.size(); i++){
@@ -1398,17 +1424,24 @@ PxArray<PxShape*> Scene::make_tetmesh(Object* obj)
 void Scene::create_object_shapes(Object* obj, Matrix4f pose, int resolution, bool is_volumetric, bool is_fixed, float mass, Vector3f com)
 {
     //Create a occupancy grid
+    #ifndef NDEBUG
     auto t1 = chrono::high_resolution_clock::now();
+    #endif
     shared_ptr<OccupancyGrid> grid = obj->create_occupancy_grid(resolution, OccupancyGrid::sampling_method::random);
+    #ifndef NDEBUG
     auto t2 = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
     cout << "Occupancy grid created in " << duration << " ms" << endl;
+    #endif
 
     PxTolerancesScale scale;
     PxCookingParams params(scale);
     PxArray<PxShape*> convexShapes;
 
+    #ifndef NDEBUG
     t1 = chrono::high_resolution_clock::now();
+    #endif
+
     //Create a shape from each voxel in the occupancy grid.
     unordered_map<uint32_t, GridCell>* cells = grid->get_grid_cells();
     //Create a shape for each occupancy grid cell
@@ -1418,34 +1451,49 @@ void Scene::create_object_shapes(Object* obj, Matrix4f pose, int resolution, boo
         PxShape* voxelShape = create_voxel_shape(cell, pose);
         convexShapes.pushBack(voxelShape);
     }
+
+    #ifndef NDEBUG
     t2 = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
     cout << "Created voxel shapes in " << duration << " ms" << endl;
+    #endif
 
     //If the object is volumetric, create a tetrahedral mesh and spheres embedded in the volume
     // to enable interpenetration detection.
     if(is_volumetric){
+        #ifndef NDEBUG
         t1 = chrono::high_resolution_clock::now();
+        #endif
+        
         //Create the tetrahedral mesh built from the triangle mesh.
         PxArray<PxShape*> tetConvexShapes = make_tetmesh(obj);
         //Augment convexShapes with the shapes
         for(auto& shape : tetConvexShapes){
             convexShapes.pushBack(shape);
         }
+
+        #ifndef NDEBUG
         t2 = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
         cout << "Created tetrahedral shapes in " << duration << " ms" << endl;
+        #endif
 
+        #ifndef NDEBUG
         t1 = chrono::high_resolution_clock::now();
+        #endif
+
         //Create spheres embedded in the volume of the object that can be used to detect interpenetration.
         PxArray<PxShape*> sphereShapes = make_canary_spheres(obj, tetConvexShapes);
         //Augment convexShapes with the shapes
         for(auto& shape : sphereShapes){
             convexShapes.pushBack(shape);
         }
+
+        #ifndef NDEBUG
         t2 = chrono::high_resolution_clock::now();
         duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
         cout << "Created canary spheres in " << duration << " ms" << endl;
+        #endif
     }
 
     //Pose of the actor/object in the world frame column by column [col0 | col1 | col2 | col3]
@@ -1555,6 +1603,8 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f tri_vertices, MatrixX
     assert(triangles.rows() > 0);
     assert(resolution > 0);
     assert(mass > 0);
+
+    //TODO: Verify that the object does not exists already. If it does, remove it first.
 
     //Create an object instance and add it to the scene
     // When adding an element to the vector, the vector may reallocate memory and move the elements which will change their addresses.
@@ -1669,7 +1719,9 @@ void Scene::set_object_pose(string id, Matrix4f pose)
     // such that, when setGlobalPose() is called, the voxels are correctly positioned. 
     //   See: create_voxel_shape()
 
+    #ifndef NDEBUG
     auto t1 = chrono::high_resolution_clock::now();
+    #endif
 
     //Get object by ID, actor and shapes
     Object* obj = get_object_by_id(id);
@@ -1721,9 +1773,12 @@ void Scene::set_object_pose(string id, Matrix4f pose)
         }
 
     }
+
+    #ifndef NDEBUG
     auto t2 = chrono::high_resolution_clock::now();
     auto duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
     cout << "Moved object " << id << " in " << duration << " ms to pose " << endl << pose << endl;
+    #endif
 }
 
 /// @brief Return the object that has the given ID

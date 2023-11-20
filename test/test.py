@@ -7,7 +7,7 @@ import assembly_cd as acd
 import time
 
 obj1_name = "cube1"
-obj2_name = "cone"
+obj2_name = "cube2"
 obj_names = [obj1_name, obj2_name]
 object_geometries = []
 
@@ -168,40 +168,45 @@ for i in range(len(voxel_positions)):
 o3d.visualization.draw([tm]+voxels)
 '''
 
+geometries = []
 
 contact_points = physxScene.get_contact_point_positions(obj1_name, obj2_name)
 print("Number of contact points: ", len(contact_points))
 
-contact_point_cloud = o3d.geometry.PointCloud()
-contact_point_cloud.points = o3d.utility.Vector3dVector(contact_points)
-contact_point_cloud.paint_uniform_color([0, 0, 1])
+if len(contact_points) > 0:
+    contact_point_cloud = o3d.geometry.PointCloud()
+    contact_point_cloud.points = o3d.utility.Vector3dVector(contact_points)
+    contact_point_cloud.paint_uniform_color([0, 0, 1])
+    geometries.append(contact_point_cloud)
 
 pen_contact_points = physxScene.get_penetrating_contact_point_positions(obj1_name, obj2_name)
 print("Number of penetrating contact points: ", len(pen_contact_points))
 
-pen_contact_point_cloud = o3d.geometry.PointCloud()
-pen_contact_point_cloud.points = o3d.utility.Vector3dVector(pen_contact_points)
-pen_contact_point_cloud.paint_uniform_color([1, 0, 0])
+if len(pen_contact_points) > 0:
+    pen_contact_point_cloud = o3d.geometry.PointCloud()
+    pen_contact_point_cloud.points = o3d.utility.Vector3dVector(pen_contact_points)
+    pen_contact_point_cloud.paint_uniform_color([1, 0, 0])
+    geometries.append(pen_contact_point_cloud)
 
 hull_contact_points = physxScene.get_contact_convex_hull(obj1_name)
 print("Number of hull contact points: ", len(hull_contact_points))
 
-hull_contact_point_cloud = o3d.geometry.PointCloud()
-hull_contact_point_cloud.points = o3d.utility.Vector3dVector(hull_contact_points)
-hull_contact_point_cloud.paint_uniform_color([0, 1, 0])
+if len(hull_contact_points) > 0:
+    hull_contact_point_cloud = o3d.geometry.PointCloud()
+    hull_contact_point_cloud.points = o3d.utility.Vector3dVector(hull_contact_points)
+    hull_contact_point_cloud.paint_uniform_color([0, 1, 0])
+    geometries.append(hull_contact_point_cloud)
 
 #Watchout: this can become very slow when hull_contact_point_cloud is large
 stable_contact_points = physxScene.get_three_most_stable_contact_points(obj2_name)
 
 #Create a red sphere for each stable contact point
-stable_contact_point_spheres = []
 for i in range(len(stable_contact_points)):
     sphere = o3d.geometry.TriangleMesh.create_sphere(radius=0.01)
     sphere.translate(stable_contact_points[i][1])
     sphere.paint_uniform_color([1, 0, 0])
-    stable_contact_point_spheres.append(sphere)
+    geometries.append(sphere)
 
-geometries = [contact_point_cloud, pen_contact_point_cloud, hull_contact_point_cloud] + stable_contact_point_spheres
 #Add object geometries as linesets
 for geo in object_geometries:
     #Create lineset from trianglemesh
@@ -250,4 +255,4 @@ if SHOW_VOXELS:
 
     geometries += voxels
 
-o3d.visualization.draw(geometries)
+o3d.visualization.draw_geometries(geometries)
