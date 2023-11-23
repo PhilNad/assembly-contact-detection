@@ -358,5 +358,60 @@ int main(int argc, char** argv) {
 
     vector<pair<string, Vector3f>> stable_contact_points = scene.get_three_most_stable_contact_points("cube2");
 
+    //Stress-test where an object is moved around a lot, removed, re-created, and moved around again.
+    int num_iterations = 1;
+    int num_sub_iterations = 1;
+    Cube cube = Cube(1, 1, 1);
+    for(int i = 0; i < num_iterations; i++){
+        //Create a new Scene
+        scene = Scene();
+        for(int j = 0; j < num_sub_iterations; j++){
+            // Add another cube to the scene
+            id = "cube4";
+            pose << 1, 0, 0, 0,
+                    0, 1, 0, 0,
+                    0, 0, 1, 0.5,
+                    0, 0, 0, 1;
+            scene.add_object(id, pose, cube.vertices, cube.triangles, 30);
+            
+            // Add a cube to the scene
+            id = "cube5";
+            pose << 1, 0, 0, 0,
+                    0, 1, 0, 0,
+                    0, 0, 1, 1.5,
+                    0, 0, 0, 1;
+            Cube cube3 = Cube(1, 1, 1);
+            scene.add_object(id, pose, cube.vertices, cube.triangles, 30);
+
+            // Add a cube to the scene
+            id = "cube6";
+            pose << 1, 0, 0, 0,
+                    0, 1, 0, 0,
+                    0, 0, 1, 2.5,
+                    0, 0, 0, 1;
+            scene.add_object(id, pose, cube.vertices, cube.triangles, 30);
+
+
+            // Add a cube to the scene
+            id = "cube7";
+            pose << 1, 0, 0, 2,
+                    0, 1, 0, 2,
+                    0, 0, 1, 0.5,
+                    0, 0, 0, 1;
+            scene.add_object(id, pose, cube.vertices, cube.triangles, 30);
+
+            scene.get_three_most_stable_contact_points("cube4");
+            scene.get_three_most_stable_contact_points("cube5");
+            scene.get_three_most_stable_contact_points("cube6");
+            scene.get_three_most_stable_contact_points("cube7");
+
+
+            scene.remove_object("cube4");
+            scene.remove_object("cube5");
+            scene.remove_object("cube6");
+            scene.remove_object("cube7");
+        }
+    }
+
     return 0;
 }

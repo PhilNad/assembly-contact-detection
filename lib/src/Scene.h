@@ -37,7 +37,7 @@ class Scene
         vector<Contact> get_contact_points(string id1, string id2);
         vector<Contact> get_penetrating_contact_points(string id1, string id2);
         Object* get_object_by_id(string id);
-        string get_contact_id_at_point(string id, Vector3f point);
+        string get_contact_id_at_point(string id, Vector3f point, float max_distance = 1e-3, int max_num_iterations = 3);
     public:
         float max_distance_factor = 0.2;
         Scene();

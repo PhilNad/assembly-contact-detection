@@ -341,10 +341,11 @@ void Scene::startupPhysics()
         gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
     }
 
+    //Releases contacts, scene, dispatcher, physics
+    cleanupPhysics();
+
     gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale());
 
-    //To be used if the tetrahedral method is used.
-    //gContactReportCallback = new ContactReportCallbackForTetrahedra();
     //To be used if the voxel grid method is used.
     gContactReportCallback = new ContactReportCallbackForVoxelgrid();
 
@@ -365,32 +366,35 @@ void Scene::startupPhysics()
 
     gScene = gPhysics->createScene(sceneDesc);
     gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
-
-    gContacts.clear();
-    gContactedObjects.clear();
-    gContactPositions.clear();
 }
 
 /// @brief Clean up the physics engine by releasing memory.
 void Scene::cleanupPhysics()
 {
     //Clear the list of contacted objects and contact points
-    gContacts.clear();
-    gContactedObjects.clear(); 
-    gContactPositions.clear();
+    clear_contacts();
+
+    //Free all the objects
+    for(auto& obj_ptr : object_ptrs){
+        obj_ptr = nullptr;
+    }
+    object_ptrs.clear();
 
     PX_RELEASE(gScene);
     PX_RELEASE(gDispatcher);
     PX_RELEASE(gPhysics);
-    //As noted in startupPhysics(), we should not release the foundation object.
+    //As noted in startupPhysics(), we should NOT release the foundation object.
     //PX_RELEASE(gFoundation);
+
+    //Free the Contact Report Callback which was allocated in startupPhysics()
+    if(gContactReportCallback != nullptr)
+        delete gContactReportCallback;
 }
 
 Scene::Scene(){
     startupPhysics();
 }
 Scene::~Scene(){
-    cleanupPhysics();
 }
 
 /// @brief Clear all recorded contacts such that the next call to step_simulation() will record new contacts.
@@ -458,17 +462,19 @@ set<string> Scene::get_contacted_objects(string target_object)
     }
 
     set<string> contacted_objects;
-    for (int i = 0; i < gContactedObjects.size(); i++)
-    {
-        if (gContactedObjects[i].first == target_object)
-        {
+    for (int i = 0; i < gContactedObjects.size(); i++){
+        if (gContactedObjects[i].first == target_object){
             contacted_objects.insert(gContactedObjects[i].second);
         }
-        else if (gContactedObjects[i].second == target_object)
-        {
+        else if (gContactedObjects[i].second == target_object){
             contacted_objects.insert(gContactedObjects[i].first);
         }
     }
+
+    #ifndef NDEBUG
+    cout << "Found " << contacted_objects.size() << " contacted objects" << endl;
+    #endif
+
     return contacted_objects;
 }
 
@@ -511,6 +517,14 @@ MatrixX3f Scene::get_contact_points_positions(string id1, string id2)
 {
     //Get the vector of Contact objects
     vector<Contact> contacts = get_contact_points(id1, id2);
+
+    #ifndef NDEBUG
+    if(id2 == ""){
+        cout << "Found " << contacts.size() << " contact points involving " << id1 << endl;
+    }else{
+        cout << "Found " << contacts.size() << " contact points between " << id1 << " and " << id2 << endl;
+    }
+    #endif
 
     //Convert the vector of contact points to a matrix
     MatrixX3f contact_points_matrix(contacts.size(), 3);
@@ -604,6 +618,19 @@ MatrixX3f Scene::get_contact_convex_hull(string id, int vertex_limit)
 
     MatrixX3f obj_contact_points = this->get_all_contact_points(id);
 
+    int num_contact_points = obj_contact_points.rows();
+
+    //If there are no contact points, return an empty matrix
+    if(num_contact_points == 0){
+        return MatrixX3f(0,3);
+    }
+
+    //Computing a convex hull requires at least 4 points
+    // A plane can always be defined by 3 points, a line with 2.
+    if(num_contact_points <= 4){
+        return obj_contact_points;
+    }
+
     PxTolerancesScale scale;
     PxCookingParams params(scale);
     PxConvexMeshDesc convexDesc;
@@ -618,14 +645,14 @@ MatrixX3f Scene::get_contact_convex_hull(string id, int vertex_limit)
     float perturbation_amplitude = 0.001;
 
     //Create a convex mesh from the object's contact points
-    PxVec3* vertices = new PxVec3[obj_contact_points.rows()];
-    for(int i=0; i < obj_contact_points.rows(); i++){
-        //Add a random perturbation to the point
+    PxVec3* vertices = new PxVec3[num_contact_points];
+    for(int i=0; i < num_contact_points; i++){
+        //Add a random perturbation to the point such that the point cloud is full dimensional
         Vector3f perturbation = perturbation_amplitude*Vector3f::Random();
         vertices[i] = PxVec3(obj_contact_points(i,0) + perturbation[0], obj_contact_points(i,1) + perturbation[1], obj_contact_points(i,2) + perturbation[2]);
     }
 
-    convexDesc.points.count = obj_contact_points.rows();
+    convexDesc.points.count = num_contact_points;
     convexDesc.points.stride = sizeof(PxVec3);
     convexDesc.points.data = vertices;
     convexDesc.vertexLimit = vertex_limit;
@@ -686,22 +713,25 @@ Vector3f Scene::get_closest_contact_point(string id1, string id2, const Vector3f
     return closest_contact_point;
 }
 
-//TODO: Modify get_contact_points and get_penetration_points to return a list of Contact objects instead of a matrix of points.
-//      and add new functions that return only the positions.
-//      Then, modify other functions to associate objects to points on the convex hull, etc.
-
 
 /// @brief Find the ID of the object that is in contact at the given point with the object whose ID is given.
 /// @param point 3D query point expressed in the world frame.
+/// @param max_distance Distance between the query point and the contact point below which the contact point is considered to be the closest.
+/// @param max_num_iterations Maximum number of iterations to perform, increasing the max_distance by a factor of 10 at each iteration.
 /// @return Object ID of the object in contact at the given point or empty string if no object could be found.
-/// @note The function is mainly used after a convex hull computation that looses object IDs.
-string Scene::get_contact_id_at_point(string id, Vector3f point)
+/// @note The function is mainly useful after performing a convex hull computation that looses object ID information.
+string Scene::get_contact_id_at_point(string id, Vector3f point, float max_distance, int max_num_iterations)
 {
     //Get the objects in contact with the given object
     set<string> contacted_objects = this->get_contacted_objects(id);
 
     //If there is no object in contact, return an empty string
     if(contacted_objects.size() == 0){
+
+        #ifndef NDEBUG
+        cout << "No object in contact with " << id << endl;
+        #endif
+
         return "";
     }
 
@@ -714,10 +744,29 @@ string Scene::get_contact_id_at_point(string id, Vector3f point)
     vector<string> candidate_objects;
     for(auto& obj_id : contacted_objects){
         Object* obj = this->get_object_by_id(obj_id);
+        if(obj == nullptr){
+            #ifdef NDEBUG
+            cout << "Object #" << obj_id << " not found (nullptr)." << endl;
+            #endif
+            continue;
+        }
+
+        if(obj->occupancy_grid == nullptr){
+            #ifdef NDEBUG
+            cout << "Object #" << obj_id << " has no occupancy grid." << endl;
+            #endif
+            continue;
+        }
+
+        //TODO: Verify that this works well.
         if(obj->occupancy_grid->is_cell_occupied(point)){
             candidate_objects.push_back(obj_id);
         }
     }
+
+    #ifndef NDEBUG
+    cout << "Found " << candidate_objects.size() << " objects in contact with " << id << " that contain the query point" << endl;
+    #endif
 
     //If no occupied voxel contains the query point, return an empty string
     if(candidate_objects.size() == 0){
@@ -725,39 +774,45 @@ string Scene::get_contact_id_at_point(string id, Vector3f point)
     }
 
     //Iterate over the candidate objects and find the one that has the query point
-    for(auto& obj_id : candidate_objects){
-        //Get the contact points between both objects
-        vector<Contact> contacts = this->get_contact_points(id, obj_id);
+    for(int iter=0; iter < max_num_iterations; iter++){
+        for(auto& obj_id : candidate_objects){
+            //Get the contact points between both objects
+            vector<Contact> contacts = this->get_contact_points(id, obj_id);
 
-        #ifndef NDEBUG
-        cout << "Found " << contacts.size() << " contact points between " << id << " and " << obj_id << endl;
-        #endif
+            #ifndef NDEBUG
+            cout << "Found " << contacts.size() << " contact points between " << id << " and " << obj_id << endl;
+            #endif
 
-        //Iterate over the contact points and find the one that is equal to the query point
-        for(int i=0; i < contacts.size(); i++){
-            Vector3f contact_point = contacts[i].get_position();
-            //Define Point objects to use the equality operator
-            Point3D contact_point_3d(contact_point);
-            Point3D query_point_3d(point);
-            //If the contact point is equal to the query point, return the object ID
-            if(contact_point == point){
-                //Return the object ID
-                pair<string, string> id_pair = contacts[i].get_object_ids();
+            //Iterate over the contact points and find the one that is equal to the query point
+            for(int i=0; i < contacts.size(); i++){
+                Vector3f contact_point = contacts[i].get_position();
+                //Compute the squared distance between the two points
+                float dist = (contact_point - point).squaredNorm();
+                //If distantce is small enough, return the object ID
+                if(dist < max_distance){
+                    //Return the object ID
+                    pair<string, string> id_pair = contacts[i].get_object_ids();
 
-                #ifndef NDEBUG
-                cout << "Found contact point at " << contact_point.transpose() << " between " << id_pair.first << " and " << id_pair.second << endl;
-                #endif
+                    #ifndef NDEBUG
+                    cout << "Found contact point at " << contact_point.transpose() << " between " << id_pair.first << " and " << id_pair.second << endl;
+                    #endif
 
-                if(id_pair.first == id){
-                    return id_pair.second;
-                }else{
-                    return id_pair.first;
+                    if(id_pair.first == id){
+                        return id_pair.second;
+                    }else{
+                        return id_pair.first;
+                    }
                 }
             }
         }
+
+        //None of the objects in contact has a contact point equal to the query point
+        //Restart with a larger distance
+        max_distance *= 10;
+        #ifndef NDEBUG
+            cout << "No contact point found. Increasing max distance to " << max_distance << endl;
+        #endif
     }
-    //Hopefully, we never get here.
-    cout << "Consider increasing the point equality check tolerance. From Scene.cpp:get_contact_id_at_point()." << endl;
     return "";
 }
 
@@ -768,6 +823,7 @@ string Scene::get_contact_id_at_point(string id, Vector3f point)
 /// @note This is computationally very expensive with worst case O(hull_max_size^3)
 vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(string id, int hull_max_size)
 {
+    vector<pair<string, Vector3f>> contact_points_with_ids;
 
     #ifndef NDEBUG
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -784,16 +840,37 @@ vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(strin
     MatrixX3f hull_contact_points = get_contact_convex_hull(id, hull_max_size);
 
     //The number of contact points on the convex hull must be at least 3
-    assert(hull_contact_points.rows() >= 3);
+    if(hull_contact_points.rows() < 3){
+        contact_points_with_ids.push_back(make_pair("", Vector3f(NAN, NAN, NAN)));
+        contact_points_with_ids.push_back(make_pair("", Vector3f(NAN, NAN, NAN)));
+        contact_points_with_ids.push_back(make_pair("", Vector3f(NAN, NAN, NAN)));
+
+        cout << "Object #" << id << " has less than 3 contact points. Returning NAN." << endl;
+
+        return contact_points_with_ids;
+    }
 
     //Create a Triangle for all combinations
     vector<Triangle<Vector3f>> triangles;
     for(int i=0; i < hull_contact_points.rows(); i++){
+        Vector3f p1 = hull_contact_points.row(i);
+        if(p1.hasNaN()){
+            continue;
+        }
         for(int j=i+1; j < hull_contact_points.rows(); j++){
+            Vector3f p2 = hull_contact_points.row(j);
+            if(p2.hasNaN()){
+                continue;
+            }
             for(int k=j+1; k < hull_contact_points.rows(); k++){
-                Vector3f p1 = hull_contact_points.row(i);
-                Vector3f p2 = hull_contact_points.row(j);
                 Vector3f p3 = hull_contact_points.row(k);
+                if(p3.hasNaN()){
+                    continue;
+                }
+                //If the triangle is degenerate, skip it
+                if((p2-p1).cross(p3-p1).norm() < 1e-6){
+                    continue;
+                }
                 Triangle<Vector3f> triangle(p1, p2, p3);
                 triangles.push_back(triangle);
             }
@@ -806,6 +883,7 @@ vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(strin
     auto t2 = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>( t2 - t1 ).count();
     cout << "Got three most stable contact points in " << duration << " ms" << endl;
+    cout << "Contact points: " << endl << contact_points << endl;
     #endif
 
     //Find the object ID of the other object in contact at each contact point
@@ -821,21 +899,27 @@ vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(strin
     string id2 = "";
 
     if(!contact_point0.hasNaN()){
-        id0 = this->get_contact_id_at_point(id, contact_points.row(0));
+        id0 = get_contact_id_at_point(id, contact_points.row(0));
     }
 
     if(!contact_point1.hasNaN()){
-        id1 = this->get_contact_id_at_point(id, contact_points.row(1));
+        id1 = get_contact_id_at_point(id, contact_points.row(1));
     }
 
     if(!contact_point2.hasNaN()){
-        id2 = this->get_contact_id_at_point(id, contact_points.row(2));
+        id2 = get_contact_id_at_point(id, contact_points.row(2));
     }
 
-    vector<pair<string, Vector3f>> contact_points_with_ids;
     contact_points_with_ids.push_back(make_pair(id0, contact_points.row(0)));
     contact_points_with_ids.push_back(make_pair(id1, contact_points.row(1)));
     contact_points_with_ids.push_back(make_pair(id2, contact_points.row(2)));
+
+    #ifndef NDEBUG
+    cout << "Contact points with IDs: " << endl;
+    for(auto& contact_point_with_id : contact_points_with_ids){
+        cout << contact_point_with_id.first << ": " << contact_point_with_id.second.transpose() << endl;
+    }
+    #endif
 
     return contact_points_with_ids;
 }
@@ -905,10 +989,6 @@ Matrix3f Scene::get_other_one_most_stable_contact_points(string id, Vector3f fir
 ///         with each row representing a contact point.
 Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> triangles, bool stable)
 {
-
-    //TODO:
-    // WARNING: This code has not been tested.
-
     float tol = 1e-6;
 
     //Sort the triangles by area
@@ -930,7 +1010,7 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
         Matrix4f pose_w = obj->pose;
         Vector3f com_w = pose_w.block<3,3>(0,0)*com_o + pose_w.block<3,1>(0,3);
         //The gravity direction vector is expressed in the world frame
-        Vector3f g_w = Vector3f(0,0,-1);        
+        Vector3f g_w = Vector3f(0,0,-1);
 
         //Distance between the projected CoM and the closest triangle side
         // for the currently best stable support. The best stable support
@@ -948,11 +1028,11 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
             float d1 = (centroid - p1).cross(p2 - p1).norm() / (p2 - p1).norm();
             float d2 = (centroid - p2).cross(p3 - p2).norm() / (p3 - p2).norm();
             float d3 = (centroid - p3).cross(p1 - p3).norm() / (p1 - p3).norm();
-            //Distance with the closest triangle side
-            float min_d = min(min(d1, d2), d3);
-
-            //If the distance between the centroid and the closest
-            // triangle side is smaller than the current min_dist, this
+            
+            //Sum of the distances
+            float min_d = d1 + d2 + d3;
+            
+            //If the sum of distances is smaller than the current min_dist, this
             // triangle cannot become a better stable support.
             if(min_d < min_dist){
                 continue;
@@ -971,8 +1051,13 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
                 continue;
             }
 
-            //Find the intersection poitn between the gravity vector and the plane of the triangle
-            Vector3f intersection_point = line_plane_intersection(com_w, g_w, tri_normal, tri_plane_distance);
+            //Find the intersection point between the gravity vector and the plane of the triangle
+            // Vector3f intersection_point = line_plane_intersection(com_w, g_w, tri_normal, tri_plane_distance);
+            
+            //Shortest distance between the start of the line vector and the plane
+            // This assumes that vector_dir and plane_normal are normalized.
+            float t = tri_plane_distance - tri_normal.dot(com_w);
+            Vector3f intersection_point = com_w + t * g_w;
 
             //Check if the triangle contains the intersection point
             bool tri_contains_point = tri.contains(intersection_point, false);
@@ -1537,10 +1622,12 @@ void Scene::create_object_shapes(Object* obj, Matrix4f pose, int resolution, boo
         PxRigidStatic* actor = gPhysics->createRigidStatic(pxPose);
         //Attach all shapes in the object to the actor
         for(int i = 0; i < convexShapes.size(); i++){
-            actor->attachShape(*convexShapes[i]);
-            //We release the shape after it has been attached such that when the actor
-            // is released, the shape is also released.
-            convexShapes[i]->release();
+            if(convexShapes[i] != nullptr){
+                actor->attachShape(*convexShapes[i]);
+                //We release the shape after it has been attached such that when the actor
+                // is released, the shape is also released.
+                convexShapes[i]->release();
+            }
         }
         gScene->addActor(*actor);
         actor->setGlobalPose(pxPose);
@@ -1558,8 +1645,12 @@ void Scene::create_object_shapes(Object* obj, Matrix4f pose, int resolution, boo
         actor->setRigidBodyFlag(PxRigidBodyFlag::eKINEMATIC, true);
         //Attach all shapes in the object to the actor
         for(int i = 0; i < convexShapes.size(); i++){
-            actor->attachShape(*convexShapes[i]);
-            convexShapes[i]->release();
+            if(convexShapes[i] != nullptr){
+                actor->attachShape(*convexShapes[i]);
+                //We release the shape after it has been attached such that when the actor
+                // is released, the shape is also released.
+                convexShapes[i]->release();
+            }
         }
         PxVec3 pxCom = PxVec3(com(0), com(1), com(2));
         //PxRigidBodyExt::setMassAndUpdateInertia(*actor, mass, &pxCom, true);
@@ -1706,10 +1797,6 @@ vector<PxShape*> Scene::get_actor_shapes(PxRigidActor* actor)
     //Get the number of shapes attached to the actor
     PxU32 nbShapes = actor->getNbShapes();
 
-    #ifndef NDEBUG
-    cout << "Scene::get_actor_shapes : Actor has " << nbShapes << " shapes" << endl;
-    #endif
-
     //Get all shapes attached to the actor
     PxShape** shapesArray = new PxShape*[nbShapes];
     PxU32 nbShapesReturned = actor->getShapes(shapesArray, nbShapes);
@@ -1722,10 +1809,6 @@ vector<PxShape*> Scene::get_actor_shapes(PxRigidActor* actor)
     //Release the shapes array
     delete[] shapesArray;
 
-    #ifndef NDEBUG
-    cout << "Scene::get_actor_shapes : Returning " << shapes.size() << " shapes" << endl;
-    #endif
-
     return shapes;
 }
 
@@ -1737,41 +1820,39 @@ void Scene::remove_object(string id)
     PxRigidActor* actor = get_actor(id);
     if (actor == nullptr)
     {
-        cout << "Object with id " << id << " not found" << endl;
+        cout << "Actor with id " << id << " not found" << endl;
         return;
+    }else{
+        #ifndef NDEBUG
+        cout << "Found actor " << id << endl;
+        #endif
+    
+
+        //When the actor is released, the shapes should also be released
+        // if the release() method was called right after the shape was created.
+
+        //Remove the actor from the scene
+        gScene->removeActor(*actor);
+        
+        //Release the memory allocated for the actor
+        // This should also release the attached shapes.
+        PX_RELEASE(actor);
+
+        #ifndef NDEBUG
+        cout << "Removed actor from scene." << endl;
+        #endif
     }
 
-    #ifndef NDEBUG
-    cout << "Removing object. Found actor " << id << endl;
-    #endif    
-
-    //When the actor is released, the shapes should also be released
-    // if the release() method was called right after the shape was created.
-
-    //Remove the actor from the scene
-    PxActor& actorRef = *actor;
-    gScene->removeActor(actorRef);
-    
-    //Do we need to also release the actor?
-    actor->release();
-
-    #ifndef NDEBUG
-    cout << "Removed actor from scene." << endl;
-    #endif
-
     //Remove the object from the list of objects
-    for (int i = 0; i < this->object_ptrs.size(); i++)
-    {
-        if (this->object_ptrs[i]->id == id)
-        {
+    for (int i = 0; i < this->object_ptrs.size(); i++){
+        if (this->object_ptrs[i]->id == id){
             this->object_ptrs.erase(this->object_ptrs.begin() + i);
+            #ifndef NDEBUG
+            cout << "Removed object " << id << " from list of objects." << endl;
+            #endif
             break;
         }
     }
-
-    #ifndef NDEBUG
-    cout << "Removed object from list of objects." << endl;
-    #endif
 
     //The contacts are no longer valid, so clear them
     clear_contacts();
@@ -1812,10 +1893,13 @@ void Scene::set_object_pose(string id, Matrix4f pose)
         for (int i = 0; i < attached_shapes.size(); i++)
         {
             PxShape* shape = attached_shapes[i];
-            PxGeometryType::Enum shape_type = shape->getGeometry().getType();
+            if(shape != nullptr){
+                PxGeometryType::Enum shape_type = shape->getGeometry().getType();
 
-            if(shape_type == PxGeometryType::eBOX){
-                actor->detachShape(*shape);
+                if(shape_type == PxGeometryType::eBOX){
+                    //actor->detachShape(*shape);
+                    shape->release();
+                }
             }
         }
 
@@ -1859,6 +1943,9 @@ void Scene::set_object_pose(string id, Matrix4f pose)
         cout << "Try creating the object first." << endl;
         #endif
     }
+
+    //The contacts are no longer valid, so clear them
+    clear_contacts();
 }
 
 /// @brief Return a list of object IDs in the scene.
