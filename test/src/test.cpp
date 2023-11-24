@@ -359,8 +359,8 @@ int main(int argc, char** argv) {
     vector<pair<string, Vector3f>> stable_contact_points = scene.get_three_most_stable_contact_points("cube2");
 
     //Stress-test where an object is moved around a lot, removed, re-created, and moved around again.
-    int num_iterations = 1;
-    int num_sub_iterations = 1;
+    int num_iterations = 2;
+    int num_sub_iterations = 2;
     Cube cube = Cube(1, 1, 1);
     for(int i = 0; i < num_iterations; i++){
         //Create a new Scene

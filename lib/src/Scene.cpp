@@ -152,12 +152,21 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
             PxContactPair pair = pairs[i];
             PxU32 contactCount = pair.contactCount;
             //cout << contactCount << " contacts between " << id_obj0 << " and " << id_obj1 << endl;
+
+            //Ignore pairs when shapes have been deleted
+            if(pair.flags & (PxContactPairFlag::eREMOVED_SHAPE_0 | PxContactPairFlag::eREMOVED_SHAPE_1))
+                continue;
   
             if(contactCount)
             {
                 //Get the shapes involved in the collision
                 PxShape* shape0 = pair.shapes[0];
                 PxShape* shape1 = pair.shapes[1];
+
+                //If the pointers are null, we skip this pair
+                if(shape0 == nullptr || shape1 == nullptr){
+                    continue;
+                }
 
                 //Geometry type of each shape
                 PxGeometryType::Enum shape0_type = shape0->getGeometry().getType();
@@ -166,6 +175,12 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                 //Get the actors
                 PxRigidActor* actor0 = shape0->getActor();
                 PxRigidActor* actor1 = shape1->getActor();
+
+                //If the pointers are null, we skip this pair
+                if(actor0 == nullptr || actor1 == nullptr){
+                    continue;
+                }
+
                 string id_obj0 = actor0->getName();
                 string id_obj1 = actor1->getName();
 
@@ -208,25 +223,27 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 
                 //The collision is between two gridcells
                 if( shape0_type == PxGeometryType::eBOX && shape1_type == PxGeometryType::eBOX ){
-                    //Get the grid cells involved in the collision
-                    GridCell* gridCell0 = static_cast<GridCell*>(shape0->userData);
-                    GridCell* gridCell1 = static_cast<GridCell*>(shape1->userData);
+                    if(shape0->userData != nullptr && shape1->userData != nullptr){
+                        //Get the grid cells involved in the collision
+                        GridCell* gridCell0 = static_cast<GridCell*>(shape0->userData);
+                        GridCell* gridCell1 = static_cast<GridCell*>(shape1->userData);
 
-                    //Surface points can be obtained with
-                    //  gridCell0->surface_points[0].get()->position
-                    //  gridCell0->surface_points[1].get()->position
-                    //  ...
-                    //  gridCell0->surface_points[0].get()->normal
-                    //  ...
-                    PointSet3D intersections = all_triangles_overlap_over_AARectangle(*gridCell0, *gridCell1, max_distance_factor);
-                    for(auto& p : intersections){
-                        //Add a new contact point to the list
-                        //TODO: Use the right normal
-                        Contact contact(obj0, obj1, Vector3f(p[0], p[1], p[2]), Vector3f(0,0,1), 0.0f);
-                        thread_contacts.push_back(contact);
+                        //Surface points can be obtained with
+                        //  gridCell0->surface_points[0].get()->position
+                        //  gridCell0->surface_points[1].get()->position
+                        //  ...
+                        //  gridCell0->surface_points[0].get()->normal
+                        //  ...
+                        PointSet3D intersections = all_triangles_overlap_over_AARectangle(*gridCell0, *gridCell1, max_distance_factor);
+                        for(auto& p : intersections){
+                            //Add a new contact point to the list
+                            //TODO: Use the right normal
+                            Contact contact(obj0, obj1, Vector3f(p[0], p[1], p[2]), Vector3f(0,0,1), 0.0f);
+                            thread_contacts.push_back(contact);
+                        }
+                        //Mark the two objects as being in contact
+                        thread_contacted_objects.push_back(make_pair(id_obj0, id_obj1));
                     }
-                    //Mark the two objects as being in contact
-                    thread_contacted_objects.push_back(make_pair(id_obj0, id_obj1));
                 }
             }
         }
@@ -373,6 +390,10 @@ void Scene::cleanupPhysics()
 {
     //Clear the list of contacted objects and contact points
     clear_contacts();
+
+    //Remove all actors from the scene
+    // This should also release all shapes.
+    remove_all_actors();
 
     //Free all the objects
     for(auto& obj_ptr : object_ptrs){
@@ -768,50 +789,93 @@ string Scene::get_contact_id_at_point(string id, Vector3f point, float max_dista
     cout << "Found " << candidate_objects.size() << " objects in contact with " << id << " that contain the query point" << endl;
     #endif
 
-    //If no occupied voxel contains the query point, return an empty string
-    if(candidate_objects.size() == 0){
-        return "";
+    //If there is a single object in contact that contains the query point, return its ID
+    if(candidate_objects.size() == 1){
+        return candidate_objects[0];
     }
 
-    //Iterate over the candidate objects and find the one that has the query point
-    for(int iter=0; iter < max_num_iterations; iter++){
-        for(auto& obj_id : candidate_objects){
-            //Get the contact points between both objects
-            vector<Contact> contacts = this->get_contact_points(id, obj_id);
+    //If no occupied voxel contains the query point
+    // Compute the distance between the query point and the voxel centers
+    // and return the ID of the object with the closest voxel center.
+    if(candidate_objects.size() == 0){
+        float min_dist = numeric_limits<float>::infinity();
+        string closest_object_id = "";
+        //Iterate over all objects in contact
+        for(auto& obj_id : contacted_objects){
+            Object* obj = this->get_object_by_id(obj_id);
+            if(obj == nullptr){
+                #ifdef NDEBUG
+                cout << "Object #" << obj_id << " not found (nullptr)." << endl;
+                #endif
+                continue;
+            }
 
-            #ifndef NDEBUG
-            cout << "Found " << contacts.size() << " contact points between " << id << " and " << obj_id << endl;
-            #endif
+            if(obj->occupancy_grid == nullptr){
+                #ifdef NDEBUG
+                cout << "Object #" << obj_id << " has no occupancy grid." << endl;
+                #endif
+                continue;
+            }
 
-            //Iterate over the contact points and find the one that is equal to the query point
-            for(int i=0; i < contacts.size(); i++){
-                Vector3f contact_point = contacts[i].get_position();
-                //Compute the squared distance between the two points
-                float dist = (contact_point - point).squaredNorm();
-                //If distantce is small enough, return the object ID
-                if(dist < max_distance){
-                    //Return the object ID
-                    pair<string, string> id_pair = contacts[i].get_object_ids();
+            //Get the distance between the query point and the voxel centers
+            MatrixX3f voxel_centres = obj->get_voxel_centres();
 
-                    #ifndef NDEBUG
-                    cout << "Found contact point at " << contact_point.transpose() << " between " << id_pair.first << " and " << id_pair.second << endl;
-                    #endif
+            //Compute the squared norm between the query point and each voxel center
+            MatrixX3f query_point_matrix = point.replicate(voxel_centres.rows());
+            MatrixX3f diff = voxel_centres - query_point_matrix;
+            VectorXf dist = diff.rowwise().squaredNorm();
 
-                    if(id_pair.first == id){
-                        return id_pair.second;
-                    }else{
-                        return id_pair.first;
+            //Find the voxel with the smallest distance to the query point
+            float min_dist = dist.minCoeff();
+
+            //If the distance is smaller than the current minimum, update the minimum
+            if(min_dist < min_dist){
+                min_dist = min_dist;
+                closest_object_id = obj_id;
+            }
+        }
+        return closest_object_id;
+    }else{
+        //Iterate over the candidate objects and find the one that has the query point
+        for(int iter=0; iter < max_num_iterations; iter++){
+            for(auto& obj_id : candidate_objects){
+                //Get the contact points between both objects
+                vector<Contact> contacts = this->get_contact_points(id, obj_id);
+
+                #ifndef NDEBUG
+                cout << "Found " << contacts.size() << " contact points between " << id << " and " << obj_id << endl;
+                #endif
+
+                //Iterate over the contact points and find the one that is equal to the query point
+                for(int i=0; i < contacts.size(); i++){
+                    Vector3f contact_point = contacts[i].get_position();
+                    //Compute the squared distance between the two points
+                    float dist = (contact_point - point).squaredNorm();
+                    //If distantce is small enough, return the object ID
+                    if(dist < max_distance){
+                        //Return the object ID
+                        pair<string, string> id_pair = contacts[i].get_object_ids();
+
+                        #ifndef NDEBUG
+                        cout << "Found contact point at " << contact_point.transpose() << " between " << id_pair.first << " and " << id_pair.second << endl;
+                        #endif
+
+                        if(id_pair.first == id){
+                            return id_pair.second;
+                        }else{
+                            return id_pair.first;
+                        }
                     }
                 }
             }
-        }
 
-        //None of the objects in contact has a contact point equal to the query point
-        //Restart with a larger distance
-        max_distance *= 10;
-        #ifndef NDEBUG
-            cout << "No contact point found. Increasing max distance to " << max_distance << endl;
-        #endif
+            //None of the objects in contact has a contact point equal to the query point
+            //Restart with a larger distance
+            max_distance *= 10;
+            #ifndef NDEBUG
+                cout << "No contact point found. Increasing max distance to " << max_distance << endl;
+            #endif
+        }
     }
     return "";
 }
@@ -1812,6 +1876,36 @@ vector<PxShape*> Scene::get_actor_shapes(PxRigidActor* actor)
     return shapes;
 }
 
+
+/// @brief Remove all actors from the scene, this should also remove all shapes attached to the actors.
+void Scene::remove_all_actors()
+{
+    if (gScene != NULL){
+        //Get the number of actors in the scene that are either dynamic or static
+        PxU32 nbActors = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
+
+        //Get all rigid actors in the scene
+        PxActor** actors = new PxActor*[nbActors];
+        PxU32 nbActorsReturned = gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, actors, nbActors);
+
+        //Iterate over actors and find the one with the specified name
+        for (int i = 0; i < nbActorsReturned; i++)
+        {
+            PxRigidActor* actor = static_cast<PxRigidActor*>(actors[i]);
+            //Remove the actor from the scene
+            gScene->removeActor(*actor);
+            //Release the memory allocated for the actor
+            PX_RELEASE(actor);
+        }
+
+        //Release the actors array
+        delete[] actors;
+
+        //The contacts are no longer valid, so clear them
+        clear_contacts();
+    }
+}
+
 /// @brief Remove an object from the scene along with its attached shapes
 /// @param id unique identifier for the object
 void Scene::remove_object(string id)
@@ -1897,8 +1991,7 @@ void Scene::set_object_pose(string id, Matrix4f pose)
                 PxGeometryType::Enum shape_type = shape->getGeometry().getType();
 
                 if(shape_type == PxGeometryType::eBOX){
-                    //actor->detachShape(*shape);
-                    shape->release();
+                    actor->detachShape(*shape);
                 }
             }
         }

@@ -25,6 +25,7 @@ class Scene
         void startupPhysics();
         void cleanupPhysics();
         void clear_contacts();
+        void remove_all_actors();
         void create_object_shapes(Object* obj, Matrix4f pose, int resolution, bool is_volumetric, bool is_fixed, float mass, Vector3f com);
         PxRigidActor* get_actor(string name);
         vector<PxShape*> get_actor_shapes(PxRigidActor* actor);
