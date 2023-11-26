@@ -294,8 +294,7 @@ int main(int argc, char** argv) {
             0, 0, 1, 0.5,
             0, 0, 0, 1;
     Cube cube1 = Cube(1, 1, 1);
-    scene.add_object(id, pose, cube1.vertices, cube1.triangles);
-    cube1.translate(pose(0, 3), pose(1, 3), pose(2, 3));
+    scene.add_object(id, pose, cube1.vertices, cube1.triangles, 30, true);
 
     // Add another cube to the scene
     id = "cube2";
@@ -304,10 +303,7 @@ int main(int argc, char** argv) {
             0, 0, 1, 1.5,
             0, 0, 0, 1;
     Cube cube2 = Cube(1, 1, 1);
-    scene.add_object(id, pose, cube2.vertices, cube2.triangles, 30);
-    cube2.rotate(0.79, RowVector3f(0, 0, 1), RowVector3f(0, 0, 0));
-    cube2.translate(pose(0, 3), pose(1, 3), pose(2, 3));
-    
+    scene.add_object(id, pose, cube2.vertices, cube2.triangles, 30, true);
 
     // Add a cube to the scene
     id = "cube3";
@@ -316,8 +312,7 @@ int main(int argc, char** argv) {
             0, 0, 1, 0.5,
             0, 0, 0, 1;
     Cube cube3 = Cube(1, 1, 1);
-    scene.add_object(id, pose, cube3.vertices, cube3.triangles, 30);
-    cube3.translate(pose(0, 3), pose(1, 3), pose(2, 3));
+    scene.add_object(id, pose, cube3.vertices, cube3.triangles, 30, true);
 
     //Remove cube1
     scene.remove_object("cube1");
@@ -359,37 +354,48 @@ int main(int argc, char** argv) {
     vector<pair<string, Vector3f>> stable_contact_points = scene.get_three_most_stable_contact_points("cube2");
 
     //Stress-test where an object is moved around a lot, removed, re-created, and moved around again.
-    int num_iterations = 2;
-    int num_sub_iterations = 2;
+    int num_iterations = 1;
+    int num_sub_iterations = 1;
     Cube cube = Cube(1, 1, 1);
     for(int i = 0; i < num_iterations; i++){
         //Create a new Scene
         scene = Scene();
+
+        // Add another cube to the scene
+        id = "cube4";
+        pose << 1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 0.5,
+                0, 0, 0, 1;
+        scene.add_object(id, pose, cube.vertices, cube.triangles, 30, true);
+        
+        // Add a cube to the scene
+        id = "cube5";
+        pose << 1, 0, 0, 0,
+                0, 1, 0, 0,
+                0, 0, 1, 1.4,
+                0, 0, 0, 1;
+        Cube cube3 = Cube(1, 1, 1);
+        scene.add_object(id, pose, cube.vertices, cube.triangles, 30, true);
+
+        scene.get_contacted_objects("cube5");
+
         for(int j = 0; j < num_sub_iterations; j++){
-            // Add another cube to the scene
-            id = "cube4";
+
+            //Move cube4
             pose << 1, 0, 0, 0,
-                    0, 1, 0, 0,
+                    0, 1, 0, (num_sub_iterations%2)/10,
                     0, 0, 1, 0.5,
                     0, 0, 0, 1;
-            scene.add_object(id, pose, cube.vertices, cube.triangles, 30);
-            
-            // Add a cube to the scene
-            id = "cube5";
-            pose << 1, 0, 0, 0,
-                    0, 1, 0, 0,
-                    0, 0, 1, 1.5,
-                    0, 0, 0, 1;
-            Cube cube3 = Cube(1, 1, 1);
-            scene.add_object(id, pose, cube.vertices, cube.triangles, 30);
+            scene.set_object_pose("cube4", pose);
 
             // Add a cube to the scene
             id = "cube6";
             pose << 1, 0, 0, 0,
                     0, 1, 0, 0,
-                    0, 0, 1, 2.5,
+                    0, 0, 1, 2.4,
                     0, 0, 0, 1;
-            scene.add_object(id, pose, cube.vertices, cube.triangles, 30);
+            scene.add_object(id, pose, cube.vertices, cube.triangles, 30, true);
 
 
             // Add a cube to the scene
@@ -398,19 +404,23 @@ int main(int argc, char** argv) {
                     0, 1, 0, 2,
                     0, 0, 1, 0.5,
                     0, 0, 0, 1;
-            scene.add_object(id, pose, cube.vertices, cube.triangles, 30);
+            scene.add_object(id, pose, cube.vertices, cube.triangles, 30, true);
 
             scene.get_three_most_stable_contact_points("cube4");
             scene.get_three_most_stable_contact_points("cube5");
             scene.get_three_most_stable_contact_points("cube6");
             scene.get_three_most_stable_contact_points("cube7");
 
+            scene.get_contacted_objects("cube5");
+            contact_points = scene.get_all_penetrating_contact_points("cube5");
+            cout << "Found " << contact_points.rows() << " penetrating points." << endl;
 
-            scene.remove_object("cube4");
-            scene.remove_object("cube5");
             scene.remove_object("cube6");
             scene.remove_object("cube7");
         }
+
+        scene.remove_object("cube4");
+        scene.remove_object("cube5");
     }
 
     return 0;

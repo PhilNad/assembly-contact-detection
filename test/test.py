@@ -7,7 +7,7 @@ import assembly_cd as acd
 import time
 
 obj1_name = "cube1"
-obj2_name = "cube2"
+obj2_name = "cube4"
 obj_names = [obj1_name, obj2_name]
 object_geometries = []
 
@@ -29,6 +29,9 @@ if "cube3" in obj_names:
     cube3.translate((0.25, 0.25, 1))
     R = cube3.get_rotation_matrix_from_xyz((0, 0, np.pi/4))
     cube3.rotate(R, center=np.array([0.5, 0.5, 1]))
+
+if "cube4" in obj_names:
+    cube4 = o3d.geometry.TriangleMesh.create_box(width=1.0, height=1.0, depth=1.0)
 
 if "cone" in obj_names:
     cone = o3d.geometry.TriangleMesh.create_cone(radius=0.5, height=1.0)
@@ -102,7 +105,7 @@ if "cube2" in obj_names:
                             True,
                             False, 
                             1.0, 
-                            np.array([0, 0, 0]), #CoM is expressed wrt local frame 
+                            np.array([0, 0, 0]), #CoM must be expressed wrt local frame, NOT THE CASE HERE
                             "wood")
     physxScene.add_object("cube2", 
                             np.identity(4), 
@@ -112,7 +115,7 @@ if "cube2" in obj_names:
                             True,
                             False, 
                             1.0, 
-                            np.array([0, 0, 0]), #CoM is expressed wrt local frame 
+                            np.array([0, 0, 0]), #CoM must be expressed wrt local frame, NOT THE CASE HERE
                             "wood")
     print("Cube2 added in: ", time.time() - start_time)
     cube2_vertices = physxScene.get_tri_vertices("cube2")
@@ -132,7 +135,7 @@ if "cube3" in obj_names:
                             True, 
                             False, 
                             1.0, 
-                            np.array([0, 0, 0]), #CoM is expressed wrt local frame 
+                            np.array([0, 0, 0]), #CoM must be expressed wrt local frame, NOT THE CASE HERE
                             "wood")
     print("Cube3 added in: ", time.time() - start_time)
     cube3_vertices = physxScene.get_tri_vertices("cube3")
@@ -142,6 +145,30 @@ if "cube3" in obj_names:
     cube3.triangles = o3d.utility.Vector3iVector(cube3_triangles)
     object_geometries.append(cube3)
 
+if "cube4" in obj_names:
+    pose = np.identity(4)
+    pose[0:3, 3] = np.array([0, 0, 0.1])
+    physxScene.add_object("cube4", 
+                        pose, 
+                        np.asarray(cube4.vertices), 
+                        np.asarray(cube4.triangles),
+                        30,
+                        True, 
+                        False, 
+                        1.0, 
+                        np.array([0.5, 0.5, 0.5]), #CoM is expressed wrt local frame 
+                        "wood")
+    
+    pose = np.identity(4)
+    pose[0:3, 3] = np.array([0, 0, 0.5])
+    physxScene.set_object_pose("cube4", pose)
+    pose = np.identity(4)
+    pose[0:3, 3] = np.array([0, 0, 0.9])
+    physxScene.set_object_pose("cube4", pose)
+
+    cube4_pose = physxScene.get_object_pose("cube4")
+    cube4.transform(cube4_pose)
+    object_geometries.append(cube4)
 '''
 vert = physxScene.get_tri_vertices("cube1")
 tri = physxScene.get_tri_triangles("cube1")
@@ -255,7 +282,7 @@ if SHOW_VOXELS:
     obj2_voxel_centres.points = o3d.utility.Vector3dVector(obj2_voxel_positions)
     contact_point_cloud.paint_uniform_color([0, 0, 1])
     obj2_voxelgrid = o3d.geometry.VoxelGrid.create_from_point_cloud(obj2_voxel_centres, voxel_size=obj2_voxel_side_lengths[0])
-    #voxels.append(obj2_voxel_centres)
+    voxels.append(obj2_voxel_centres)
 
     #Check if the centres from the first object are inside the voxel grid of the second object
     obj1_included_indices = obj1_voxelgrid.check_if_included(o3d.utility.Vector3dVector(obj2_voxel_positions))

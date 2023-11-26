@@ -25,6 +25,7 @@ class Scene
         void startupPhysics();
         void cleanupPhysics();
         void clear_contacts();
+        void wake_all_actors();
         void remove_all_actors();
         void create_object_shapes(Object* obj, Matrix4f pose, int resolution, bool is_volumetric, bool is_fixed, float mass, Vector3f com);
         PxRigidActor* get_actor(string name);
@@ -82,8 +83,8 @@ class Scene
         MatrixX3f get_all_contact_points(string id);
         MatrixX3f get_all_penetrating_contact_points(string id);
         MatrixX3f get_contact_convex_hull(string id, int vertex_limit = 255);
-        Matrix3f get_best_contact_triangle(string id, vector<Triangle<Vector3f>> triangles, bool stable);
-        vector<pair<string, Vector3f>> get_three_most_stable_contact_points(string id, int hull_max_size = 255);
+        Matrix3f get_best_contact_triangle(string id, vector<Triangle<Vector3f>> triangles, bool stable, int max_tri_to_consider = -1);
+        vector<pair<string, Vector3f>> get_three_most_stable_contact_points(string id, int hull_max_size = 255, bool random_third_point = false);
         Matrix3f get_other_two_most_stable_contact_points(string id, Vector3f first_contact_point);
         Matrix3f get_other_one_most_stable_contact_points(string id, Vector3f first_contact_point, Vector3f second_contact_point);
         void merge_similar_contact_points(float position_threshold, float normal_threshold);

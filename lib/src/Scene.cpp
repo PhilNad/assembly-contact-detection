@@ -14,6 +14,26 @@ using namespace physx;
 using namespace std;
 using namespace Eigen;
 
+/* TODO: Record contacts on a per-object basis, such that they can easily returned
+      without additional simulation if they were already computed.
+      Record which object touches which other object such that only the minimal
+      number of objects are processed in a simulation step: the ones that moved
+      or were added since the last simulation step, and those in contact with them.
+      Right now, moving an object clears all contacts, including those that are not
+      affected by the movement.
+
+      Note that when an actor touches another actor, the other actor is woke up.
+
+      While at it, is it possible to have contact related variables not being global
+      although they need to be accessed by the contact report callback?
+
+      See: https://nvidia-omniverse.github.io/PhysX/physx/5.3.0/docs/RigidBodyDynamics.html?highlight=Sleeping#sleeping
+*/
+
+/* TODO: If two objects are exactly overlapping, the contact points and the penetration
+    points are not detected.
+*/
+
 vector<Contact> gContacts;
 vector<Contact> gPenetrationContacts;
 vector<PxVec3> gContactPositions;
@@ -39,9 +59,12 @@ static PxFilterFlags contactReportFilterShader(	PxFilterObjectAttributes attribu
 	PX_UNUSED(constantBlock);
 
     //Do not use eSOLVE_CONTACT with kinematic bodies as no force is involved.
+    //When using eDETECT_DISCRETE_CONTACT "Contacts are only responded to if eSOLVE_CONTACT is enabled."
+    // However, not using it result in: "warning : Filtering: Pair did not request either eDETECT_DISCRETE_CONTACT or eDETECT_CCD_CONTACT. It is recommended to suppress/kill such pairs for performance reasons."
+	//Is PxPairFlag::eNOTIFY_TOUCH_FOUND needed if we use eNOTIFY_TOUCH_PERSISTS
+    // WARNING: No report will get sent if the objects in contact are sleeping.
 	pairFlags = PxPairFlag::eDETECT_DISCRETE_CONTACT
-			    | PxPairFlag::eNOTIFY_TOUCH_FOUND 
-			    | PxPairFlag::eNOTIFY_TOUCH_PERSISTS
+                | PxPairFlag::eNOTIFY_TOUCH_PERSISTS 
 			    | PxPairFlag::eNOTIFY_CONTACT_POINTS;
 	return PxFilterFlag::eDEFAULT;
 }
@@ -61,6 +84,9 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 
         //If there is no contact but the callback was nonetheless trigerred, we return.
         if(nbPairs == 0){
+            #ifndef NDEBUG
+            cout << "No contact detected" << endl;
+            #endif
             return;
         }else{
             #ifndef NDEBUG
@@ -75,6 +101,10 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
         //Maximum number of threads to use (can be zero)
         const int num_threads = std::thread::hardware_concurrency();
         #endif
+
+        //NOTE: PhysX provides a way to handle multi-threading for contact resolution
+        // without the user having to implement the mechanics.
+        // See: https://nvidia-omniverse.github.io/PhysX/physx/5.3.0/docs/Simulation.html#split-fetchresults
 
         if(num_threads > 1){
             //List of threads
@@ -133,6 +163,11 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
             gContacts.insert(gContacts.end(), contacts.begin(), contacts.end());
             //Add the penetrating contact points to the list of contact points
             gPenetrationContacts.insert(gPenetrationContacts.end(), pen_contacts.begin(), pen_contacts.end());
+
+            #ifndef NDEBUG
+            cout << "Added " << contacts.size() << " surface contact points" << endl;
+            cout << "Added " << pen_contacts.size() << " penetrating contact points" << endl;
+            #endif
         }
 	}
 
@@ -442,6 +477,43 @@ void Scene::set_max_distance_factor(float max_distance_factor){
     this->max_distance_factor = max_distance_factor;
 }
 
+/// @brief Wake up all actors in the scene by seetting their target pose.
+void Scene::wake_all_actors()
+{
+    //Iterate over all objects and wake up their actors
+    for(auto& obj_ptr : object_ptrs){
+        PxRigidActor* actor = get_actor(obj_ptr->id);
+        if(actor != nullptr){
+            PxActorType::Enum actor_type = actor->getType();
+            if(actor_type == PxActorType::Enum::eRIGID_DYNAMIC){
+                Matrix4f pose = get_object_pose(obj_ptr->id);
+                PxTransform pxPose = PxTransform(PxMat44(
+                    PxVec3(pose(0,0), pose(1,0), pose(2,0)),
+                    PxVec3(pose(0,1), pose(1,1), pose(2,1)),
+                    PxVec3(pose(0,2), pose(1,2), pose(2,2)),
+                    PxVec3(pose(0,3), pose(1,3), pose(2,3))
+                ));
+                //Cast to dynamic actor and set the target pose
+                PxRigidDynamic* rigidDynamicActor = static_cast<PxRigidDynamic*>(actor);
+                rigidDynamicActor->setKinematicTarget(pxPose);
+
+                #ifndef NDEBUG
+                cout << "Woke up actor " << obj_ptr->id << endl;
+                #endif
+
+            }else{
+                #ifndef NDEBUG
+                cout << "Object " << obj_ptr->id << " is not a dynamic actor." << endl;
+                #endif
+            }
+        }else{
+            #ifndef NDEBUG
+            cout << "Could not wake up (nullptr) actor " << obj_ptr->id << endl;
+            #endif
+        }
+    }
+}
+
 /// @brief Step the simulation by a given time step.
 /// @param dt time step
 void Scene::step_simulation(float dt)
@@ -451,12 +523,33 @@ void Scene::step_simulation(float dt)
     //Clear the list of contacted objects and contact points
     clear_contacts();
 
+    /*
+    READ THIS: SLEEPING
+        For kinematic actors, special sleep rules apply. 
+        A kinematic actor is asleep unless a target pose has been set (in which case it will stay awake until 
+        two consecutive simulation steps without a target pose being set have passed). 
+        As a consequence, it is not allowed to use setWakeCounter() for kinematic actors. 
+        The wake counter of a kinematic actor is solely defined based on whether a target pose has been set.
+
+        "Kinematic actors are expected to not attain the kinematic target immediately, but only at the end of the next simulation step.
+         We infer the velocity of the kinematic from the current pose and the kinematic target, and use this velocity for interactions with dynamics."
+         - From an NVIDIA employee: https://github.com/NVIDIA-Omniverse/PhysX/issues/32
+
+        This involves that two subsequent simulation steps are required to get all contacts.
+        See: https://github.com/NVIDIA-Omniverse/PhysX/blob/b7182d5e563b763a340053864658202a3ee966ab/physx/source/simulationcontroller/src/ScKinematics.cpp#L44
+    */
+    wake_all_actors();
+
     #ifndef NDEBUG
     auto t1 = std::chrono::high_resolution_clock::now();
     cout << "Stepping simulation by " << dt << " seconds" << endl;
     #endif
 
-    gScene->simulate(dt);
+    //Perform two subsequent simulation steps to get contacts
+    // from kinematic actors.
+    gScene->simulate(dt/2);
+    gScene->fetchResults(true);
+    gScene->simulate(dt/2);
 
     #ifndef NDEBUG
     cout << "Simulation step done. Fetching results." << endl;
@@ -493,7 +586,7 @@ set<string> Scene::get_contacted_objects(string target_object)
     }
 
     #ifndef NDEBUG
-    cout << "Found " << contacted_objects.size() << " contacted objects" << endl;
+    cout << "Found " << contacted_objects.size() << " contacted objects with " << target_object << endl;
     #endif
 
     return contacted_objects;
@@ -686,7 +779,9 @@ MatrixX3f Scene::get_contact_convex_hull(string id, int vertex_limit)
 
     //Get the vertices of the convex hull
     PxU32 numVerts = convexMesh->getNbVertices();
+    PxU32 numPoly = convexMesh->getNbPolygons();
     const PxVec3* convexVerts = convexMesh->getVertices();
+    const PxU8* idxBuffer = convexMesh->getIndexBuffer();
         
     //Convert the vertices to a matrix
     MatrixX3f convex_hull(numVerts, 3);
@@ -695,6 +790,54 @@ MatrixX3f Scene::get_contact_convex_hull(string id, int vertex_limit)
         convex_hull(i,1) = convexVerts[i].y;
         convex_hull(i,2) = convexVerts[i].z;
     }
+
+/*  This idea does not work and would create way too many points.
+    
+    //Compute the number of edges of the convex hull
+    // Euler's formulate is V - E + F = 2 -> E = V + F - 2
+    PxU32 num_edges = numVerts + numPoly - 2;
+
+    //There should be 2 points per edge
+    MatrixX3f points_on_cvx_hull(2*num_edges, 3);
+
+    //Add a point in the matrix for the midpoint between each sides of
+    // every polygon of the convex hull.
+    PxHullPolygon data;
+    int nb_accumulated_points = 0;
+    for(int i=0; i < numPoly; i++){
+        bool success = convexMesh->getPolygonData(i, data);
+        if(success){
+            PxU32 numVerts = data.mNbVerts;
+            PxVec3 previous_vertex;
+            for(int j=0; j < numVerts; j++){
+                //Get the vertex index in idxBuffer
+                // and the corresponding vertex in convexVerts.
+                PxU8 idx = idxBuffer[data.mIndexBase + j];
+                PxVec3 v1 = convexVerts[idx];
+                //Add the vertex to the matrix
+                points_on_cvx_hull(nb_accumulated_points, 0) = v1.x;
+                points_on_cvx_hull(nb_accumulated_points, 1) = v1.y;
+                points_on_cvx_hull(nb_accumulated_points, 2) = v1.z;
+                nb_accumulated_points += 1;
+                
+                //If this is not the first vertex of the polygon, add the midpoint
+                // by using the previous vertex.
+                if(j > 0){
+                    //Add the midpoint between the two vertices to the matrix
+                    PxVec3 midpoint = (v1 + previous_vertex) / 2;
+                    points_on_cvx_hull(nb_accumulated_points, 0) = midpoint.x;
+                    points_on_cvx_hull(nb_accumulated_points, 1) = midpoint.y;
+                    points_on_cvx_hull(nb_accumulated_points, 2) = midpoint.z;
+                    nb_accumulated_points += 1;
+                }
+                previous_vertex = v1;
+            }
+        }
+    }
+*/
+
+    //Free the vertices
+    delete[] vertices;
 
     return convex_hull;
 }
@@ -821,7 +964,7 @@ string Scene::get_contact_id_at_point(string id, Vector3f point, float max_dista
             MatrixX3f voxel_centres = obj->get_voxel_centres();
 
             //Compute the squared norm between the query point and each voxel center
-            MatrixX3f query_point_matrix = point.replicate(voxel_centres.rows());
+            MatrixX3f query_point_matrix = point.transpose().replicate(voxel_centres.rows(), 1);
             MatrixX3f diff = voxel_centres - query_point_matrix;
             VectorXf dist = diff.rowwise().squaredNorm();
 
@@ -885,7 +1028,7 @@ string Scene::get_contact_id_at_point(string id, Vector3f point, float max_dista
 /// @param hull_max_size Maximum number of points on the convex hull (default: 255)
 /// @return Vector of pairs of object IDs and contact points positions.
 /// @note This is computationally very expensive with worst case O(hull_max_size^3)
-vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(string id, int hull_max_size)
+vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(string id, int hull_max_size, bool random_third_point)
 {
     vector<pair<string, Vector3f>> contact_points_with_ids;
 
@@ -898,6 +1041,16 @@ vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(strin
         hull_max_size = 4;
     }else if(hull_max_size > 255){
         hull_max_size = 255;
+    }
+
+    MatrixX3f obj_contact_points;
+
+    if(random_third_point){
+        #ifndef NDEBUG
+        cout << "Using two points on the cvx hull and a random third point." << endl;
+        #endif
+
+        obj_contact_points = this->get_all_contact_points(id);
     }
 
     //The contact points are expressed in the world frame.
@@ -926,8 +1079,10 @@ vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(strin
             if(p2.hasNaN()){
                 continue;
             }
-            for(int k=j+1; k < hull_contact_points.rows(); k++){
-                Vector3f p3 = hull_contact_points.row(k);
+            if(random_third_point){
+                //Get a random point on the object
+                int random_index = rand() % obj_contact_points.rows();
+                Vector3f p3 = obj_contact_points.row(random_index);
                 if(p3.hasNaN()){
                     continue;
                 }
@@ -937,11 +1092,30 @@ vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(strin
                 }
                 Triangle<Vector3f> triangle(p1, p2, p3);
                 triangles.push_back(triangle);
+            }else{
+                //Produce all possible triangles
+                for(int k=j+1; k < hull_contact_points.rows(); k++){
+                    Vector3f p3 = hull_contact_points.row(k);
+                    if(p3.hasNaN()){
+                        continue;
+                    }
+                    //If the triangle is degenerate, skip it
+                    if((p2-p1).cross(p3-p1).norm() < 1e-6){
+                        continue;
+                    }
+                    Triangle<Vector3f> triangle(p1, p2, p3);
+                    triangles.push_back(triangle);
+                }
             }
         }
     }
 
-    Matrix3f contact_points = get_best_contact_triangle(id, triangles, true);
+    #ifndef NDEBUG
+    cout << "Determined " << triangles.size() << " triangles" << endl;
+    cout << "but only considering the 100 largest ones." << endl;
+    #endif
+
+    Matrix3f contact_points = get_best_contact_triangle(id, triangles, true, 100);
 
     #ifndef NDEBUG
     auto t2 = std::chrono::high_resolution_clock::now();
@@ -1030,6 +1204,11 @@ Matrix3f Scene::get_other_one_most_stable_contact_points(string id, Vector3f fir
     //The contact points are expressed in the world frame.
     MatrixX3f hull_contact_points = get_contact_convex_hull(id);
 
+    //TODO: Using the points on the convex hull does not always work.
+    // For instance, every triangle made from the four corners of a square
+    // will be marginally stable. In this example, we would need points
+    // in the middle of each side of the square to get a stable triangle.
+
     //Create a Triangle for all combinations
     vector<Triangle<Vector3f>> triangles;
     for(int i=0; i < hull_contact_points.rows(); i++){
@@ -1049,9 +1228,10 @@ Matrix3f Scene::get_other_one_most_stable_contact_points(string id, Vector3f fir
 /// @param id Id of the object for which to get the contact points.
 /// @param triangles List of triangles to consider, with each triangle represented by a tuple of three 3D points.
 /// @param stable If true, the triangle must be stable under gravity. Otherwise, the largest triangle is returned.
+/// @param max_tri_to_consider Consider only the N largest triangles. Set to -1 to consider all triangles (default).
 /// @return 3x3 matrix representing the three contact points that create the best stable support,
 ///         with each row representing a contact point.
-Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> triangles, bool stable)
+Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> triangles, bool stable, int max_tri_to_consider)
 {
     float tol = 1e-6;
 
@@ -1082,22 +1262,37 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
         float min_dist = 0;
 
         //Iterate over the triangles
-        for(auto& tri : triangles){
+        for(int i=0; i < triangles.size(); i++){
+
+            //If we have already considered enough triangles, stop
+            if(max_tri_to_consider > 0 && i >= max_tri_to_consider){
+                break;
+            }
+
+            Triangle<Vector3f> tri = triangles[i];
             Vector3f p1 = tri.vertex_0;
             Vector3f p2 = tri.vertex_1;
             Vector3f p3 = tri.vertex_2;
 
             Vector3f centroid = (p1 + p2 + p3) / 3;
             //Compute the distance between the centroid and each triangle side
-            float d1 = (centroid - p1).cross(p2 - p1).norm() / (p2 - p1).norm();
-            float d2 = (centroid - p2).cross(p3 - p2).norm() / (p3 - p2).norm();
-            float d3 = (centroid - p3).cross(p1 - p3).norm() / (p1 - p3).norm();
+            //float d1 = (centroid - p1).cross(p2 - p1).norm() / (p2 - p1).norm();
+            //float d2 = (centroid - p2).cross(p3 - p2).norm() / (p3 - p2).norm();
+            //float d3 = (centroid - p3).cross(p1 - p3).norm() / (p1 - p3).norm();
             
-            //Sum of the distances
-            float min_d = d1 + d2 + d3;
+            Vector3f rej_13 = (centroid - p1) - (centroid - p1).dot(p3 - p1) * ((p3 - p1) / (p3 - p1).norm());
+            float d1 = rej_13.norm();
+            Vector3f rej_12 = (centroid - p1) - (centroid - p1).dot(p2 - p1) * ((p2 - p1) / (p2 - p1).norm());
+            float d2 = rej_12.norm();
+            Vector3f rej_23 = (centroid - p2) - (centroid - p2).dot(p3 - p2) * ((p3 - p2) / (p3 - p2).norm());
+            float d3 = rej_23.norm();
+
+            //Smallest distance
+            float min_d = min(min(d1, d2), d3);
             
-            //If the sum of distances is smaller than the current min_dist, this
-            // triangle cannot become a better stable support.
+            //Since the centroid is the point furthest away from the triangle sides,
+            // if the distance between the centroid and the closest triangle side
+            // is smaller than the current min_dist, this triangle cannot be the best.
             if(min_d < min_dist){
                 continue;
             }
@@ -1116,12 +1311,16 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
             }
 
             //Find the intersection point between the gravity vector and the plane of the triangle
-            // Vector3f intersection_point = line_plane_intersection(com_w, g_w, tri_normal, tri_plane_distance);
-            
+            //If tri_normal is opposed to g_w, change the sign of g_w
+            float sign = 1;
+            if(tri_normal.dot(g_w) < 0){
+                sign = -1;
+            }
+
             //Shortest distance between the start of the line vector and the plane
-            // This assumes that vector_dir and plane_normal are normalized.
+            // This assumes that g_w and tri_normal are normalized.
             float t = tri_plane_distance - tri_normal.dot(com_w);
-            Vector3f intersection_point = com_w + t * g_w;
+            Vector3f intersection_point = com_w + t * sign*g_w;
 
             //Check if the triangle contains the intersection point
             bool tri_contains_point = tri.contains(intersection_point, false);
@@ -1131,9 +1330,25 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
             if(tri_contains_point){
 
                 //Compute the distance between the projected CoM and each triangle side
+                Vector3f p = intersection_point;
+
+                Vector3f u_13 = (p3 - p1) / (p3 - p1).norm();
+                Vector3f rej_13 = (p - p1) - (p - p1).dot(u_13) * u_13;
+                float d1 = rej_13.norm();
+
+                Vector3f u_12 = (p2 - p1) / (p2 - p1).norm();
+                Vector3f rej_12 = (p - p1) - (p - p1).dot(u_12) * u_12;
+                float d2 = rej_12.norm();
+
+                Vector3f u_23 = (p3 - p2) / (p3 - p2).norm();
+                Vector3f rej_23 = (p - p2) - (p - p2).dot(u_23) * u_23;
+                float d3 = rej_23.norm();
+
+                /*
                 float d1 = (intersection_point - p1).cross(p2 - p1).norm() / (p2 - p1).norm();
                 float d2 = (intersection_point - p2).cross(p3 - p2).norm() / (p3 - p2).norm();
                 float d3 = (intersection_point - p3).cross(p1 - p3).norm() / (p1 - p3).norm();
+                */
                 //Distance with the closest triangle side
                 float min_d = min(min(d1, d2), d3);
 
@@ -1148,6 +1363,13 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
                 }
             }
         }
+
+        if(min_dist == 0){
+            #ifndef NDEBUG
+            cout << "No stable support found for object #" << id << endl;
+            #endif
+        }
+
     }else{
         //If stability is not required, return the largest triangle
         contact_points.row(0) = triangles[0].vertex_0;
@@ -1557,12 +1779,17 @@ PxArray<PxShape*> Scene::make_tetmesh(Object* obj)
         //Get the tetrahedral mesh from the object
         // and make PxArrays from the Eigen matrices
         PxArray<PxVec3> tetMeshVertices(obj->tetra_vertices.rows());
-        PxArray<PxU32> tetMeshIndices(obj->tetra_indices.rows());
+        PxArray<PxU32> tetMeshIndices(4*obj->tetra_indices.rows());
         for(int i=0; i < obj->tetra_vertices.rows(); i++){
             tetMeshVertices[i] = PxVec3(obj->tetra_vertices(i,0), obj->tetra_vertices(i,1), obj->tetra_vertices(i,2));
         }
+        //Set the indices. We have 4 indices per tetrahedron.
+        //  obj->tetra_indices is a MatrixX4i but we need a PxArray<PxU32>
         for(int i=0; i < obj->tetra_indices.rows(); i++){
-            tetMeshIndices[i] = PxU32(obj->tetra_indices(i,0));
+            tetMeshIndices[4*i]   = obj->tetra_indices(i,0);
+            tetMeshIndices[4*i+1] = obj->tetra_indices(i,1);
+            tetMeshIndices[4*i+2] = obj->tetra_indices(i,2);
+            tetMeshIndices[4*i+3] = obj->tetra_indices(i,3);
         }
     }
 
@@ -1723,6 +1950,10 @@ void Scene::create_object_shapes(Object* obj, Matrix4f pose, int resolution, boo
         gScene->addActor(*actor);
         actor->setGlobalPose(pxPose);
         actor->setKinematicTarget(pxPose);
+        //Since our actors are kinematic, this is not enough to disable sleeping.
+        // We need to do setKinematicTarget at every simulation step.
+        // See: https://github.com/NVIDIA-Omniverse/PhysX/blob/b7182d5e563b763a340053864658202a3ee966ab/physx/source/simulationcontroller/src/ScBodySim.cpp#L608C12-L608C12
+        actor->setSleepThreshold(0.0f);
         actor->setName(obj->id.c_str());
         actor->userData = obj;
     }
@@ -1773,8 +2004,17 @@ void Scene::add_volumetric_object(string id, Matrix4f pose,
     //Record the canary sphere positions in the object
     obj->canary_sphere_positions = canary_sphere_positions;
 
-    //Create the shapes (oocupancy grid, tetrahedral mesh, canary spheres) and attach them to an actor for the object
+    //Create the shapes (occupancy grid, tetrahedral mesh, canary spheres) and attach them to an actor for the object
     create_object_shapes(obj.get(), pose, resolution, true, is_fixed, mass, com);
+
+    #ifndef NDEBUG
+    cout << "Added volumetric object with id " << id << endl;
+    cout << "at pose " << endl;
+    cout << pose << endl;
+    cout << "with " << tri_vertices.rows() << " vertices and " << tri_indices.rows() << " triangles" << endl;
+    cout << "with " << tetra_vertices.rows() << " tetrahedra and " << tetra_indices.rows() << " indices" << endl;
+    cout << "with " << canary_sphere_positions.rows() << " canary spheres" << endl;
+    #endif
 }
 
 /// @brief Add an object to the scene

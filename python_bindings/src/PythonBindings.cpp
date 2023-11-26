@@ -67,7 +67,8 @@ PYBIND11_MODULE(assembly_cd, m) {
                 py::arg("vertex_limit") = 255)
         .def("get_three_most_stable_contact_points", &Scene::get_three_most_stable_contact_points, "Get the three most stable contact points on an object.",
                 py::arg("id"),
-                py::arg("hull_max_size") = 255)
+                py::arg("hull_max_size") = 255,
+                py::arg("random_third_point") = false)
         .def("get_other_two_most_stable_contact_points", &Scene::get_other_two_most_stable_contact_points, "Get the other two most stable contact points on an object.",
                 py::arg("id"), 
                 py::arg("first_contact_point"))
