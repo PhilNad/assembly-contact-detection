@@ -66,6 +66,7 @@ static PxFilterFlags contactReportFilterShader(	PxFilterObjectAttributes attribu
 	pairFlags = PxPairFlag::eDETECT_DISCRETE_CONTACT
                 | PxPairFlag::eNOTIFY_TOUCH_PERSISTS 
 			    | PxPairFlag::eNOTIFY_CONTACT_POINTS;
+
 	return PxFilterFlag::eDEFAULT;
 }
 
@@ -2166,11 +2167,14 @@ void Scene::remove_object(string id)
         // if the release() method was called right after the shape was created.
 
         //Remove the actor from the scene
+        // This seems to also release the attached shapes.
         gScene->removeActor(*actor);
         
         //Release the memory allocated for the actor
-        // This should also release the attached shapes.
-        PX_RELEASE(actor);
+        // WARNING: This seems to cause memory related issues inside simulate()
+        //  when PhysX tries to access the actor after it has been released.
+        //  Possibly related to https://github.com/NVIDIA-Omniverse/PhysX/issues/211
+        //PX_RELEASE(actor);
 
         #ifndef NDEBUG
         cout << "Removed actor from scene." << endl;
