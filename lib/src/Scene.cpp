@@ -58,13 +58,14 @@ static PxFilterFlags contactReportFilterShader(	PxFilterObjectAttributes attribu
 	PX_UNUSED(constantBlockSize);
 	PX_UNUSED(constantBlock);
 
-    //Do not use eSOLVE_CONTACT with kinematic bodies as no force is involved.
+    //Do not use eSOLVE_CONTACT with kinematic bodies as no force is involved (eCONTACT_DEFAULT = eSOLVE_CONTACT | eDETECT_DISCRETE_CONTACT)
     //When using eDETECT_DISCRETE_CONTACT "Contacts are only responded to if eSOLVE_CONTACT is enabled."
     // However, not using it result in: "warning : Filtering: Pair did not request either eDETECT_DISCRETE_CONTACT or eDETECT_CCD_CONTACT. It is recommended to suppress/kill such pairs for performance reasons."
 	//Is PxPairFlag::eNOTIFY_TOUCH_FOUND needed if we use eNOTIFY_TOUCH_PERSISTS
     // WARNING: No report will get sent if the objects in contact are sleeping.
 	pairFlags = PxPairFlag::eDETECT_DISCRETE_CONTACT
-                | PxPairFlag::eNOTIFY_TOUCH_PERSISTS 
+                //| PxPairFlag::eNOTIFY_TOUCH_PERSISTS
+                | PxPairFlag::eNOTIFY_TOUCH_FOUND
 			    | PxPairFlag::eNOTIFY_CONTACT_POINTS;
 
 	return PxFilterFlag::eDEFAULT;
@@ -660,7 +661,7 @@ vector<Contact> Scene::get_penetrating_contact_points(string id1, string id2)
 {
     //If there are no contacts, step the simulation by a small amount
     // to make sure that the collision detection is performed.
-    if(gPenetrationContacts.size() == 0){
+    if(gContacts.size() == 0){
         this->step_simulation(1/1000.0f);
     }
 
@@ -1910,7 +1911,9 @@ void Scene::create_object_shapes(Object* obj, Matrix4f pose, int resolution, boo
         PxVec3(pose(0,3), pose(1,3), pose(2,3))));
 
     //If the object is fixed, there is no dynamics involved
-    if(is_fixed){
+    //TODO: Currently disabled the creation of static objects as they
+    // do not seem to generate contacts / can be woken up.
+    if(false && is_fixed){
         PxRigidStatic* actor = gPhysics->createRigidStatic(pxPose);
         //Attach all shapes in the object to the actor
         for(int i = 0; i < convexShapes.size(); i++){
@@ -2174,6 +2177,7 @@ void Scene::remove_object(string id)
         // WARNING: This seems to cause memory related issues inside simulate()
         //  when PhysX tries to access the actor after it has been released.
         //  Possibly related to https://github.com/NVIDIA-Omniverse/PhysX/issues/211
+        // Hmm, it seems it might not have been the cause, we are still getting same segfault.
         //PX_RELEASE(actor);
 
         #ifndef NDEBUG
