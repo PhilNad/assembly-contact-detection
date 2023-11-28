@@ -1235,7 +1235,8 @@ Matrix3f Scene::get_other_one_most_stable_contact_points(string id, Vector3f fir
 ///         with each row representing a contact point.
 Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> triangles, bool stable, int max_tri_to_consider)
 {
-    float tol = 1e-6;
+    //Tolerance for rejecting triangles if their normal is (almost) orthogonal to the gravity vector
+    float tol = 1e-2;
 
     //Sort the triangles by area
     sort(triangles.begin(), triangles.end(), [](const Triangle<Vector3f>& t1, const Triangle<Vector3f>& t2){
@@ -1319,10 +1320,15 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
                 sign = -1;
             }
 
-            //Shortest distance between the start of the line vector and the plane
-            // This assumes that g_w and tri_normal are normalized.
-            float t = tri_plane_distance - tri_normal.dot(com_w);
-            Vector3f intersection_point = com_w + t * sign*g_w;
+            //Compute the intersection point between the plane of the triangle and 
+            // the gravity vector starting at the CoM
+            Vector3f p12 = p2 - p1;
+            Vector3f p13 = p3 - p1;
+            Vector3f p12_cp_p13 = p12.cross(p13);
+            float num = p12_cp_p13.dot(com_w - p1);
+            float den = -g_w.dot(p12_cp_p13);
+            float t = num / den;
+            Vector3f intersection_point = com_w + t*sign*g_w;
 
             //Check if the triangle contains the intersection point
             bool tri_contains_point = tri.contains(intersection_point, false);
