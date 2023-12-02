@@ -1279,10 +1279,6 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
 
             Vector3f centroid = (p1 + p2 + p3) / 3;
             //Compute the distance between the centroid and each triangle side
-            //float d1 = (centroid - p1).cross(p2 - p1).norm() / (p2 - p1).norm();
-            //float d2 = (centroid - p2).cross(p3 - p2).norm() / (p3 - p2).norm();
-            //float d3 = (centroid - p3).cross(p1 - p3).norm() / (p1 - p3).norm();
-            
             Vector3f rej_13 = (centroid - p1) - (centroid - p1).dot(p3 - p1) * ((p3 - p1) / (p3 - p1).norm());
             float d1 = rej_13.norm();
             Vector3f rej_12 = (centroid - p1) - (centroid - p1).dot(p2 - p1) * ((p2 - p1) / (p2 - p1).norm());
@@ -1296,7 +1292,7 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
             //Since the centroid is the point furthest away from the triangle sides,
             // if the distance between the centroid and the closest triangle side
             // is smaller than the current min_dist, this triangle cannot be the best.
-            if(min_d < min_dist){
+            if(min_d < min_dist){    
                 continue;
             }
 
@@ -1313,10 +1309,11 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
                 continue;
             }
 
-            //Find the intersection point between the gravity vector and the plane of the triangle
-            //If tri_normal is opposed to g_w, change the sign of g_w
+            //Define the direction along which the CoM must be projected such that it
+            // hits the triangle (the sign of g_w).
+            Vector3f centroid_wrt_com = centroid - com_w;
             float sign = 1;
-            if(tri_normal.dot(g_w) < 0){
+            if(centroid_wrt_com.dot(g_w) < 0){
                 sign = -1;
             }
 
@@ -1352,11 +1349,6 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
                 Vector3f rej_23 = (p - p2) - (p - p2).dot(u_23) * u_23;
                 float d3 = rej_23.norm();
 
-                /*
-                float d1 = (intersection_point - p1).cross(p2 - p1).norm() / (p2 - p1).norm();
-                float d2 = (intersection_point - p2).cross(p3 - p2).norm() / (p3 - p2).norm();
-                float d3 = (intersection_point - p3).cross(p1 - p3).norm() / (p1 - p3).norm();
-                */
                 //Distance with the closest triangle side
                 float min_d = min(min(d1, d2), d3);
 

@@ -319,8 +319,8 @@ int main(int argc, char** argv) {
 
     //Move cube2
     pose << 1, 0, 0, 0,
-            0, 1, 0, 2.25,
-            0, 0, 1, 1.4,//1.5
+            0, 1, 0, 2, //2.25
+            0, 0, 1, 1.5,//1.5
             0, 0, 0, 1;
     scene.set_object_pose("cube2", pose);
 
@@ -351,7 +351,7 @@ int main(int argc, char** argv) {
     MatrixX3f hull_contacts = scene.get_contact_convex_hull("cube2");
     cout << "Found " << hull_contacts.rows() << " hull contact points." << endl;
 
-    vector<pair<string, Vector3f>> stable_contact_points = scene.get_three_most_stable_contact_points("cube2");
+    vector<pair<string, Vector3f>> stable_contact_points = scene.get_three_most_stable_contact_points("cube2", 30, true);
 
     //Stress-test where an object is moved around a lot, removed, re-created, and moved around again.
     int num_iterations = 1;

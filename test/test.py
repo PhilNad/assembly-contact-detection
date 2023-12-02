@@ -163,7 +163,7 @@ if "cube4" in obj_names:
     pose[0:3, 3] = np.array([0, 0, 0.5])
     physxScene.set_object_pose("cube4", pose)
     pose = np.identity(4)
-    pose[0:3, 3] = np.array([0, 0, 0.9])
+    pose[0:3, 3] = np.array([0, 0, 1])
     physxScene.set_object_pose("cube4", pose)
 
     cube4_pose = physxScene.get_object_pose("cube4")
@@ -235,7 +235,7 @@ if len(hull_contact_points) > 0:
     geometries.append(hull_contact_point_cloud)
 
 #Watchout: this can become very slow when hull_contact_point_cloud is large
-stable_contact_points = physxScene.get_three_most_stable_contact_points(obj2_name)
+stable_contact_points = physxScene.get_three_most_stable_contact_points(obj2_name, hull_max_size=50, random_third_point=False)
 
 #Create a red sphere for each stable contact point
 for i in range(len(stable_contact_points)):
