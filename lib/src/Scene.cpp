@@ -14,30 +14,11 @@ using namespace physx;
 using namespace std;
 using namespace Eigen;
 
-/* TODO: Record contacts on a per-object basis, such that they can easily returned
-      without additional simulation if they were already computed.
-      Record which object touches which other object such that only the minimal
-      number of objects are processed in a simulation step: the ones that moved
-      or were added since the last simulation step, and those in contact with them.
-      Right now, moving an object clears all contacts, including those that are not
-      affected by the movement.
-
-      Note that when an actor touches another actor, the other actor is woke up.
-
-      While at it, is it possible to have contact related variables not being global
-      although they need to be accessed by the contact report callback?
-
-      See: https://nvidia-omniverse.github.io/PhysX/physx/5.3.0/docs/RigidBodyDynamics.html?highlight=Sleeping#sleeping
-*/
-
 /* TODO: If two objects are exactly overlapping, the contact points and the penetration
     points are not detected.
 */
 
-vector<Contact> gContacts;
-vector<Contact> gPenetrationContacts;
-vector<PxVec3> gContactPositions;
-vector<pair<string, string>> gContactedObjects;
+ContactsManager contacts_manager;
 
 static PxDefaultAllocator		gAllocator;
 static PxDefaultErrorCallback	gErrorCallback;
@@ -63,6 +44,7 @@ static PxFilterFlags contactReportFilterShader(	PxFilterObjectAttributes attribu
     // However, not using it result in: "warning : Filtering: Pair did not request either eDETECT_DISCRETE_CONTACT or eDETECT_CCD_CONTACT. It is recommended to suppress/kill such pairs for performance reasons."
 	//Is PxPairFlag::eNOTIFY_TOUCH_FOUND needed if we use eNOTIFY_TOUCH_PERSISTS
     // WARNING: No report will get sent if the objects in contact are sleeping.
+    // Note: We are not using eNOTIFY_TOUCH_PERSISTS since the introduction of the ContactsManager.
 	pairFlags = PxPairFlag::eDETECT_DISCRETE_CONTACT
                 //| PxPairFlag::eNOTIFY_TOUCH_PERSISTS
                 | PxPairFlag::eNOTIFY_TOUCH_FOUND
@@ -141,30 +123,20 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
             int nb_added_points = 0;
             for(auto& thread_contact : thread_contacts){
                 nb_added_points += thread_contact.size();
-                gContacts.insert(gContacts.end(), thread_contact.begin(), thread_contact.end());
+                contacts_manager.add_contacts(thread_contact, false);
             }
             for(auto& thread_pen_contacts : thread_pen_contacts){
-                gPenetrationContacts.insert(gPenetrationContacts.end(), thread_pen_contacts.begin(), thread_pen_contacts.end());
-            }
-            if(nb_added_points > 0){
-                //Merge the contacted objects from all threads
-                for(auto& thread_contacted_object : thread_contacted_objects){
-                    gContactedObjects.insert(gContactedObjects.end(), thread_contacted_object.begin(), thread_contacted_object.end());
-                }
+                contacts_manager.add_contacts(thread_pen_contacts, true);
             }
         }else{
             std::vector<Contact> contacts;
             std::vector<Contact> pen_contacts;
             std::vector<pair<string, string>> contact_object_ids;
             process_contact_pairs(pairs, 0, nbPairs, contacts, pen_contacts, contact_object_ids);
-            //Add the pair of objects to the list of contacted objects.
-            if(contacts.size() > 0){
-                gContactedObjects.insert(gContactedObjects.end(), contact_object_ids.begin(), contact_object_ids.end());
-            }
             //Add the surface contact points to the list of contact points
-            gContacts.insert(gContacts.end(), contacts.begin(), contacts.end());
+            contacts_manager.add_contacts(contacts, false);
             //Add the penetrating contact points to the list of contact points
-            gPenetrationContacts.insert(gPenetrationContacts.end(), pen_contacts.begin(), pen_contacts.end());
+            contacts_manager.add_contacts(pen_contacts, true);
 
             #ifndef NDEBUG
             cout << "Added " << contacts.size() << " surface contact points" << endl;
@@ -389,14 +361,14 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 /// @brief Initialize the physics engine.
 void Scene::startupPhysics()
 {
+    //Releases contacts, scene, dispatcher, physics
+    cleanupPhysics();
+
     //Only one foundation object can be spawned per process. So we should keep track of it
     // for the lifetime of the process (even if we destroy the scene).
     if(gFoundation == NULL){
         gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
     }
-
-    //Releases contacts, scene, dispatcher, physics
-    cleanupPhysics();
 
     gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale());
 
@@ -426,7 +398,7 @@ void Scene::startupPhysics()
 void Scene::cleanupPhysics()
 {
     //Clear the list of contacted objects and contact points
-    clear_contacts();
+    contacts_manager.remove_all_objects();
 
     //Remove all actors from the scene
     // This should also release all shapes.
@@ -438,6 +410,7 @@ void Scene::cleanupPhysics()
     }
     object_ptrs.clear();
 
+    //"When a scene is released, any actors contained in the scene are automatically removed from the scene, but they are not released."
     PX_RELEASE(gScene);
     PX_RELEASE(gDispatcher);
     PX_RELEASE(gPhysics);
@@ -453,20 +426,6 @@ Scene::Scene(){
     startupPhysics();
 }
 Scene::~Scene(){
-}
-
-/// @brief Clear all recorded contacts such that the next call to step_simulation() will record new contacts.
-void Scene::clear_contacts()
-{
-    //Clear the list of contacted objects and contact points
-    gContacts.clear();
-    gPenetrationContacts.clear();
-    gContactedObjects.clear(); 
-    gContactPositions.clear();
-
-    #ifndef NDEBUG
-    cout << "Cleared contacts" << endl;
-    #endif
 }
 
 /// @brief Sets a factor that multiplies that maximal distance an intersection point can be from the objects considered in contact.
@@ -520,10 +479,14 @@ void Scene::wake_all_actors()
 /// @param dt time step
 void Scene::step_simulation(float dt)
 {
-    assert(dt > 0);
+    if(gScene == nullptr){
+        #ifndef NDEBUG
+        cout << "Scene is null" << endl;
+        #endif
+        return;
+    }
 
-    //Clear the list of contacted objects and contact points
-    clear_contacts();
+    assert(dt > 0);
 
     /*
     READ THIS: SLEEPING
@@ -539,8 +502,9 @@ void Scene::step_simulation(float dt)
 
         This involves that two subsequent simulation steps are required to get all contacts.
         See: https://github.com/NVIDIA-Omniverse/PhysX/blob/b7182d5e563b763a340053864658202a3ee966ab/physx/source/simulationcontroller/src/ScKinematics.cpp#L44
+    
+        Note: Since the introduction of the ContactsManager, we do not need to wake up actors anymore at each simulation step.
     */
-    wake_all_actors();
 
     #ifndef NDEBUG
     auto t1 = std::chrono::high_resolution_clock::now();
@@ -569,23 +533,14 @@ void Scene::step_simulation(float dt)
 /// @brief Get the list of objects in contact with a given object.
 /// @param target_object id of the object
 /// @return list of objects in contact with the target object
-set<string> Scene::get_contacted_objects(string target_object)
+unordered_set<string> Scene::get_contacted_objects(string target_object)
 {
-    //If there are no contacts, step the simulation by a small amount
-    // to make sure that the collision detection is performed.
-    if(gContacts.size() == 0){
+
+    if(contacts_manager.needs_update(target_object)){
         this->step_simulation(1/1000.0f);
     }
 
-    set<string> contacted_objects;
-    for (int i = 0; i < gContactedObjects.size(); i++){
-        if (gContactedObjects[i].first == target_object){
-            contacted_objects.insert(gContactedObjects[i].second);
-        }
-        else if (gContactedObjects[i].second == target_object){
-            contacted_objects.insert(gContactedObjects[i].first);
-        }
-    }
+    unordered_set<string> contacted_objects = contacts_manager.get_contacted_object_ids(target_object);
 
     #ifndef NDEBUG
     cout << "Found " << contacted_objects.size() << " contacted objects with " << target_object << endl;
@@ -596,90 +551,33 @@ set<string> Scene::get_contacted_objects(string target_object)
 
 /// @brief Get the contact points between two objects that are not penetrating.
 /// @param id1 id of the first object
-/// @param id2 id of the second object or empty string to get all contact points involving id1
-/// @return A vector of Contact objects representing the contact points between the two objects.
-/// @note If id2 is set to an empty string, returns all contact points involving id1.
-vector<Contact> Scene::get_contact_points(string id1, string id2)
-{
-    //If there are no contacts, step the simulation by a small amount
-    // to make sure that the collision detection is performed.
-    if(gContacts.size() == 0){
-        this->step_simulation(1/1000.0f);
-    }
-
-    //If id2 is set to an empty string, we return all contact points involving id1
-    bool return_all_contact_points = (id2 == "");
-
-    //Iterate over gContacts and find the contact points between the two objects
-    vector<Contact> contact_points;
-    for (int i = 0; i < gContacts.size(); i++)
-    {
-        pair<string, string> object_ids = gContacts[i].get_object_ids();
-        if (object_ids.first == id1 && (return_all_contact_points || object_ids.second == id2))
-            contact_points.push_back(gContacts[i]);
-        if (object_ids.second == id1 && (return_all_contact_points || object_ids.first == id2))
-            contact_points.push_back(gContacts[i]);
-    }
-
-    return contact_points;
-}
-
-/// @brief Get the contact points between two objects that are not penetrating.
-/// @param id1 id of the first object
 /// @param id2 id of the second object
 /// @return Nx3 matrix representing the contact points between the two objects
 /// @note If id2 is set to an empty string, returns all contact points involving id1.
 MatrixX3f Scene::get_contact_points_positions(string id1, string id2)
 {
-    //Get the vector of Contact objects
-    vector<Contact> contacts = get_contact_points(id1, id2);
-
-    #ifndef NDEBUG
-    if(id2 == ""){
-        cout << "Found " << contacts.size() << " contact points involving " << id1 << endl;
-    }else{
-        cout << "Found " << contacts.size() << " contact points between " << id1 << " and " << id2 << endl;
-    }
-    #endif
-
-    //Convert the vector of contact points to a matrix
-    MatrixX3f contact_points_matrix(contacts.size(), 3);
-    for (int i = 0; i < contacts.size(); i++)
-    {
-        //The contact point is a column vector, but we want to store it as a row vector.
-        contact_points_matrix.row(i) = contacts[i].get_position().transpose();
-    }
-    return contact_points_matrix;
-}
-
-/// @brief Get the contact points between two objects that are penetrating.
-/// @param id1 id of the first object
-/// @param id2 id of the second object
-/// @return Vector of Contact objects representing the penetrating contact points between the two objects.
-/// @note If id2 is set to an empty string, returns all contact points involving id1.
-vector<Contact> Scene::get_penetrating_contact_points(string id1, string id2)
-{
-    //If there are no contacts, step the simulation by a small amount
-    // to make sure that the collision detection is performed.
-    if(gContacts.size() == 0){
-        this->step_simulation(1/1000.0f);
-    }
-
     //If id2 is set to an empty string, we return all contact points involving id1
     bool return_all_contact_points = (id2 == "");
-
-    //Iterate over gPenetrationContacts and find the contact points between the two objects
-    vector<Contact> contact_points;
-    for (int i = 0; i < gPenetrationContacts.size(); i++)
-    {
-        pair<string, string> object_ids = gPenetrationContacts[i].get_object_ids();
-        if (object_ids.first == id1 && (return_all_contact_points || object_ids.second == id2))
-            contact_points.push_back(gPenetrationContacts[i]);
-        if (object_ids.second == id1 && (return_all_contact_points || object_ids.first == id2))
-            contact_points.push_back(gPenetrationContacts[i]);
+    vector<Vector3f> contact_points;
+    if(return_all_contact_points){
+        if(contacts_manager.needs_update(id1)){
+            this->step_simulation(1/1000.0f);
+        }
+        contact_points = contacts_manager.get_contact_positions(id1);
+    }else{
+        if(contacts_manager.needs_update(id1) || contacts_manager.needs_update(id2)){
+            this->step_simulation(1/1000.0f);
+        }
+        contact_points = contacts_manager.get_contact_positions(id1, id2);
     }
 
-    return contact_points;
+    //Convert the vector of contact points to a matrix
+    MatrixX3f contact_points_matrix(contact_points.size(), 3);
+    for (int i = 0; i < contact_points.size(); i++){
+        //The contact point is a column vector, but we want to store it as a row vector.
+        contact_points_matrix.row(i) = contact_points[i].transpose();
+    }
+    return contact_points_matrix;
 }
 
 /// @brief Get the contact points between two objects that are penetrating.
@@ -689,15 +587,26 @@ vector<Contact> Scene::get_penetrating_contact_points(string id1, string id2)
 /// @note If id2 is set to an empty string, returns all contact points involving id1.
 MatrixX3f Scene::get_penetrating_contact_point_positions(string id1, string id2)
 {
-    //Get the vector of Contact objects
-    vector<Contact> contacts = get_penetrating_contact_points(id1, id2);
+   //If id2 is set to an empty string, we return all contact points involving id1
+    bool return_all_contact_points = (id2 == "");
+    vector<Vector3f> contact_points;
+    if(return_all_contact_points){
+        if(contacts_manager.needs_update(id1)){
+            this->step_simulation(1/1000.0f);
+        }
+        contact_points = contacts_manager.get_contact_positions(id1, true);
+    }else{
+        if(contacts_manager.needs_update(id1) || contacts_manager.needs_update(id2)){
+            this->step_simulation(1/1000.0f);
+        }
+        contact_points = contacts_manager.get_contact_positions(id1, id2, true);
+    }
 
     //Convert the vector of contact points to a matrix
-    MatrixX3f contact_points_matrix(contacts.size(), 3);
-    for (int i = 0; i < contacts.size(); i++)
-    {
+    MatrixX3f contact_points_matrix(contact_points.size(), 3);
+    for (int i = 0; i < contact_points.size(); i++){
         //The contact point is a column vector, but we want to store it as a row vector.
-        contact_points_matrix.row(i) = contacts[i].get_position().transpose();
+        contact_points_matrix.row(i) = contact_points[i].transpose();
     }
     return contact_points_matrix;
 }
@@ -793,51 +702,6 @@ MatrixX3f Scene::get_contact_convex_hull(string id, int vertex_limit)
         convex_hull(i,2) = convexVerts[i].z;
     }
 
-/*  This idea does not work and would create way too many points.
-    
-    //Compute the number of edges of the convex hull
-    // Euler's formulate is V - E + F = 2 -> E = V + F - 2
-    PxU32 num_edges = numVerts + numPoly - 2;
-
-    //There should be 2 points per edge
-    MatrixX3f points_on_cvx_hull(2*num_edges, 3);
-
-    //Add a point in the matrix for the midpoint between each sides of
-    // every polygon of the convex hull.
-    PxHullPolygon data;
-    int nb_accumulated_points = 0;
-    for(int i=0; i < numPoly; i++){
-        bool success = convexMesh->getPolygonData(i, data);
-        if(success){
-            PxU32 numVerts = data.mNbVerts;
-            PxVec3 previous_vertex;
-            for(int j=0; j < numVerts; j++){
-                //Get the vertex index in idxBuffer
-                // and the corresponding vertex in convexVerts.
-                PxU8 idx = idxBuffer[data.mIndexBase + j];
-                PxVec3 v1 = convexVerts[idx];
-                //Add the vertex to the matrix
-                points_on_cvx_hull(nb_accumulated_points, 0) = v1.x;
-                points_on_cvx_hull(nb_accumulated_points, 1) = v1.y;
-                points_on_cvx_hull(nb_accumulated_points, 2) = v1.z;
-                nb_accumulated_points += 1;
-                
-                //If this is not the first vertex of the polygon, add the midpoint
-                // by using the previous vertex.
-                if(j > 0){
-                    //Add the midpoint between the two vertices to the matrix
-                    PxVec3 midpoint = (v1 + previous_vertex) / 2;
-                    points_on_cvx_hull(nb_accumulated_points, 0) = midpoint.x;
-                    points_on_cvx_hull(nb_accumulated_points, 1) = midpoint.y;
-                    points_on_cvx_hull(nb_accumulated_points, 2) = midpoint.z;
-                    nb_accumulated_points += 1;
-                }
-                previous_vertex = v1;
-            }
-        }
-    }
-*/
-
     //Free the vertices
     delete[] vertices;
 
@@ -889,7 +753,7 @@ Vector3f Scene::get_closest_contact_point(string id1, string id2, const Vector3f
 string Scene::get_contact_id_at_point(string id, Vector3f point, float max_distance, int max_num_iterations)
 {
     //Get the objects in contact with the given object
-    set<string> contacted_objects = this->get_contacted_objects(id);
+    unordered_set<string> contacted_objects = this->get_contacted_objects(id);
 
     //If there is no object in contact, return an empty string
     if(contacted_objects.size() == 0){
@@ -985,31 +849,21 @@ string Scene::get_contact_id_at_point(string id, Vector3f point, float max_dista
         for(int iter=0; iter < max_num_iterations; iter++){
             for(auto& obj_id : candidate_objects){
                 //Get the contact points between both objects
-                vector<Contact> contacts = this->get_contact_points(id, obj_id);
+                Eigen::MatrixX3f contacts = this->get_contact_points_positions(id, obj_id);
 
                 #ifndef NDEBUG
                 cout << "Found " << contacts.size() << " contact points between " << id << " and " << obj_id << endl;
                 #endif
 
                 //Iterate over the contact points and find the one that is equal to the query point
-                for(int i=0; i < contacts.size(); i++){
-                    Vector3f contact_point = contacts[i].get_position();
+                for(int i=0; i < contacts.rows(); i++){
+                    Vector3f contact_point = contacts.row(i);
                     //Compute the squared distance between the two points
                     float dist = (contact_point - point).squaredNorm();
                     //If distantce is small enough, return the object ID
                     if(dist < max_distance){
                         //Return the object ID
-                        pair<string, string> id_pair = contacts[i].get_object_ids();
-
-                        #ifndef NDEBUG
-                        cout << "Found contact point at " << contact_point.transpose() << " between " << id_pair.first << " and " << id_pair.second << endl;
-                        #endif
-
-                        if(id_pair.first == id){
-                            return id_pair.second;
-                        }else{
-                            return id_pair.first;
-                        }
+                        return obj_id;
                     }
                 }
             }
@@ -1383,16 +1237,16 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
 /// @param position_threshold Maximal distance between two contact points to be merged
 /// @param normal_threshold Maximum angle cosine between the normals of two contact points to be merged
 /// @note This is slow, use it only when necessary.
-void Scene::merge_similar_contact_points(float position_threshold = 0, float normal_threshold = 0.1)
+void Scene::merge_similar_contact_points(vector<Contact> contact_points, float position_threshold = 0, float normal_threshold = 0.1)
 {
     //If the position threshold is not specified, use an adaptive threshold based on the
     // size of the voxels in contact.
     bool compute_adaptive_threshold = (position_threshold == 0);
 
     //Merge points that are less than some distance apart if their normal is mostly aligned
-    for (int i = 0; i < gContacts.size(); i++)
+    for (int i = 0; i < contact_points.size(); i++)
     {
-        Contact contact1 = gContacts[i];
+        Contact contact1 = contact_points[i];
 
         if(compute_adaptive_threshold){
             pair<Object*, Object*> objects = contact1.get_objects();
@@ -1404,9 +1258,9 @@ void Scene::merge_similar_contact_points(float position_threshold = 0, float nor
             float position_threshold = 0.1*max_side;
         }
 
-        for (int j = i + 1; j < gContacts.size(); j++)
+        for (int j = i + 1; j < contact_points.size(); j++)
         {
-            Contact contact2 = gContacts[j];
+            Contact contact2 = contact_points[j];
 
             if(compute_adaptive_threshold){
                 pair<Object*, Object*> objects = contact1.get_objects();
@@ -1433,7 +1287,7 @@ void Scene::merge_similar_contact_points(float position_threshold = 0, float nor
                 contact1.set_position(pos);
                 contact1.set_normal(normal);
                 //Remove the second contact point
-                gContacts.erase(gContacts.begin() + j);
+                contact_points.erase(contact_points.begin() + j);
                 j--;
             }
         }
@@ -1959,9 +1813,6 @@ void Scene::create_object_shapes(Object* obj, Matrix4f pose, int resolution, boo
         actor->setName(obj->id.c_str());
         actor->userData = obj;
     }
-
-    //The contacts are no longer valid, so clear them
-    clear_contacts();
 }
 
 /// @brief Add a volumetric object to the scene defined by its triangular surface mesh, its tetrahedral volume mesh, and its canary spheres.
@@ -2008,6 +1859,9 @@ void Scene::add_volumetric_object(string id, Matrix4f pose,
 
     //Create the shapes (occupancy grid, tetrahedral mesh, canary spheres) and attach them to an actor for the object
     create_object_shapes(obj.get(), pose, resolution, true, is_fixed, mass, com);
+
+    //The contacts are no longer valid, so clear them
+    contacts_manager.invalidate_object_state(id);
 
     #ifndef NDEBUG
     cout << "Added volumetric object with id " << id << endl;
@@ -2056,6 +1910,10 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f tri_vertices, MatrixX
 
     //Create the shapes (ocupancy grid, possibly tetrahedral mesh and canary spheres) and attach them to an actor for the object
     create_object_shapes(obj.get(), pose, resolution, compute_volume, is_fixed, mass, com);
+
+    //The contacts are no longer valid, so clear them
+    contacts_manager.invalidate_object_state(id);
+
 }
 
 /// @brief Get the actor with a specified name from the scene
@@ -2067,7 +1925,7 @@ PxRigidActor* Scene::get_actor(string name)
     PxU32 nbActors = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
 
     //Get all rigid actors in the scene
-    PxActor** actors = new PxActor*[nbActors];
+    PxActor* actors[nbActors];
     PxU32 nbActorsReturned = gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, actors, nbActors);
 
     PxRigidActor* actor = nullptr;
@@ -2080,9 +1938,6 @@ PxRigidActor* Scene::get_actor(string name)
             actor = candidate_actor;
         }
     }
-
-    //Release the actors array
-    delete[] actors;
 
     return actor;
 }
@@ -2120,6 +1975,7 @@ vector<PxShape*> Scene::get_actor_shapes(PxRigidActor* actor)
 
 
 /// @brief Remove all actors from the scene, this should also remove all shapes attached to the actors.
+/// @note See: https://github.com/NVIDIAGameWorks/PhysX/issues/541#issuecomment-1102264977 for information about actor remove/release.
 void Scene::remove_all_actors()
 {
     if (gScene != NULL){
@@ -2127,7 +1983,7 @@ void Scene::remove_all_actors()
         PxU32 nbActors = gScene->getNbActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC);
 
         //Get all rigid actors in the scene
-        PxActor** actors = new PxActor*[nbActors];
+        PxActor* actors[nbActors];
         PxU32 nbActorsReturned = gScene->getActors(PxActorTypeFlag::eRIGID_DYNAMIC | PxActorTypeFlag::eRIGID_STATIC, actors, nbActors);
 
         //Iterate over actors and find the one with the specified name
@@ -2140,11 +1996,8 @@ void Scene::remove_all_actors()
             PX_RELEASE(actor);
         }
 
-        //Release the actors array
-        delete[] actors;
-
         //The contacts are no longer valid, so clear them
-        clear_contacts();
+        contacts_manager.remove_all_objects();
     }
 }
 
@@ -2166,6 +2019,7 @@ void Scene::remove_object(string id)
 
         //When the actor is released, the shapes should also be released
         // if the release() method was called right after the shape was created.
+        // See: https://github.com/NVIDIAGameWorks/PhysX/issues/541#issuecomment-1102264977
 
         //Remove the actor from the scene
         // This seems to also release the attached shapes.
@@ -2195,7 +2049,7 @@ void Scene::remove_object(string id)
     }
 
     //The contacts are no longer valid, so clear them
-    clear_contacts();
+    contacts_manager.remove_object(id);
 }
 
 /// @brief Set the pose of an object by recreating a new object.
@@ -2284,7 +2138,8 @@ void Scene::set_object_pose(string id, Matrix4f pose)
     }
 
     //The contacts are no longer valid, so clear them
-    clear_contacts();
+    contacts_manager.invalidate_object_state(id);
+
 }
 
 /// @brief Return a list of object IDs in the scene.

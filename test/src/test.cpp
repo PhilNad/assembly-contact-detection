@@ -300,7 +300,7 @@ int main(int argc, char** argv) {
     id = "cube2";
     pose << 1, 0, 0, 0,
             0, 1, 0, 0.25,
-            0, 0, 1, 1.5,
+            0, 0, 1, 1.5, 
             0, 0, 0, 1;
     Cube cube2 = Cube(1, 1, 1);
     scene.add_object(id, pose, cube2.vertices, cube2.triangles, 30, true);
@@ -314,13 +314,29 @@ int main(int argc, char** argv) {
     Cube cube3 = Cube(1, 1, 1);
     scene.add_object(id, pose, cube3.vertices, cube3.triangles, 30, true);
 
+    /*
+    //Cleanup crashes when there is an exact overlap of spheres
+    // It also only crashes when cube 2 is in contact with the other cubes.
+    // It also only crashes when the resolution is larger than 30
+    // It also only crashes if the simulation was stepped after adding objects
+    // It also only crashes when the grid cells are added too.
+    // Only crashes when sceneDesc.kineKineFilteringMode = PxPairFilteringMode::eKEEP;
+    // Only crashes when PxFilterFlag::eSUPPRESS is not used in the filter.
+    // However it still crashes when the tetrahedra are not added.
+    // It still crashes when the contact resolution routine is not called.
+    // Could the crash be caused by too many contacts?
+    scene = Scene();
+
+    return 0;
+    */
+
     //Remove cube1
     scene.remove_object("cube1");
 
     //Move cube2
     pose << 1, 0, 0, 0,
-            0, 1, 0, 2, //2.25
-            0, 0, 1, 1.5,//1.5
+            0, 1, 0, 2.25,
+            0, 0, 1, 1.4,//1.5
             0, 0, 0, 1;
     scene.set_object_pose("cube2", pose);
 
@@ -332,7 +348,7 @@ int main(int argc, char** argv) {
     scene.set_object_pose("cube3", pose);
 
     // Get the list of objects in contact with the cube
-    set<string> contacted_objects = scene.get_contacted_objects("cube2");
+    unordered_set<string> contacted_objects = scene.get_contacted_objects("cube2");
     cout << "Contacted objects: ";
     for(auto it = contacted_objects.begin(); it != contacted_objects.end(); ++it){
         cout << *it << " ";
@@ -344,9 +360,6 @@ int main(int argc, char** argv) {
     cout << "Found " << contact_points.rows() << " contact points." << endl;
     contact_points = scene.get_all_penetrating_contact_points("cube2");
     cout << "Found " << contact_points.rows() << " penetrating points." << endl;
-    for (int i = 0; i < contact_points.rows(); i++) {
-        //cout << contact_points.row(i) << endl;
-    }
 
     MatrixX3f hull_contacts = scene.get_contact_convex_hull("cube2");
     cout << "Found " << hull_contacts.rows() << " hull contact points." << endl;
@@ -354,7 +367,7 @@ int main(int argc, char** argv) {
     vector<pair<string, Vector3f>> stable_contact_points = scene.get_three_most_stable_contact_points("cube2", 30, true);
 
     //Stress-test where an object is moved around a lot, removed, re-created, and moved around again.
-    int num_iterations = 1;
+    int num_iterations = 0;
     int num_sub_iterations = 1;
     Cube cube = Cube(1, 1, 1);
     for(int i = 0; i < num_iterations; i++){

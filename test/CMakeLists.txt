@@ -5,7 +5,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 SET(PROJECT_NAME "acd-tests")
 project(${PROJECT_NAME})
-add_executable(${PROJECT_NAME} src/test.cpp)
+add_executable(${PROJECT_NAME} src/test.cpp) #_overlap_crash
 
 set(PHYSX_ROOT_DIR ${PROJECT_SOURCE_DIR}/../physx)
 set(PHYSX_BIN_PATH ${PHYSX_ROOT_DIR}/bin/linux.clang)

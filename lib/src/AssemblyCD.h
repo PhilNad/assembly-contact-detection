@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include "Object.h"
 #include "Contact.h"
+#include "ContactsManager.h"
 #include "OccupancyGrid.h"
 #include "PointSet.h"
 #include "Points.h"

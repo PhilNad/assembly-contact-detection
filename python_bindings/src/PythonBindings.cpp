@@ -91,6 +91,7 @@ PYBIND11_MODULE(assembly_cd, m) {
         .def("get_voxel_side_lengths", &Scene::get_voxel_side_lengths, "Get the voxel side lengths of an object.",
                 py::arg("id"))
         .def("merge_similar_contact_points", &Scene::merge_similar_contact_points, "Merge contact points that are close to each other.",
+                py::arg("contact_points"),
                 py::arg("position_threshold") = 0, 
                 py::arg("normal_threshold") = 0.1);
 
