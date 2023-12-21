@@ -163,8 +163,12 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
             //cout << contactCount << " contacts between " << id_obj0 << " and " << id_obj1 << endl;
 
             //Ignore pairs when shapes have been deleted
-            if(pair.flags & (PxContactPairFlag::eREMOVED_SHAPE_0 | PxContactPairFlag::eREMOVED_SHAPE_1))
+            if(pair.flags & (PxContactPairFlag::eREMOVED_SHAPE_0 | PxContactPairFlag::eREMOVED_SHAPE_1)){
+                #ifndef NDEBUG
+                cout << "Scene::process_contact_pairs(): One of the shapes has been deleted. Ignoring pair." << endl;
+                #endif
                 continue;
+            }
   
             if(contactCount)
             {
@@ -174,6 +178,9 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 
                 //If the pointers are null, we skip this pair
                 if(shape0 == nullptr || shape1 == nullptr){
+                    #ifndef NDEBUG
+                    cout << "Scene::process_contact_pairs(): One of the shapes is null. Ignoring pair." << endl;
+                    #endif
                     continue;
                 }
 
@@ -187,6 +194,9 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 
                 //If the pointers are null, we skip this pair
                 if(actor0 == nullptr || actor1 == nullptr){
+                    #ifndef NDEBUG
+                    cout << "Scene::process_contact_pairs(): One of the actors is null. Ignoring pair." << endl;
+                    #endif
                     continue;
                 }
 
@@ -209,8 +219,8 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                 float position_threshold = max(position_threshold, 0.1f*max_side);
 
                 //If the collision is between a sphere and a tetrahedron, it means that there is an inter-penetration
-                if((shape0_type == PxGeometryType::eSPHERE && shape1_type == PxGeometryType::eCONVEXMESH) ||
-                    (shape1_type == PxGeometryType::eSPHERE && shape0_type == PxGeometryType::eCONVEXMESH) ){
+                if( (shape0_type == PxGeometryType::eSPHERE && shape1_type == PxGeometryType::eCONVEXMESH) ||
+                    (shape1_type == PxGeometryType::eSPHERE && shape0_type == PxGeometryType::eCONVEXMESH)){
                     PxVec3 p;
                     //Get the position of the sphere/point
                     if(shape0_type == PxGeometryType::eSPHERE){
@@ -252,6 +262,10 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                         }
                         //Mark the two objects as being in contact
                         thread_contacted_objects.push_back(make_pair(id_obj0, id_obj1));
+                    }else{
+                        #ifndef NDEBUG
+                        cout << "Scene::process_contact_pairs(): One of the gridcells has no userData. Ignoring pair." << endl;
+                        #endif
                     }
                 }
             }
@@ -386,6 +400,7 @@ void Scene::startupPhysics()
     sceneDesc.staticKineFilteringMode = PxPairFilteringMode::eKEEP;
     sceneDesc.filterShader	          = contactReportFilterShader;
     sceneDesc.simulationEventCallback = gContactReportCallback;
+    sceneDesc.maxNbContactDataBlocks  = PX_MAX_U32;
     //When getting more contact points matters, its better to disable PCM.
     // See: https://nvidia-omniverse.github.io/PhysX/physx/5.2.1/docs/AdvancedCollisionDetection.html#persistent-contact-manifold-pcm
     // sceneDesc.flags &= ~PxSceneFlag::eENABLE_PCM;
@@ -515,6 +530,11 @@ void Scene::step_simulation(float dt)
     // from kinematic actors.
     gScene->simulate(dt/2);
     gScene->fetchResults(true);
+    #ifndef NDEBUG
+    PxU32 nbUsedDataBlocks = gScene->getNbContactDataBlocksUsed();
+    PxU32 maxNbDataBlocks = gScene->getMaxNbContactDataBlocksUsed();
+    cout << "Number of used contact data blocks: " << nbUsedDataBlocks << "/" << maxNbDataBlocks << endl;
+    #endif
     gScene->simulate(dt/2);
 
     #ifndef NDEBUG
@@ -1520,6 +1540,12 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
                 spheres.pushBack(sphere);
             }
         }
+        //Record the sphere positions in the object
+        MatrixX3f canary_sphere_positions(sphere_positions.size(), 3);
+        for(int i=0; i < sphere_positions.size(); i++){
+            canary_sphere_positions.row(i) = sphere_positions[i];
+        }
+        obj->canary_sphere_positions = canary_sphere_positions;
     }else{
         //The object already has canary sphere positions, so we just need to create the spheres
         for(int i = 0; i < obj->canary_sphere_positions.rows(); i++){
@@ -1538,13 +1564,6 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
             spheres.pushBack(sphere);
         }
     }
-
-    //Record the sphere positions in the object
-    MatrixX3f canary_sphere_positions(sphere_positions.size(), 3);
-    for(int i=0; i < sphere_positions.size(); i++){
-        canary_sphere_positions.row(i) = sphere_positions[i];
-    }
-    obj->canary_sphere_positions = canary_sphere_positions;
 
     return spheres;
 }
@@ -1714,7 +1733,7 @@ void Scene::create_object_shapes(Object* obj, Matrix4f pose, int resolution, boo
     #ifndef NDEBUG
     t2 = chrono::high_resolution_clock::now();
     duration = chrono::duration_cast<chrono::milliseconds>(t2 - t1).count();
-    cout << "Created voxel shapes in " << duration << " ms" << endl;
+    cout << "Created " << convexShapes.size() << " voxel shapes in " << duration << " ms" << endl;
     #endif
 
     //If the object is volumetric, create a tetrahedral mesh and spheres embedded in the volume

@@ -294,7 +294,8 @@ int main(int argc, char** argv) {
             0, 0, 1, 0.5,
             0, 0, 0, 1;
     Cube cube1 = Cube(1, 1, 1);
-    scene.add_object(id, pose, cube1.vertices, cube1.triangles, 30, true);
+    scene.add_object(id, pose, cube1.vertices, cube1.triangles, 15, true);
+
 
     // Add another cube to the scene
     id = "cube2";
@@ -303,7 +304,7 @@ int main(int argc, char** argv) {
             0, 0, 1, 1.5, 
             0, 0, 0, 1;
     Cube cube2 = Cube(1, 1, 1);
-    scene.add_object(id, pose, cube2.vertices, cube2.triangles, 30, true);
+    scene.add_object(id, pose, cube2.vertices, cube2.triangles, 15, true);
 
     // Add a cube to the scene
     id = "cube3";
@@ -312,24 +313,8 @@ int main(int argc, char** argv) {
             0, 0, 1, 0.5,
             0, 0, 0, 1;
     Cube cube3 = Cube(1, 1, 1);
-    scene.add_object(id, pose, cube3.vertices, cube3.triangles, 30, true);
-
-    /*
-    //Cleanup crashes when there is an exact overlap of spheres
-    // It also only crashes when cube 2 is in contact with the other cubes.
-    // It also only crashes when the resolution is larger than 30
-    // It also only crashes if the simulation was stepped after adding objects
-    // It also only crashes when the grid cells are added too.
-    // Only crashes when sceneDesc.kineKineFilteringMode = PxPairFilteringMode::eKEEP;
-    // Only crashes when PxFilterFlag::eSUPPRESS is not used in the filter.
-    // However it still crashes when the tetrahedra are not added.
-    // It still crashes when the contact resolution routine is not called.
-    // Could the crash be caused by too many contacts?
-    scene = Scene();
-
-    return 0;
-    */
-
+    scene.add_object(id, pose, cube3.vertices, cube3.triangles, 15, true);
+    
     //Remove cube1
     scene.remove_object("cube1");
 
@@ -340,15 +325,19 @@ int main(int argc, char** argv) {
             0, 0, 0, 1;
     scene.set_object_pose("cube2", pose);
 
-    //Move cube3
+    //Remove cube3
+    scene.remove_object("cube3");
+
+    //New cube3 pose
     pose << 1, 0, 0, 0,
             0, 1, 0, 2,
             0, 0, 1, 0.5,
             0, 0, 0, 1;
-    scene.set_object_pose("cube3", pose);
+    //Add cube3 in new pose
+    scene.add_object("cube3", pose, cube3.vertices, cube3.triangles, 15, true);
 
     // Get the list of objects in contact with the cube
-    unordered_set<string> contacted_objects = scene.get_contacted_objects("cube2");
+    unordered_set<string> contacted_objects = scene.get_contacted_objects("cube3");
     cout << "Contacted objects: ";
     for(auto it = contacted_objects.begin(); it != contacted_objects.end(); ++it){
         cout << *it << " ";

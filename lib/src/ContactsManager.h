@@ -30,7 +30,7 @@ class ContactsManager
         unordered_map<string, unordered_set<string>> contacting_object_ids;
         //List of objects that are in volume contact with a given object (penetrating)
         unordered_map<string, unordered_set<string>> penetrating_object_ids;
-        //List of objects that are waiting for contacts to be added
+        //List of objects that are waiting for contacts to be added 
         unordered_set<string> objects_waiting_for_contacts;
     public:
         ContactsManager();

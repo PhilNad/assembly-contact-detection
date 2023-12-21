@@ -94,5 +94,4 @@ class Scene
         MatrixX3f get_canary_sphere_positions(string id);
         void set_tetra_mesh(string id, MatrixX3f vertices, MatrixX4i indices);
         void set_canary_sphere_positions(string id, MatrixX3f canary_sphere_positions);
-        
 };
