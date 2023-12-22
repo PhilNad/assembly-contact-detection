@@ -256,7 +256,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                         PointSet3D intersections = all_triangles_overlap_over_AARectangle(*gridCell0, *gridCell1, max_distance_factor);
                         for(auto& p : intersections){
                             //Add a new contact point to the list
-                            //TODO: Use the right normal
+                            //TODO: Use the correct normal
                             Contact contact(obj0, obj1, Vector3f(p[0], p[1], p[2]), Vector3f(0,0,1), 0.0f);
                             thread_contacts.push_back(contact);
                         }
@@ -899,6 +899,25 @@ string Scene::get_contact_id_at_point(string id, Vector3f point, float max_dista
     return "";
 }
 
+/// @brief Get the normal at the surface point on the object with the given ID, that is closest to the query point.
+/// @param id Unique ID of the object.
+/// @param query_point 3D query point expressed in the world frame.
+/// @return Normal unit-length vector expressed in the world frame, and pointing towards the outside of the object.
+Eigen::Vector3f Scene::get_normal_at_point(string id, Eigen::Vector3f query_point)
+{
+    Object* obj = this->get_object_by_id(id);
+    uint32_t grid_idx = obj->occupancy_grid->idx_cell_at(query_point);
+    if( obj->occupancy_grid->is_cell_occupied(grid_idx) != 0){
+        //Get grid cells
+        GridCell gc = obj->occupancy_grid->get_grid_cell(grid_idx);
+        //Get the normal at the point
+        OrientedPoint op = gc.weighted_average(query_point);
+        return op.normal;
+    }else{
+        return Vector3f(NAN, NAN, NAN);
+    }
+}
+
 /// @brief Find the three contact points that create the best stable support for an object.
 /// @param id Id of the object for which to get the contact points.
 /// @param hull_max_size Maximum number of points on the convex hull (default: 255)
@@ -950,11 +969,27 @@ vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(strin
         if(p1.hasNaN()){
             continue;
         }
+
+        //Consider only points for which a normal force at the contact point,
+        // when directed towards the inside of the object, would oppose gravity.
+        Vector3f p1_normal = this->get_normal_at_point(id, p1);
+        if(p1_normal.hasNaN() || p1_normal.dot(Vector3f(0,0,-1)) < 0){
+            continue;
+        }
+
         for(int j=i+1; j < hull_contact_points.rows(); j++){
             Vector3f p2 = hull_contact_points.row(j);
             if(p2.hasNaN()){
                 continue;
             }
+
+            //Consider only points for which a normal force at the contact point,
+            // when directed towards the inside of the object, would oppose gravity.
+            Vector3f p2_normal = this->get_normal_at_point(id, p2);
+            if(p2_normal.hasNaN() || p2_normal.dot(Vector3f(0,0,-1)) < 0){
+                continue;
+            }
+
             if(random_third_point){
                 //Get a random point on the object
                 int random_index = rand() % obj_contact_points.rows();
@@ -979,6 +1014,22 @@ vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(strin
                     if((p2-p1).cross(p3-p1).norm() < 1e-6){
                         continue;
                     }
+
+                    //Consider only points for which a normal force at the contact point,
+                    // when directed towards the inside of the object, would oppose gravity.
+                    Vector3f p3_normal = this->get_normal_at_point(id, p3);
+                    if(p3_normal.hasNaN() || p3_normal.dot(Vector3f(0,0,-1)) < 0){
+                        continue;
+                    }
+
+                    /*
+                    cout << "Normals: " << endl;
+                    cout << p1_normal.transpose() << endl;
+                    cout << p2_normal.transpose() << endl;
+                    cout << p3_normal.transpose() << endl;
+                    */
+
+                    //A valid triangle is determined
                     Triangle<Vector3f> triangle(p1, p2, p3);
                     triangles.push_back(triangle);
                 }
@@ -1151,6 +1202,29 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
             Vector3f p2 = tri.vertex_1;
             Vector3f p3 = tri.vertex_2;
 
+            #ifndef NDEBUG
+            cout << "Considering triangle " << i << " with vertices: " << endl;
+            cout << p1.transpose() << endl;
+            cout << p2.transpose() << endl;
+            cout << p3.transpose() << endl;
+            #endif
+
+            //Compute the normal of the triangle
+            Vector3f tri_normal = (p2 - p1).cross(p3 - p1);
+            tri_normal.normalize();
+
+            //Distance between the origin and the plane of the triangle
+            float tri_plane_distance = p1.dot(tri_normal);
+
+            //If the gravity vector is orthogonal to the triangle normal
+            // there is no possible stable support with the selected triangle.
+            if(abs(tri_normal.dot(g_w)) < tol){
+                #ifndef NDEBUG
+                cout << "Triangle normal is orthogonal to gravity vector. Skipping triangle." << endl;
+                #endif
+                continue;
+            }
+
             Vector3f centroid = (p1 + p2 + p3) / 3;
             //Compute the distance between the centroid and each triangle side
             Vector3f rej_13 = (centroid - p1) - (centroid - p1).dot(p3 - p1) * ((p3 - p1) / (p3 - p1).norm());
@@ -1166,20 +1240,10 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
             //Since the centroid is the point furthest away from the triangle sides,
             // if the distance between the centroid and the closest triangle side
             // is smaller than the current min_dist, this triangle cannot be the best.
-            if(min_d < min_dist){    
-                continue;
-            }
-
-            //Compute the normal of the triangle
-            Vector3f tri_normal = (p2 - p1).cross(p3 - p1);
-            tri_normal.normalize();
-
-            //Distance between the origin and the plane of the triangle
-            float tri_plane_distance = p1.dot(tri_normal);
-
-            //If the gravity vector is orthogonal to the triangle normal
-            // there is no possible stable support with the selected triangle.
-            if(abs(tri_normal.dot(g_w)) < tol){
+            if(min_d < min_dist){
+                #ifndef NDEBUG
+                cout << "Centroid is too close to sides. Skipping triangle." << endl;
+                #endif
                 continue;
             }
 
@@ -1226,6 +1290,26 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
                 //Distance with the closest triangle side
                 float min_d = min(min(d1, d2), d3);
 
+                //Torque exerted by gravity about the triangle sides
+                float tau_1 = (com_w - p1).cross(g_w).dot(((p3 - p1) / (p3 - p1).norm()));
+                float tau_2 = (com_w - p1).cross(g_w).dot(((p2 - p1) / (p2 - p1).norm()));
+                float tau_3 = (com_w - p2).cross(g_w).dot(((p3 - p2) / (p3 - p2).norm()));
+
+                //Compute the smallest absolute torque
+                float min_tau = min(min(abs(tau_1), abs(tau_2)), abs(tau_3));
+
+                if(min_tau > min_dist){
+                    min_dist = min_tau;
+                    contact_points.row(0) = p1;
+                    contact_points.row(1) = p2;
+                    contact_points.row(2) = p3;
+                }else{
+                    #ifndef NDEBUG
+                    cout << "Torque is too small. Skipping triangle." << endl;
+                    #endif
+                }
+                continue;
+
                 //If the distance between the projected CoM and the closest
                 // triangle side is larger than the current min_dist, this
                 // triangle is the best stable support.
@@ -1235,6 +1319,11 @@ Matrix3f Scene::get_best_contact_triangle(string id, vector<Triangle<Vector3f>> 
                     contact_points.row(1) = p2;
                     contact_points.row(2) = p3;
                 }
+            }else{
+                #ifndef NDEBUG
+                cout << "Triangle does not contain intersection point. Skipping triangle." << endl;
+                cout << "Intersection point: " << intersection_point.transpose() << endl;
+                #endif
             }
         }
 

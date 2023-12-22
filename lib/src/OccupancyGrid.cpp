@@ -519,6 +519,14 @@ unordered_map<uint32_t, GridCell>* OccupancyGrid::get_grid_cells()
     return &(this->grid_cells);
 }
 
+/// @brief Get the grid cell at the given index.
+/// @param idx Index of the cell.
+/// @return Grid cell at the given index.
+GridCell OccupancyGrid::get_grid_cell(uint32_t idx)
+{
+    return this->grid_cells.at(idx);
+}
+
 /// @brief Builds a grid of cells that represent the volume of the object.
 /// @param vertices Array of vertices of the triangle mesh representing the object, one vertex per row.
 /// @param triangles Array of indices of the triangle mesh representing the object, one triangle per row.
@@ -603,7 +611,7 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
                     //cout << "Index of cell containing point " << sampled_points[j].transpose() << " is " << cell_idx << endl;
                 }else{
                     //Add the point to the existing grid cell
-                    //this->grid_cells.at(cell_idx).additional_point(surface_point);
+                    this->grid_cells.at(cell_idx).additional_point(surface_point);
                     this->grid_cells.at(cell_idx).additional_triangle(triangle);
                 }
             }

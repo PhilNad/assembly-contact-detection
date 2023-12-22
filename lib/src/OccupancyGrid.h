@@ -66,6 +66,7 @@ class OccupancyGrid
         uint32_t idx_cell_at(const Vector3f& point);
         vector<int> reverse_cell_idx(uint32_t idx);
         unordered_map<uint32_t, GridCell>* get_grid_cells();
+        GridCell get_grid_cell(uint32_t idx);
         uint32_t is_cell_occupied(const Vector3f& point);
         uint32_t is_cell_occupied(uint32_t cell_idx);
         enum sampling_method {uniform, random};

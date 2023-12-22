@@ -37,6 +37,7 @@ class Scene
         void points_in_tetrahedron(Matrix3Xf voxel_vertices_matrix, vector<vector<Vector3f>> tetra_vertices_list, int index_first_tet, int index_last_tet, VectorXd& inside_volume);
         Object* get_object_by_id(string id);
         string get_contact_id_at_point(string id, Vector3f point, float max_distance = 1e-3, int max_num_iterations = 3);
+        Eigen::Vector3f get_normal_at_point(string id, Eigen::Vector3f query_point);
     public:
         float max_distance_factor = 0.2;
         Scene();
