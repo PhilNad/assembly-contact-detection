@@ -1701,7 +1701,7 @@ Matrix3f Scene::tetra_local_frame(const vector<Vector3f>& tetra_vertices)
 VectorXd Scene::check_points_in_tetra(const Matrix3Xf& points, const Matrix3f& T_world_to_local, const Vector3f& origin) 
 {
     //A greater tolerance is more strict on inclusion
-    float tol = 0.1;
+    float tol = 0;
 
     //Get the barycentric coordinates of the points WRT to this tetrahedron
     Matrix3Xf mapped_points = T_world_to_local * (points.colwise() - origin);
