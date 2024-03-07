@@ -395,6 +395,7 @@ void Scene::startupPhysics()
     
         // Create the OmniPVD instance
         gOmniPvd = PxCreateOmniPvd(*gFoundation);
+        bool success = false;
         if (gOmniPvd)
         {
             OmniPvdWriter* omniWriter = gOmniPvd->getWriter();
@@ -405,8 +406,8 @@ void Scene::startupPhysics()
                 omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*omniFileWriteStream));
                 gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, NULL, gOmniPvd);
                 if (gPhysics && gPhysics->getOmniPvd()){
-                    bool result = gPhysics->getOmniPvd()->startSampling();
-                    if(result){
+                    success = gPhysics->getOmniPvd()->startSampling();
+                    if(success){
                         cout << "OmniPvd sampling started." << endl;
                     }else{
                         cout << "Error: Failed to start OmniPvd sampling." << endl;
@@ -420,7 +421,10 @@ void Scene::startupPhysics()
         }else{
             cout << "Error: Failed to create OmniPvd instance." << endl;
         }
-        cout << "Running debug build. OmniPVD is supported." << endl;
+
+        if(!success){
+            gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale());
+        }
     
     #else
         gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale());
