@@ -9,6 +9,11 @@
 #include <chrono>
 #include "PxPhysicsAPI.h"
 #include "extensions/PxTetMakerExt.h"
+#ifndef NDEBUG
+    #include "omnipvd/PxOmniPvd.h"
+    #include "../pvdruntime/include/OmniPvdWriter.h"
+    #include "../pvdruntime/include/OmniPvdFileWriteStream.h"
+#endif
 
 using namespace physx;
 using namespace std;
@@ -23,6 +28,7 @@ ContactsManager contacts_manager;
 static PxDefaultAllocator		gAllocator;
 static PxDefaultErrorCallback	gErrorCallback;
 static PxFoundation*			gFoundation = NULL;
+static PxOmniPvd*               gOmniPvd = NULL;
 static PxPhysics*				gPhysics;
 static PxDefaultCpuDispatcher*	gDispatcher;
 static PxScene*					gScene;
@@ -384,7 +390,41 @@ void Scene::startupPhysics()
         gFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, gAllocator, gErrorCallback);
     }
 
-    gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale());
+    //The OmniPVD data stream is only generated in debug and checked builds, not in release builds.
+    #ifndef NDEBUG
+    
+        // Create the OmniPVD instance
+        gOmniPvd = PxCreateOmniPvd(*gFoundation);
+        if (gOmniPvd)
+        {
+            OmniPvdWriter* omniWriter = gOmniPvd->getWriter();
+            OmniPvdFileWriteStream* omniFileWriteStream = gOmniPvd->getFileWriteStream();
+            if (omniWriter && omniFileWriteStream)
+            {
+                omniFileWriteStream->setFileName("/home/phil/physx_debug_record.ovd");
+                omniWriter->setWriteStream(static_cast<OmniPvdWriteStream&>(*omniFileWriteStream));
+                gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale(), true, NULL, gOmniPvd);
+                if (gPhysics && gPhysics->getOmniPvd()){
+                    bool result = gPhysics->getOmniPvd()->startSampling();
+                    if(result){
+                        cout << "OmniPvd sampling started." << endl;
+                    }else{
+                        cout << "Error: Failed to start OmniPvd sampling." << endl;
+                    }
+                }else{
+                    cout << "Error: Failed to get OmniPvd instance from physics." << endl;
+                }
+            }else{
+                cout << "Error: Failed to create OmniPvd writer or file stream." << endl;
+            }
+        }else{
+            cout << "Error: Failed to create OmniPvd instance." << endl;
+        }
+        cout << "Running debug build. OmniPVD is supported." << endl;
+    
+    #else
+        gPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *gFoundation, PxTolerancesScale());
+    #endif // NDEBUG
 
     //To be used if the voxel grid method is used.
     gContactReportCallback = new ContactReportCallbackForVoxelgrid();
@@ -412,6 +452,10 @@ void Scene::startupPhysics()
 /// @brief Clean up the physics engine by releasing memory.
 void Scene::cleanupPhysics()
 {
+    #ifndef NDEBUG
+    cout << "Cleaning up physics" << endl;
+    #endif
+
     //Clear the list of contacted objects and contact points
     contacts_manager.remove_all_objects();
 
@@ -429,6 +473,7 @@ void Scene::cleanupPhysics()
     PX_RELEASE(gScene);
     PX_RELEASE(gDispatcher);
     PX_RELEASE(gPhysics);
+    PX_RELEASE(gOmniPvd);
     //As noted in startupPhysics(), we should NOT release the foundation object.
     //PX_RELEASE(gFoundation);
 
@@ -441,6 +486,7 @@ Scene::Scene(){
     startupPhysics();
 }
 Scene::~Scene(){
+    cleanupPhysics();
 }
 
 /// @brief Sets a factor that multiplies that maximal distance an intersection point can be from the objects considered in contact.
