@@ -536,6 +536,9 @@ OccupancyGrid::OccupancyGrid(const MatrixX3f& vertices, const MatrixX3i& triangl
     //The resolution is the number of cells along each dimension
     // and must be at least 1.
     assert(resolution > 0);
+    #ifndef NDEBUG
+    cout << "Building occupancy grid with resolution " << resolution << endl;
+    #endif
 
     // Get axis-aligned bounding box
     float min_x = vertices.col(0).minCoeff();

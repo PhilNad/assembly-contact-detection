@@ -419,7 +419,7 @@ void Scene::startupPhysics()
                 cout << "Error: Failed to create OmniPvd writer or file stream." << endl;
             }
         }else{
-            cout << "Error: Failed to create OmniPvd instance." << endl;
+            cout << "Error: Failed to create OmniPvd instance. Make sure that libPVDRuntime_64.so can be dynamically loaded." << endl;
         }
 
         if(!success){
@@ -490,7 +490,6 @@ Scene::Scene(){
     startupPhysics();
 }
 Scene::~Scene(){
-    cleanupPhysics();
 }
 
 /// @brief Sets a factor that multiplies that maximal distance an intersection point can be from the objects considered in contact.
