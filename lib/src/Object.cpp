@@ -104,7 +104,7 @@ void Object::set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh)
     for (int i = 0; i < simpleTriMesh.points.count; i++) {
         vertices_ptr[i] = PxVec3(this->tri_vertices(i, 0), this->tri_vertices(i, 1), this->tri_vertices(i, 2));
     }
-    this->tri_mesh_vertices = shared_ptr<PxVec3>(vertices_ptr);
+    this->tri_mesh_vertices = shared_ptr<PxVec3>(vertices_ptr, std::default_delete<PxVec3[]>());
 
     PxU32* indices_ptr = new PxU32[simpleTriMesh.triangles.count*3];
     for (int i = 0; i < simpleTriMesh.triangles.count; i++) {
@@ -112,7 +112,7 @@ void Object::set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh)
         indices_ptr[i*3+1] = this->tri_triangles(i, 1);
         indices_ptr[i*3+2] = this->tri_triangles(i, 2);
     }
-    this->tri_mesh_indices = shared_ptr<PxU32>(indices_ptr);
+    this->tri_mesh_indices = shared_ptr<PxU32>(indices_ptr, std::default_delete<PxU32[]>());
 
     //Convert PxSimpleTriangleMesh to Eigen Matrix
     this->tri_vertices.resize(simpleTriMesh.points.count, 3);
@@ -288,6 +288,10 @@ bool Object::create_tetra_convex_set(PxArray<PxVec3> tetVertices, PxArray<PxU32>
     //      (v1 - v0).cross(v2 - v0) points towards the outside
     // and can be used to retrieve the normal of the face directly from the vertices.
 
+    //NOTE: The memory allocated here for vertices, indexBuffer, and polyFaces is freed in Scene::make_tetmesh()
+    //      after the convex shapes are created. I dont think we can avoid using new here as PhysX expects that
+    //      the user will manage the memory of the vertices and indices.
+
     for(int j=0; j < tetIndices.size(); j+=4){
         //Vertices
         PxVec3 v0 = tetVertices[tetIndices[j+0]];
@@ -295,7 +299,7 @@ bool Object::create_tetra_convex_set(PxArray<PxVec3> tetVertices, PxArray<PxU32>
         PxVec3 v2 = tetVertices[tetIndices[j+2]];
         PxVec3 v3 = tetVertices[tetIndices[j+3]];
         //This should make 48 consecutive bytes.
-        PxVec3* vertices = new PxVec3[4]; 
+        PxVec3* vertices = new PxVec3[4];
         vertices[0] = v0; vertices[1] = v1; vertices[2] = v2; vertices[3] = v3;
         //Centre of the tetrahedron
         PxVec3 tetCentre = (v0 + v1 + v2 + v3)/4;
@@ -312,10 +316,12 @@ bool Object::create_tetra_convex_set(PxArray<PxVec3> tetVertices, PxArray<PxU32>
         f4_idx[0] = 3; f4_idx[1] = 2; f4_idx[2] = 0;
 
         //Each face is composed of three vertices
+        /*
         PxVec3* face1 = new PxVec3[3]; face1[0] = v0; face1[1] = v1; face1[2] = v2;
         PxVec3* face2 = new PxVec3[3]; face2[0] = v0; face2[1] = v2; face2[2] = v3;
         PxVec3* face3 = new PxVec3[3]; face3[0] = v0; face3[1] = v3; face3[2] = v1;
         PxVec3* face4 = new PxVec3[3]; face4[0] = v1; face4[1] = v2; face4[2] = v3;
+        */
         //Compute the centre of each face
         PxVec3 face1_centre = (vertices[f1_idx[0]] + vertices[f1_idx[1]] + vertices[f1_idx[2]])/3;
         PxVec3 face2_centre = (vertices[f2_idx[0]] + vertices[f2_idx[1]] + vertices[f2_idx[2]])/3;

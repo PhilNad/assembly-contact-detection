@@ -21,7 +21,7 @@ void ContactsManager::invalidate_object_state(string object_id)
     - (1) has no contacts, and
     - (2) that there was no contact update done since the object was last moved or added.
 
-    Checking for condition (1) does not suffice because an object might simply have not contact with other objects, we should not
+    Checking for condition (1) does not suffice because an object might simply have no contact with other objects, we should not
     run a simulation every time the user requests contact information on this isolated object.
 
     The user should not have to run a simulation after each move/add/remove of an object, but only when contact information is requested (lazy evaluation)
@@ -116,7 +116,8 @@ void ContactsManager::add_contact(string id1, string id2, Vector3f position, boo
 void ContactsManager::remove_object(string object_id)
 {
     //Iterate over all objects in surface contact with the object
-    for (auto it = this->contacting_object_ids[object_id].begin(); it != this->contacting_object_ids[object_id].end(); ++it){
+    unordered_set<string> surface_contact_ids = this->contacting_object_ids[object_id];
+    for (auto it = surface_contact_ids.begin(); it != surface_contact_ids.end(); ++it){
         //Remove the contact points between the two objects
         this->surface_contact_positions.erase(make_pair(object_id, *it));
         this->surface_contact_positions.erase(make_pair(*it, object_id));
@@ -124,7 +125,8 @@ void ContactsManager::remove_object(string object_id)
         this->contacting_object_ids[*it].erase(object_id);
     }
     //Iterate over all objects in volume contact with the object
-    for (auto it = this->penetrating_object_ids[object_id].begin(); it != this->penetrating_object_ids[object_id].end(); ++it){
+    unordered_set<string> volume_contact_ids = this->penetrating_object_ids[object_id];
+    for (auto it = volume_contact_ids.begin(); it != volume_contact_ids.end(); ++it){
         //Remove the contact points between the two objects
         this->penetration_contact_positions.erase(make_pair(object_id, *it));
         this->penetration_contact_positions.erase(make_pair(*it, object_id));

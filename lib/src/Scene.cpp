@@ -209,6 +209,14 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                 string id_obj0 = actor0->getName();
                 string id_obj1 = actor1->getName();
 
+                //If the collision is between an actor and itself, we skip this pair
+                if(id_obj0 == id_obj1){
+                    #ifndef NDEBUG
+                    cout << "Scene::process_contact_pairs(): Collision between an actor and itself. Ignoring pair." << endl;
+                    #endif
+                    continue;
+                }
+
                 //Get the objects
                 Object* obj0 = static_cast<Object*>(actor0->userData);
                 Object* obj1 = static_cast<Object*>(actor1->userData);
@@ -447,7 +455,7 @@ void Scene::startupPhysics()
     sceneDesc.maxNbContactDataBlocks  = PX_MAX_U32;
     //When getting more contact points matters, its better to disable PCM.
     // See: https://nvidia-omniverse.github.io/PhysX/physx/5.2.1/docs/AdvancedCollisionDetection.html#persistent-contact-manifold-pcm
-    // sceneDesc.flags &= ~PxSceneFlag::eENABLE_PCM;
+    sceneDesc.flags &= ~PxSceneFlag::eENABLE_PCM;
 
     gScene = gPhysics->createScene(sceneDesc);
     gMaterial = gPhysics->createMaterial(0.5f, 0.5f, 0.1f);
@@ -1831,6 +1839,16 @@ PxArray<PxShape*> Scene::make_tetmesh(Object* obj)
         }else{
             cout << "Null convex shape in Scene.cpp:make_tetmesh()" << endl;
         }
+
+        //Release the convex mesh description
+        PxVec3* points = (PxVec3*)convexMeshDesc.points.data;
+        PxHullPolygon* polygons = (PxHullPolygon*)convexMeshDesc.polygons.data;
+        PxU32* indices = (PxU32*)convexMeshDesc.indices.data;
+
+        //Free the memory
+        delete[] points;
+        delete[] polygons;
+        delete[] indices;
     }
     return convexShapes;
 }

@@ -25,9 +25,9 @@ struct OrientedPoint
 class GridCell
 {
     public:
-        uint32_t id;
-        vector<shared_ptr<OrientedPoint>> surface_points;
-        vector<shared_ptr<Triangle<Vector3f>>> triangles;
+        uint32_t id = 0;
+        vector<shared_ptr<OrientedPoint>> surface_points = {};
+        vector<shared_ptr<Triangle<Vector3f>>> triangles = {};
         Vector3f half_extents;
         Vector3f centre;
         GridCell(uint32_t id, shared_ptr<OrientedPoint> surface_point, const Vector3f& cell_size, const Vector3f& cell_centre, shared_ptr<Triangle<Vector3f>> triangle);
