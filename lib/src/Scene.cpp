@@ -485,7 +485,9 @@ void Scene::cleanupPhysics()
     PX_RELEASE(gScene);
     PX_RELEASE(gDispatcher);
     PX_RELEASE(gPhysics);
-    PX_RELEASE(gOmniPvd);
+    #ifndef NDEBUG
+        PX_RELEASE(gOmniPvd);
+    #endif
     //As noted in startupPhysics(), we should NOT release the foundation object.
     //PX_RELEASE(gFoundation);
 
