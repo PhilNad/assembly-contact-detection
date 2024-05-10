@@ -42,7 +42,11 @@ ln -s /home/phil/PhysX/physx physx
 ```
 3. Navigate to the `physx/compiler/linux-release` directory and run 
 ```bash
-make PhysXPvdSDk PhysXExtensions PhysXCooking
+make
+```
+4. Navigate to the `physx/compiler/linux-checked` directory and run 
+```bash
+make
 ``` 
 that will trigger the compilation of the PhysX libraries. Note that when developing the library, you should be using the `checked` version of the libraries, which can be compiled by navigating to the `physx/compiler/linux-checked` directory instead.
 
@@ -56,9 +60,10 @@ that will trigger the compilation of the PhysX libraries. Note that when develop
 ```
 5. Build the library with: 
 ```bash
-> cmake --build "assembly-contact-detection/build" --config Release --target clean
-> cmake --build "assembly-contact-detection/build" --config Release --target all
+> cmake -S . -B build
+> cmake --build build --config Release --target all
 ```
+which will compile the library with the `Release` configuration. If you want to compile the library with the `Debug` configuration, replace `Release` with `Debug`.
 6. Install everything with:
 ```bash
 > sudo cmake --install build
