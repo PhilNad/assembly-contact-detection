@@ -106,9 +106,6 @@ void ContactsManager::add_contact(string id1, string id2, Vector3f position, boo
         this->contacting_object_ids[id1].insert(id2);
         this->contacting_object_ids[id2].insert(id1);
     }
-
-    //All objects have been updated
-    this->objects_waiting_for_contacts.clear();
 }
 
 /// @brief Remove all contact points associated with an object.

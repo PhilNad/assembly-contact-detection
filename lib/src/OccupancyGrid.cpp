@@ -502,9 +502,11 @@ vector<int> OccupancyGrid::reverse_cell_idx(uint32_t idx)
 
     // Get cell indices
     idx -= 1;
-    int i = idx % this->resolution;
-    int j = (idx / this->resolution) % this->resolution;
     int k = idx / (this->resolution*this->resolution);
+    idx -= k*this->resolution*this->resolution;
+    int j = idx / this->resolution;
+    idx -= j*this->resolution;
+    int i = idx;
 
     //cout << "Cell with index " << idx << " has coordinates (" << i << ", " << j << ", " << k << ")" << endl;
 

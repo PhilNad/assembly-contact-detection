@@ -211,9 +211,6 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
 
                 //If the collision is between an actor and itself, we skip this pair
                 if(id_obj0 == id_obj1){
-                    #ifndef NDEBUG
-                    cout << "Scene::process_contact_pairs(): Collision between an actor and itself. Ignoring pair." << endl;
-                    #endif
                     continue;
                 }
 
@@ -1553,7 +1550,7 @@ PxShape* Scene::create_voxel_shape(GridCell* cell, Matrix4f obj_world_pose)
 }
 
 
-/// @brief Produce a sphere for at each voxel corner that is contained in a tetrahedron defining the volume of the object.
+/// @brief Produces a set of spheres positioned slightly below the surface of the object.
 ///         These spheres can be used to detect interpenetration as they are embedded in the volume of the object.
 /// @param obj Object for which to generate the spheres (must be volumetric).
 /// @param tetConvexShapes Array of tetrahedra from make_tetmesh().
@@ -1563,6 +1560,7 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
     //Surface voxels information
     MatrixX3f voxel_centres = obj->get_voxel_centres();
     Vector3f voxel_side_lengths = obj->get_voxel_side_lengths();
+
     //Array of sphere, each with the same radius
     PxArray<PxShape*> spheres;
     vector<Vector3f> sphere_positions;
@@ -1574,25 +1572,28 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
         auto t1 = chrono::high_resolution_clock::now();
         #endif
 
-        //Get the half-extents of the voxel
-        Vector3f voxel_half_extents = voxel_side_lengths/2;
-
-        //A 3xN matrix of the vertices of the voxels where N is the number of voxels
-        Matrix3Xf voxel_vertices_matrix(3, voxel_centres.rows()*2);
-
-        //Generate a point at the two extremities of each voxel
-        Matrix3Xf batch = (voxel_centres.rowwise() + RowVector3f(voxel_half_extents[0], voxel_half_extents[1], voxel_half_extents[2])).transpose();
-        voxel_vertices_matrix.block(0, 0, 3, batch.cols()) = batch;
-        batch = (voxel_centres.rowwise() - RowVector3f(voxel_half_extents[0], voxel_half_extents[1], voxel_half_extents[2])).transpose();
-        voxel_vertices_matrix.block(0, batch.cols(), 3, batch.cols()) = batch;
+        //Generate a set of candidate canary positions
+        // To do so, the OrientedPoint at the (distance weighted) average position of the surface points
+        // associated with each voxel is used. The canary position is set to be slightly below the surface
+        // by assuming that the normal of the OrientedPoint is pointing outwards.
+        std::unordered_map<uint32_t, GridCell>* grid = obj->occupancy_grid->get_grid_cells();
+        Matrix3Xf canary_positions(3, grid->size());
+        int i = 0;
+        for (auto& it : *grid) {
+            GridCell cell = it.second;
+            OrientedPoint op = cell.weighted_average(cell.centre);
+            Vector3f canary_position = op.position - sphere_radius * op.normal;
+            canary_positions.col(i) = canary_position;
+            i++;
+        }
 
         //The voxels are defined in the world frame but the tetrahedra are defined in the object frame
-        // and the position of the spheres will be set in the object frame. Therefore, we need to transform
-        // the voxel vertices to the object frame.
+        // and the position of the spheres will be set in the object frame. Therefore, we need to express
+        // the canary positions in the object frame.
         Matrix4f pose_inv = obj->pose.inverse();
         Matrix3f T_R = pose_inv.block(0,0,3,3);
         Vector3f T_t = pose_inv.block(0,3,3,1);
-        voxel_vertices_matrix = (T_R*voxel_vertices_matrix).colwise() + T_t;
+        canary_positions = (T_R*canary_positions).colwise() + T_t;
 
         #ifndef NDEBUG
         auto t2 = chrono::high_resolution_clock::now();
@@ -1622,7 +1623,7 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
         }
 
         //Iterate over tetrahedra and flag the points that are inside the volume
-        VectorXd inside_volume = VectorXd::Zero(voxel_vertices_matrix.cols());
+        VectorXd inside_volume = VectorXd::Zero(canary_positions.cols());
 
         //In debug, we only use one thread to make debugging easier
         #ifndef NDEBUG
@@ -1646,10 +1647,10 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
                 //Get the index of the last tet to process in this thread
                 int last_tet_index = (thread_i == num_threads - 1) ? tetConvexShapes.size() : (thread_i+1)*nb_tet_per_thread;
                 //Initialize the thread output
-                thread_output[thread_i] = VectorXd::Zero(voxel_vertices_matrix.cols());
+                thread_output[thread_i] = VectorXd::Zero(canary_positions.cols());
                 //Launch the thread
                 threads[thread_i] = std::thread(&Scene::points_in_tetrahedron, this, 
-                    voxel_vertices_matrix, tetra_vertices_list, first_tet_index, last_tet_index, 
+                    canary_positions, tetra_vertices_list, first_tet_index, last_tet_index, 
                     std::ref(thread_output[thread_i]));
             }
             //Join the threads
@@ -1661,7 +1662,7 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
                 inside_volume += output;
             }
         }else{
-            points_in_tetrahedron(voxel_vertices_matrix, tetra_vertices_list, 0, tetra_vertices_list.size(), inside_volume);
+            points_in_tetrahedron(canary_positions, tetra_vertices_list, 0, tetra_vertices_list.size(), inside_volume);
         }
 
         #ifndef NDEBUG
@@ -1679,7 +1680,7 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
                 if(!sphere)
                     throw runtime_error("Error creating shape");
                 //Set the position of the sphere. The voxel vertices are in the object frame here.
-                Vector3f pos = voxel_vertices_matrix.col(i);
+                Vector3f pos = canary_positions.col(i);
                 sphere_positions.push_back(pos);
                 sphere->setLocalPose(PxTransform(PxVec3(pos[0], pos[1], pos[2])));
                 sphere->setRestOffset(0);
@@ -2025,29 +2026,34 @@ void Scene::add_volumetric_object(string id, Matrix4f pose,
     }
 
     shared_ptr<Object> obj = make_shared<Object>(this, id, pose, tri_vertices, tri_indices, true, is_fixed, mass, com, material_name);
-    object_ptrs.push_back(obj);
+    
+    if (obj->is_valid_pose_matrix(pose)){
+        object_ptrs.push_back(obj);
 
-    //Record the triangle mesh in the object
-    obj->set_tri_mesh(tri_vertices, tri_indices);
-    //Record the tetrahedral mesh in the object
-    obj->set_tetra_mesh(tetra_vertices, tetra_indices);
-    //Record the canary sphere positions in the object
-    obj->canary_sphere_positions = canary_sphere_positions;
+        //Record the triangle mesh in the object
+        obj->set_tri_mesh(tri_vertices, tri_indices);
+        //Record the tetrahedral mesh in the object
+        obj->set_tetra_mesh(tetra_vertices, tetra_indices);
+        //Record the canary sphere positions in the object
+        obj->canary_sphere_positions = canary_sphere_positions;
 
-    //Create the shapes (occupancy grid, tetrahedral mesh, canary spheres) and attach them to an actor for the object
-    create_object_shapes(obj.get(), pose, resolution, true, is_fixed, mass, com);
+        //Create the shapes (occupancy grid, tetrahedral mesh, canary spheres) and attach them to an actor for the object
+        create_object_shapes(obj.get(), pose, resolution, true, is_fixed, mass, com);
 
-    //The contacts are no longer valid, so clear them
-    contacts_manager.invalidate_object_state(id);
+        //The contacts are no longer valid, so clear them
+        contacts_manager.invalidate_object_state(id);
 
-    #ifndef NDEBUG
-    cout << "Added volumetric object with id " << id << endl;
-    cout << "at pose " << endl;
-    cout << pose << endl;
-    cout << "with " << tri_vertices.rows() << " vertices and " << tri_indices.rows() << " triangles" << endl;
-    cout << "with " << tetra_vertices.rows() << " tetrahedra and " << tetra_indices.rows() << " indices" << endl;
-    cout << "with " << canary_sphere_positions.rows() << " canary spheres" << endl;
-    #endif
+        #ifndef NDEBUG
+        std::cout << "Added volumetric object with id " << id << endl;
+        std::cout << "at pose " << endl;
+        std::cout << pose << endl;
+        std::cout << "with " << tri_vertices.rows() << " vertices and " << tri_indices.rows() << " triangles" << endl;
+        std::cout << "with " << tetra_vertices.rows() << " tetrahedra and " << tetra_indices.rows() << " indices" << endl;
+        std::cout << "with " << canary_sphere_positions.rows() << " canary spheres" << endl;
+        #endif
+    }else{
+        std::cout << "Invalid pose matrix when adding object with id " << id << endl;
+    }
 }
 
 /// @brief Add an object to the scene
@@ -2071,7 +2077,7 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f tri_vertices, MatrixX
     //Verify that the object does not exists already. If it does, remove it first.
     Object* existing_obj = get_object_by_id(id);
     if(existing_obj != nullptr){
-        cout << "Object with id " << id << " already exists. Removing it first." << endl;
+        std::cout << "Object with id " << id << " already exists. Removing it first." << endl;
         remove_object(id);
     }
 
@@ -2080,16 +2086,21 @@ void Scene::add_object(string id, Matrix4f pose, MatrixX3f tri_vertices, MatrixX
     // However, we need to supply the callback with a persistent pointer to the object.
     // Therefore, we store pointers to preallocated objects in the vector instead of the objects themselves.
     shared_ptr<Object> obj = make_shared<Object>(this, id, pose, tri_vertices, tri_indices, compute_volume, is_fixed, mass, com, material_name);
-    object_ptrs.push_back(obj);
+    
+    if (obj->is_valid_pose_matrix(pose)){
+        object_ptrs.push_back(obj);
 
-    //Record the triangle mesh in the object
-    obj->set_tri_mesh(tri_vertices, tri_indices);
+        //Record the triangle mesh in the object
+        obj->set_tri_mesh(tri_vertices, tri_indices);
 
-    //Create the shapes (ocupancy grid, possibly tetrahedral mesh and canary spheres) and attach them to an actor for the object
-    create_object_shapes(obj.get(), pose, resolution, compute_volume, is_fixed, mass, com);
+        //Create the shapes (ocupancy grid, possibly tetrahedral mesh and canary spheres) and attach them to an actor for the object
+        create_object_shapes(obj.get(), pose, resolution, compute_volume, is_fixed, mass, com);
 
-    //The contacts are no longer valid, so clear them
-    contacts_manager.invalidate_object_state(id);
+        //The contacts are no longer valid, so clear them
+        contacts_manager.invalidate_object_state(id);
+    }else{
+        std::cout << "Invalid pose matrix when adding object with id " << id << endl;
+    }
 
 }
 
