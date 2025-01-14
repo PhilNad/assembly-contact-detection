@@ -49,6 +49,7 @@ bool ContactsManager::needs_update(string object_id)
 /// @param is_penetrating Whether the contact points are embedded in the volume of the objects (default: false).
 void ContactsManager::add_contacts(std::vector<Contact> contacts, bool is_penetrating)
 {
+    //TODO: Record contact normal (currently not supported by add_contact())
     for (auto it = contacts.begin(); it != contacts.end(); ++it){
         this->add_contact(it->get_object_ids().first, it->get_object_ids().second, it->get_position(), is_penetrating);
     }

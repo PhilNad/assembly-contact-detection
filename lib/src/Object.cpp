@@ -99,6 +99,7 @@ void Object::set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh)
 {
     //Record the triangle mesh
     this->tri_mesh = make_shared<PxSimpleTriangleMesh>(simpleTriMesh);
+
     //Record the vertices and indices to shared_ptr<PxVec3> tri_mesh_vertices;
     PxVec3* vertices_ptr = new PxVec3[simpleTriMesh.points.count];
     for (int i = 0; i < simpleTriMesh.points.count; i++) {
@@ -132,6 +133,9 @@ void Object::set_tri_mesh(PxSimpleTriangleMesh& simpleTriMesh)
         this->tri_triangles(i, 1) = data[i*3+1];
         this->tri_triangles(i, 2) = data[i*3+2];
     }
+
+    //Create a PxTriangleMeshGeometry from the description of the triangle mesh
+    this->create_tri_mesh_geometry();
 }
 
 /// @brief Record the description of the triangle mesh that represents the surface of the object
@@ -167,6 +171,29 @@ void Object::set_tri_mesh(MatrixX3f& vertices, MatrixX3i& triangles)
     simpleTriMesh_ptr->triangles.stride   = 3*sizeof(PxU32);
     simpleTriMesh_ptr->triangles.data     = triangles_ptr.get();
     this->tri_mesh = simpleTriMesh_ptr;
+
+    //Create a PxTriangleMeshGeometry from the description of the triangle mesh
+    this->create_tri_mesh_geometry();
+}
+
+/// @brief Create a PxTriangleMeshGeometry from the description of the triangle mesh in tri_mesh and store the pointer to the result in tri_mesh_geometry.
+void Object::create_tri_mesh_geometry()
+{
+    //Build a PxTriangleMeshGeometry from its description 
+    PxTriangleMeshDesc meshDesc;
+    meshDesc.points.count   = this->tri_mesh->points.count;
+    meshDesc.points.stride  = this->tri_mesh->points.stride;
+    meshDesc.points.data    = this->tri_mesh->points.data;
+    meshDesc.triangles.count    = this->tri_mesh->triangles.count;
+    meshDesc.triangles.stride   = this->tri_mesh->triangles.stride;
+    meshDesc.triangles.data     = this->tri_mesh->triangles.data;
+
+    PxTolerancesScale scale;
+    PxCookingParams params(scale);
+    PxTriangleMesh* aTriangleMesh = PxCreateTriangleMesh(params, meshDesc);
+
+    shared_ptr<PxTriangleMeshGeometry> geometry_ptr(new PxTriangleMeshGeometry(aTriangleMesh));
+    this->tri_mesh_geometry = geometry_ptr;
 }
 
 /// @brief Create a grid of cells, defined in the world frame, that represents the volume of the object.
@@ -562,6 +589,19 @@ void Object::set_max_separation(float max_separation)
     this->max_separation = abs(max_separation);
 }
 
+/// @brief Return the pose of the object as a PxTransform.
+/// @return Object pose.
+PxTransform Object::get_pose()
+{
+    PxTransform pxPose = PxTransform(PxMat44(
+        PxVec3(pose(0,0), pose(1,0), pose(2,0)),
+        PxVec3(pose(0,1), pose(1,1), pose(2,1)),
+        PxVec3(pose(0,2), pose(1,2), pose(2,2)),
+        PxVec3(pose(0,3), pose(1,3), pose(2,3))
+    ));
+    return pxPose;
+}
+
 /// @brief Change the pose of the object and updates the occupancy grid.
 /// @param pose Homogeneous transformation matrix describing the new pose of the object.
 void Object::reset_pose(Matrix4f new_pose)
@@ -607,4 +647,41 @@ bool Object::is_valid_pose_matrix(Matrix4f matrix)
         return false;
 
     return true;
+}
+
+/// @brief Get the closest point on the surface of the object to a query point and the normal at that point.
+/// @param query_point 3D point in the world frame
+/// @return OrientedPoint containing the position and normal of the closest point on the surface.
+OrientedPoint Object::get_closest_point_on_surface(Vector3f query_point)
+{
+    //Point from which to find the closest point on the surface
+    PxVec3 point(query_point(0), query_point(1), query_point(2));
+
+    // closestPoint is an optional output argument which returns the closest point.
+    // closestIndex is an optional output argument which returns the closest triangle index (when passed geom is a triangle mesh).
+    PxVec3 closestPoint;
+    PxU32 closestIndex;
+
+    PxTransform pose = this->get_pose();
+    PxTriangleMeshGeometry geom = *this->tri_mesh_geometry;
+
+    //Compute the distance from the point to the surface of the object and return optional outputs
+    PxReal dist = PxGeometryQuery::pointDistance(point, geom, pose, &closestPoint, &closestIndex);
+
+    //Get the triangle whose index is closestIndex
+    Eigen::Vector3i vert_indices = this->tri_triangles.row(closestIndex);
+    Eigen::Vector3f v0 = this->tri_vertices.row(vert_indices(0));
+    Eigen::Vector3f v1 = this->tri_vertices.row(vert_indices(1));
+    Eigen::Vector3f v2 = this->tri_vertices.row(vert_indices(2));
+
+    //Compute the normal of the triangle
+    Triangle<Eigen::Vector3f> tri(v0, v1, v2);
+    Eigen::Vector3f normal = tri.normal();
+
+    //Define an OrientedPoint to return the result
+    OrientedPoint result;
+    result.position = Eigen::Vector3f(closestPoint.x, closestPoint.y, closestPoint.z);
+    result.normal = normal;
+
+    return result;
 }

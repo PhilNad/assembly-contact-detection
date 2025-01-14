@@ -517,13 +517,7 @@ void Scene::wake_all_actors()
         if(actor != nullptr){
             PxActorType::Enum actor_type = actor->getType();
             if(actor_type == PxActorType::Enum::eRIGID_DYNAMIC){
-                Matrix4f pose = get_object_pose(obj_ptr->id);
-                PxTransform pxPose = PxTransform(PxMat44(
-                    PxVec3(pose(0,0), pose(1,0), pose(2,0)),
-                    PxVec3(pose(0,1), pose(1,1), pose(2,1)),
-                    PxVec3(pose(0,2), pose(1,2), pose(2,2)),
-                    PxVec3(pose(0,3), pose(1,3), pose(2,3))
-                ));
+                PxTransform pxPose = obj_ptr->get_pose();
                 //Cast to dynamic actor and set the target pose
                 PxRigidDynamic* rigidDynamicActor = static_cast<PxRigidDynamic*>(actor);
                 rigidDynamicActor->setKinematicTarget(pxPose);
@@ -756,10 +750,6 @@ MatrixX3f Scene::get_contact_convex_hull(string id1, string id2, int vertex_limi
     convexDesc.points.stride = sizeof(PxVec3);
     convexDesc.points.data = vertices;
     convexDesc.vertexLimit = vertex_limit;
-
-    #ifndef NDEBUG
-    cout << "Computing convex hull for object #" << id << endl;
-    #endif
 
     PxConvexMesh* convexMesh = PxCreateConvexMesh(params, convexDesc, gPhysics->getPhysicsInsertionCallback());
 

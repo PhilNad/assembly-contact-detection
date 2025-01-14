@@ -65,6 +65,8 @@ OrientedPoint GridCell::weighted_average(const Vector3f& query_point){
         position_average += weights[i]/sum * this->surface_points[i]->position;
     }
     //Compute the weighted average of the surface normals
+    //TODO: This will result in an incorrect normal for a point close to an edge and
+    // where a different number of surface points are on each side of the edge.
     Vector3f normal_average = Vector3f::Zero();
     for (int i = 0; i < this->surface_points.size(); i++){
         normal_average += weights[i]/sum * this->surface_points[i]->normal;

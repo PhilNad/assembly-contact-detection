@@ -22,6 +22,7 @@ class Object
     private:
         shared_ptr<PxVec3> tri_mesh_vertices;
         shared_ptr<PxU32> tri_mesh_indices;
+        shared_ptr<PxTriangleMeshGeometry> tri_mesh_geometry;
     public:
         string id;
         Matrix4f pose;
@@ -59,6 +60,7 @@ class Object
         Vector3f get_voxel_side_lengths();
         int get_grid_resolution();
         void set_max_separation(float max_separation);
+        PxTransform get_pose();
         void reset_pose(Matrix4f new_pose);
         bool is_valid_pose_matrix(Matrix4f matrix);
         void set_tetra_mesh(MatrixX3f vertices, MatrixX4i indices);
@@ -67,7 +69,10 @@ class Object
         void set_tri_mesh(MatrixX3f& vertices, MatrixX3i& triangles);
         bool validate_mesh(PxSimpleTriangleMesh& surfaceMesh);
         void remesh_surface_trimesh();
+        void create_tri_mesh_geometry();
         bool create_tetra_mesh(PxSimpleTriangleMesh& triSurfaceMesh, PxArray<PxVec3>& tetMeshVertices, PxArray<PxU32>& tetMeshIndices);
         bool create_tetra_convex_set(PxArray<PxVec3> tetVertices, PxArray<PxU32> tetIndices, PxArray<PxConvexMeshDesc>& convexMeshDescs);
         shared_ptr<OccupancyGrid> create_occupancy_grid(int resolution, int sampling_method);
+
+        OrientedPoint get_closest_point_on_surface(Vector3f query_point);
 };

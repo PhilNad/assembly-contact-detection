@@ -321,7 +321,7 @@ int main(int argc, char** argv) {
     //Move cube2
     pose << 1, 0, 0, 0,
             0, 1, 0, 2.25,
-            0, 0, 1, 1.4,//1.5
+            0, 0, 1, 1.5,// Use 1.5 for no penetration and 1.4 to trigger penetration
             0, 0, 0, 1;
     scene.set_object_pose("cube2", pose);
 
@@ -350,8 +350,23 @@ int main(int argc, char** argv) {
     contact_points = scene.get_all_penetrating_contact_points("cube2");
     cout << "Found " << contact_points.rows() << " penetrating points." << endl;
 
-    MatrixX3f hull_contacts = scene.get_contact_convex_hull("cube2");
-    cout << "Found " << hull_contacts.rows() << " hull contact points." << endl;
+    // Print the position of the five farthest contact points
+    MatrixX3f hull_contacts = scene.get_contact_convex_hull("cube2", "", 5);
+    cout << "Position of the five farthest contact points:" << endl;
+    for(int i = 0; i < hull_contacts.rows(); i++){
+        cout << hull_contacts.row(i) << endl;
+    }
+
+    // Get contact forces between the objects
+    vector<ContactForce> contact_forces = scene.get_contact_forces();
+    for(auto& contact_force : contact_forces){
+        cout << "Contact force between " << contact_force.object1_by_id << " and " << contact_force.object2_to_id << endl;
+        cout << "\tPosition: " << contact_force.position.transpose() << endl;
+        cout << "\tNormal: " << contact_force.normal_dir.transpose() << endl;
+        cout << "\tLocal force: " << contact_force.local_force.transpose() << endl;
+        cout << "\tFriction coefficient: " << contact_force.friction_coefficient << endl;
+        cout << "\tGlobal wrench: " << contact_force.get_global_wrench().transpose() << endl;
+    }
 
     vector<pair<string, Vector3f>> stable_contact_points = scene.get_three_most_stable_contact_points("cube2", 30, true);
 

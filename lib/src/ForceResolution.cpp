@@ -64,6 +64,9 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
         for (size_t j = i+1; j < object_ids.size(); j++){
             string id1 = object_ids[i];
             string id2 = object_ids[j];
+            Object* obj1 = this->scene->get_object_by_id(id1);
+            Object* obj2 = this->scene->get_object_by_id(id2);
+
             //Get the points on the convex hull over the contact points
             MatrixX3f points = this->scene->get_contact_convex_hull(id1, id2, this->nb_contacts_per_object_pair);
             
@@ -72,7 +75,12 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
             for (size_t k = 0; k < points.rows(); k++){
                 Vector3f position = points.row(k);
                 //The normal is outward from object1 and inward to object2
-                Vector3f normal = this->scene->get_normal_at_point(id1, position);
+                OrientedPoint op1 = obj1->get_closest_point_on_surface(position);
+                OrientedPoint op2 = obj2->get_closest_point_on_surface(position);
+
+                //NOTE: op1.normal and op2.normal are not necessarily opposed when the point position is close to an edge.
+                Vector3f normal = (op1.position - op2.position).normalized();
+
                 //Define vectors tangent to the surface at the contact point
                 Vector3f tangent_u = normal.cross(Vector3f(1.0f, 0.0f, 0.0f));
                 if (tangent_u.norm() < 1e-3){
@@ -83,8 +91,6 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
                 tangent_v.normalize();
 
                 //Friction coefficient
-                Object* obj1 = this->scene->get_object_by_id(id1);
-                Object* obj2 = this->scene->get_object_by_id(id2);
                 float mu = this->scene->get_friction_coefficient(obj1->material_name, obj2->material_name);
 
                 //Create the ContactForce object and add it to the map
@@ -124,11 +130,11 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
     //  q: Zero vector of size n
     //  l: m x 1
     //  u: m x 1
-    A(m, n); A.setZero();
-    P(n, n); P.setIdentity();
-    q(n); q.setZero();
-    u(m); u.setZero();
-    l(m); l.setZero();
+    A.resize(m, n); A.setZero();
+    P.resize(n, n); P.setIdentity();
+    q.resize(n); q.setZero();
+    u.resize(m); u.setZero();
+    l.resize(m); l.setZero();
     //The last (m-6J) elements of l are -inf
     Eigen::VectorXf l_inf(m-6*J);
     l_inf.setConstant(-std::numeric_limits<float>::infinity());
