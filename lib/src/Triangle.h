@@ -23,6 +23,7 @@ class Triangle
         T vertex_2;
         float signed_area = 0;
         Triangle(T vertex_0, T vertex_1, T vertex_2);
+        Eigen::Vector3f normal();
         bool contains(const T& point, bool boundary_included);
         float shortest_distance_to_plane(const Eigen::Vector3f& point);
         Eigen::Vector3f project_on_triangle(const Eigen::Vector3f& point);

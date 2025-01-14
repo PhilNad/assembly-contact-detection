@@ -20,13 +20,14 @@ Summary:
 - Python bindings are provided.
 
 ### Object Inter-Penetration Detection
-This library can also be used to detect when the volume of an object intersects with the one of another object (inter-penetration). This operation is more expensive and requires the input surface mesh to be watertight (a much more difficult requirement to satisfy than for contact detection). The volume of the objects is described through a tetrahedralization. Small spheres (*Canary Spheres*) are placed at the corners of the voxels that lie inside the volume of a tetrahedron, thereby guaranteeing that the canary spheres are all inside the volume of the object and not merely on the surface. During contact resolution, a contact between a canary sphere and the tetrahedron of another object implies that the two objects are inter-penetrating. The position of the inter-penetration contact point is defined as the one of the canary sphere.
+This library can also be used to detect when the volume of an object intersects with the one of another object (inter-penetration). This operation is more expensive and requires the input surface mesh to be watertight (a much more difficult requirement to satisfy than for contact detection). The volume of the objects is described through a tetrahedralization. Small spheres (*Canary Spheres*) are placed slightly below the surface of the object. During contact resolution, a contact between a canary sphere and the tetrahedron of another object implies that the two objects are inter-penetrating. The position of the inter-penetration contact point is defined as the one of the canary sphere.
 
 With this technique, inter-penetration should not be triggered when one object touches another one without going through. However, it requires generating a large number of collision shapes, which increases the compute time significantly.
 
 ## Dependencies
 - [PhysX](https://github.com/NVIDIA-Omniverse/PhysX) : Download the latest release, and unzip it in a convenient (permanent) location.
 - [Eigen](https://eigen.tuxfamily.org/)
+- [OSQP](https://osqp.org/) : Follow the installation instructions on the website.
 - [PyBind11](https://pybind11.readthedocs.io/en/stable/index.html) (this is included in the repository as an external module).
 - `sudo apt install libglew-dev freeglut3-dev clang` to be able to compile PhysX's example snippets
 - A compiler for C++ 11

@@ -1,3 +1,4 @@
+#include "Utils.h"
 #include "Scene.h"
 #include "Object.h"
 #include "Contact.h"
@@ -9,3 +10,4 @@
 #include "AARectangle.h"
 #include "Intersections.h"
 #include "Polygon.h"
+#include "ForceResolution.h"

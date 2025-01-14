@@ -63,19 +63,13 @@ PYBIND11_MODULE(assembly_cd, m) {
         .def("get_all_penetrating_contact_points", &Scene::get_all_penetrating_contact_points, "Get the penetrating contact points between an object and all other objects.",
                 py::arg("id"))
         .def("get_contact_convex_hull", &Scene::get_contact_convex_hull, "Get the convex hull of the contact points on an object.",
-                py::arg("id"),
+                py::arg("id1"),
+                py::arg("id2") = "",
                 py::arg("vertex_limit") = 255)
         .def("get_three_most_stable_contact_points", &Scene::get_three_most_stable_contact_points, "Get the three most stable contact points on an object.",
                 py::arg("id"),
                 py::arg("hull_max_size") = 255,
                 py::arg("random_third_point") = false)
-        .def("get_other_two_most_stable_contact_points", &Scene::get_other_two_most_stable_contact_points, "Get the other two most stable contact points on an object.",
-                py::arg("id"), 
-                py::arg("first_contact_point"))
-        .def("get_other_one_most_stable_contact_points", &Scene::get_other_one_most_stable_contact_points, "Get the other one most stable contact points on an object.",
-                py::arg("id"), 
-                py::arg("first_contact_point"), 
-                py::arg("second_contact_point"))
         .def("get_tri_vertices", &Scene::get_tri_vertices, "Get the triangle vertices of an object.",
                 py::arg("id"))
         .def("get_tri_triangles", &Scene::get_tri_triangles, "Get the triangle indices of an object.",

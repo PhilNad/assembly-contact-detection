@@ -49,7 +49,9 @@ class Point3D : public Eigen::Vector3f
         Point3D();
         Point3D(float x, float y, float z);
         Point3D(const Eigen::Vector3f& other);
+        Point3D(const Eigen::Vector3f& other, const Eigen::Vector3f& normal);
         Point3D(const Point3D& other);
+        Eigen::Vector3f normal = Eigen::Vector3f::Zero();
         bool operator==(const Point3D& other) const;
         struct HashFunction
         {

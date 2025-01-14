@@ -16,10 +16,23 @@ using namespace Eigen;
 
 //Forward declaration
 class Contact;
+class ContactForce;
 
 class Scene
 {
     private:
+        struct ObjectIDHashFunction
+        {
+            std::hash<string> hasher;
+            size_t operator()(const std::pair<string, string> &obj_id_pair) const
+            {
+                size_t obj1_id_hash = this->hasher(obj_id_pair.first);
+                size_t obj2_id_hash = this->hasher(obj_id_pair.second);
+                //This is the hash function used by boost::hash_combine
+                return obj1_id_hash ^ obj2_id_hash + 0x9e3779b9 + (obj1_id_hash << 6) + (obj1_id_hash >> 2);
+            }
+        };
+
         physx::PxSimulationEventCallback* gContactReportCallback = nullptr;
         vector<shared_ptr<Object>> object_ptrs;
         void startupPhysics();
@@ -38,6 +51,11 @@ class Scene
         Object* get_object_by_id(string id);
         string get_contact_id_at_point(string id, Vector3f point, float max_distance = 1e-3, int max_num_iterations = 3);
         Eigen::Vector3f get_normal_at_point(string id, Eigen::Vector3f query_point);
+        
+        unordered_map<pair<string, string>, float, ObjectIDHashFunction> friction_coefficients;
+
+        friend class ForceSolver;
+        
     public:
         float max_distance_factor = 0.2;
         Scene();
@@ -75,16 +93,15 @@ class Scene
         void step_simulation(float dt);
         vector<string> get_all_object_ids();
         unordered_set<string> get_contacted_objects(string target_object);
-        MatrixX3f get_contact_points_positions(string id1, string id2);
+        MatrixX3f get_contact_points_positions(string id1, string id2 = "");
         Vector3f get_closest_contact_point(string id1, string id2, const Vector3f point);
         MatrixX3f get_penetrating_contact_point_positions(string id1, string id2);
         MatrixX3f get_all_contact_points(string id);
         MatrixX3f get_all_penetrating_contact_points(string id);
-        MatrixX3f get_contact_convex_hull(string id, int vertex_limit = 255);
+        MatrixX3f get_contact_convex_hull(string id1, string id2 = "", int vertex_limit = 255);
+        std::vector<ContactForce> get_contact_forces();
         Matrix3f get_best_contact_triangle(string id, vector<Triangle<Vector3f>> triangles, bool stable, int max_tri_to_consider = -1);
         vector<pair<string, Vector3f>> get_three_most_stable_contact_points(string id, int hull_max_size = 255, bool random_third_point = false);
-        Matrix3f get_other_two_most_stable_contact_points(string id, Vector3f first_contact_point);
-        Matrix3f get_other_one_most_stable_contact_points(string id, Vector3f first_contact_point, Vector3f second_contact_point);
         void merge_similar_contact_points(vector<Contact> contact_points, float position_threshold, float normal_threshold);
         MatrixX3f get_tri_vertices(string id);
         MatrixX3i get_tri_triangles(string id);
@@ -95,4 +112,8 @@ class Scene
         MatrixX3f get_canary_sphere_positions(string id);
         void set_tetra_mesh(string id, MatrixX3f vertices, MatrixX4i indices);
         void set_canary_sphere_positions(string id, MatrixX3f canary_sphere_positions);
+
+        //Friction coefficients
+        float get_friction_coefficient(string mat_name1, string mat_name2);
+        void set_friction_coefficient(string mat_name1, string mat_name2, float friction_coefficient);
 };

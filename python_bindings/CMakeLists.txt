@@ -1,12 +1,14 @@
 cmake_minimum_required(VERSION 3.7)
 cmake_policy(SET CMP0057 NEW)
+
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+#set(PYTHON_EXECUTABLE "/home/phil/mambaforge/envs/noetic_env/bin/python")
 find_package(pybind11 REQUIRED)
 
-SET(PROJECT_NAME "assembly_cd")
+set(PROJECT_NAME "assembly_cd")
 project(${PROJECT_NAME})
 pybind11_add_module(${PROJECT_NAME} MODULE src/PythonBindings.cpp)
 

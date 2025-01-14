@@ -40,15 +40,24 @@ Triangle<T>::Triangle(T vertex_0, T vertex_1, T vertex_2) : vertex_0(vertex_0), 
     }
 }
 
+/// @brief Compute the normal vector to the triangle surface.
+/// @return Unit-length 3D normal vector.
+template <>
+Eigen::Vector3f Triangle<Eigen::Vector3f>::normal()
+{
+    Eigen::Vector3f normal = (vertex_1 - vertex_0).cross(vertex_2 - vertex_0);
+    normal.normalize();
+
+    return normal;
+}
+
 /// @brief Project a 3D point onto the plane of the triangle and return its 3D coordinates.
 /// @param point Point to project onto the triangle.
 /// @return  3D coordinates of the projected point.
 template <>
 Eigen::Vector3f Triangle<Eigen::Vector3f>::project_on_triangle(const Eigen::Vector3f& point)
 {
-    //Compute the normal of the triangle
-    Eigen::Vector3f normal = (vertex_1 - vertex_0).cross(vertex_2 - vertex_0);
-    normal.normalize();
+    Eigen::Vector3f normal = this->normal();
 
     //Compute the distance between the point and the plane of the triangle
     float distance = normal.dot(point - vertex_0);
@@ -65,9 +74,7 @@ Eigen::Vector3f Triangle<Eigen::Vector3f>::project_on_triangle(const Eigen::Vect
 template <>
 float Triangle<Eigen::Vector3f>::shortest_distance_to_plane(const Eigen::Vector3f& point)
 {
-    //Compute the normal of the triangle
-    Eigen::Vector3f normal = (vertex_1 - vertex_0).cross(vertex_2 - vertex_0);
-    normal.normalize();
+    Eigen::Vector3f normal = this->normal();
 
     //Compute the distance between the point and the plane of the triangle
     float distance = normal.dot(point - vertex_0);

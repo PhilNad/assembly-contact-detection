@@ -90,8 +90,19 @@ PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::s
         float shortest_dist_t1 = (closest_pt_t1 - p3d).norm();
         float shortest_dist_t2 = (closest_pt_t2 - p3d).norm();
 
+        //Define the normal at the intersection point to be the average of the normals of the two triangles.
+        Vector3f normal_t1 = t1->normal();
+        Vector3f normal_t2 = t2->normal();
+        //If the normals are in opposite directions, we flip one of them
+        if(normal_t1.dot(normal_t2) < 0){
+            normal_t2 = -normal_t2;
+        }
+        Vector3f normal = (normal_t1 + normal_t2).normalized();
+
+        //If the intersection point is close enough to both triangles, we consider it valid
         if(shortest_dist_t1 < max_distance && shortest_dist_t2 < max_distance){
-            all_3d_intersections.insert(p3d);
+            Point3D p3d_with_normal = Point3D(p3d, normal);
+            all_3d_intersections.insert(p3d_with_normal);
         }
     }
 

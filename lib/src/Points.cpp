@@ -18,7 +18,8 @@ bool Point2D::operator==(const Point2D& other) const
 Point3D::Point3D() : Vector3f(0.0f, 0.0f, 0.0f) {}
 Point3D::Point3D(float x, float y, float z) : Vector3f(x, y, z) {}
 Point3D::Point3D(const Vector3f& other) : Vector3f(other) {}
-Point3D::Point3D(const Point3D& other) : Vector3f(other) {}
+Point3D::Point3D(const Point3D& other) : Vector3f(other), normal(other.normal) {}
+Point3D::Point3D(const Vector3f& other, const Vector3f& normal) : Vector3f(other), normal(normal) {}
 bool Point3D::operator==(const Point3D& other) const
 {
     return abs((*this)[0] - other[0]) < EPSILON

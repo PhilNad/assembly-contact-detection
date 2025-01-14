@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.7)
 
 find_package (Eigen3 3.4 REQUIRED NO_MODULE)
+find_package(osqp REQUIRED)
 
 SET(PROJECT_NAME "assembly-cd-lib")
 project(${PROJECT_NAME} VERSION 0.1.0 LANGUAGES C CXX)
@@ -39,6 +40,7 @@ set(MISC_LIBRARIES
     Eigen3::Eigen
     pthread
     dl
+    osqp::osqp
 )
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
@@ -58,6 +60,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/li
 
 #This is needed only if you are using the PhysX Visual Debugger
 target_link_libraries(${PROJECT_NAME} PRIVATE debug ${PHYSX_BIN_PATH}/checked/libPVDRuntime_64.so)
+include(GNUInstallDirs)
 install(FILES ${PHYSX_BIN_PATH}/checked/libPVDRuntime_64.so DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 include(GNUInstallDirs)

@@ -267,8 +267,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                         PointSet3D intersections = all_triangles_overlap_over_AARectangle(*gridCell0, *gridCell1, max_distance_factor);
                         for(auto& p : intersections){
                             //Add a new contact point to the list
-                            //TODO: Use the correct normal
-                            Contact contact(obj0, obj1, Vector3f(p[0], p[1], p[2]), Vector3f(0,0,1), 0.0f);
+                            Contact contact(obj0, obj1, Vector3f(p[0], p[1], p[2]), p.normal, 0.0f);
                             thread_contacts.push_back(contact);
                         }
                         //Mark the two objects as being in contact
@@ -703,21 +702,21 @@ MatrixX3f Scene::get_all_penetrating_contact_points(string id)
     return this->get_penetrating_contact_point_positions(id, "");
 }
 
-/// @brief Amongst an object's contact points, get those lying on the convex hull.
-/// @param id Id of the object for which to get the contact points.
+/// @brief Return the vertices of the convex hull over the contact points between two objects, or between an object and the scene.
+/// @param id1 ID of the (first) object for which to get the contact points.
+/// @param id2 ID of the second object on which the contact points lie. If empty, use all contact points lying on the first object.
 /// @param vertex_limit Maximum number of vertices of the convex hull (default: 255)
 /// @return Nx3 matrix representing the subset of contact points lying on the convex hull.
 /// @note A small perturbation is added to each contact point to make sure that the convex hull
 ///         is full dimensional. Equivalent to QHull's "QJ" option.
-MatrixX3f Scene::get_contact_convex_hull(string id, int vertex_limit)
+MatrixX3f Scene::get_contact_convex_hull(string id1, string id2, int vertex_limit)
 {
-
     //With ePLANE_SHIFTING, the minimum vertex_limit is 4
     if(vertex_limit < 4){
         vertex_limit = 4;
     }
 
-    MatrixX3f obj_contact_points = this->get_all_contact_points(id);
+    MatrixX3f obj_contact_points = this->get_contact_points_positions(id1, id2);
 
     int num_contact_points = obj_contact_points.rows();
 
@@ -782,6 +781,14 @@ MatrixX3f Scene::get_contact_convex_hull(string id, int vertex_limit)
     delete[] vertices;
 
     return convex_hull;
+}
+
+/// @brief Get the contact forces between objects in the scene.
+/// @return List of contact forces.
+std::vector<ContactForce> Scene::get_contact_forces()
+{
+    ForceSolver force_solver = ForceSolver(this);
+    return force_solver.get_contact_forces();
 }
 
 /// @brief Find the contact point between two objects that is the closest to the given point.
@@ -1005,7 +1012,7 @@ vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(strin
     }
 
     //The contact points are expressed in the world frame.
-    MatrixX3f hull_contact_points = get_contact_convex_hull(id, hull_max_size);
+    MatrixX3f hull_contact_points = get_contact_convex_hull(id, "", hull_max_size);
 
     //The number of contact points on the convex hull must be at least 3
     if(hull_contact_points.rows() < 3){
@@ -1143,68 +1150,6 @@ vector<pair<string, Vector3f>> Scene::get_three_most_stable_contact_points(strin
     #endif
 
     return contact_points_with_ids;
-}
-
-/// @brief Find the two points on the contact convex hull that forms the most stable triangle with the given contact point.
-/// @param id Id of the object for which to get the contact points.
-/// @param first_contact_point First contact point expressed in the world frame.
-/// @return 3x3 matrix representing the three contact points that create the best stable support,
-///         with each row representing a contact point.
-/// @note This is computationally quite expensive O(n^2) depending on the number of points on the convex hull.
-Matrix3f Scene::get_other_two_most_stable_contact_points(string id, Vector3f first_contact_point)
-{
-    //The contact points are expressed in the world frame.
-    MatrixX3f hull_contact_points = get_contact_convex_hull(id);
-
-    //The number of contact points on the convex hull must be at least 2
-    assert(hull_contact_points.rows() >= 2);
-
-    //Create a Triangle for all combinations
-    vector<Triangle<Vector3f>> triangles;
-    for(int i=0; i < hull_contact_points.rows(); i++){
-        for(int j=i+1; j < hull_contact_points.rows(); j++){
-            Vector3f p1 = first_contact_point;
-            Vector3f p2 = hull_contact_points.row(i);
-            Vector3f p3 = hull_contact_points.row(j);
-            Triangle<Vector3f> triangle(p1, p2, p3);
-            triangles.push_back(triangle);       
-        }
-    }
-
-    Matrix3f contact_points = get_best_contact_triangle(id, triangles, true);
-
-    return contact_points;
-}
-
-/// @brief Find the point on the contact convex hull that forms the most stable triangle with the two given contact points.
-/// @param id Id of the object for which to get the contact points.
-/// @param first_contact_point  First contact point expressed in the world frame.
-/// @param second_contact_point  Second contact point expressed in the world frame.
-/// @return 3x3 matrix representing the three contact points that create the best stable support,
-///         with each row representing a contact point.
-Matrix3f Scene::get_other_one_most_stable_contact_points(string id, Vector3f first_contact_point, Vector3f second_contact_point)
-{
-    //The contact points are expressed in the world frame.
-    MatrixX3f hull_contact_points = get_contact_convex_hull(id);
-
-    //TODO: Using the points on the convex hull does not always work.
-    // For instance, every triangle made from the four corners of a square
-    // will be marginally stable. In this example, we would need points
-    // in the middle of each side of the square to get a stable triangle.
-
-    //Create a Triangle for all combinations
-    vector<Triangle<Vector3f>> triangles;
-    for(int i=0; i < hull_contact_points.rows(); i++){
-        Vector3f p1 = first_contact_point;
-        Vector3f p2 = second_contact_point;
-        Vector3f p3 = hull_contact_points.row(i);
-        Triangle<Vector3f> triangle(p1, p2, p3);
-        triangles.push_back(triangle);       
-    }
-
-    Matrix3f contact_points = get_best_contact_triangle(id, triangles, true);
-
-    return contact_points;
 }
 
 /// @brief Amongst the given triangles, find the one that creates the best stable support for an object.
@@ -1564,7 +1509,7 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
     //Array of sphere, each with the same radius
     PxArray<PxShape*> spheres;
     vector<Vector3f> sphere_positions;
-    PxReal sphere_radius = voxel_side_lengths.minCoeff() / 10;
+    PxReal sphere_radius = voxel_side_lengths.minCoeff() / 100;
 
     if(!obj->has_canary_spheres()){
 
@@ -1582,7 +1527,7 @@ PxArray<PxShape*> Scene::make_canary_spheres(Object* obj, PxArray<PxShape*> tetC
         for (auto& it : *grid) {
             GridCell cell = it.second;
             OrientedPoint op = cell.weighted_average(cell.centre);
-            Vector3f canary_position = op.position - sphere_radius * op.normal;
+            Vector3f canary_position = op.position - 100 * sphere_radius * op.normal;
             canary_positions.col(i) = canary_position;
             i++;
         }
@@ -2437,4 +2382,20 @@ Vector3f Scene::get_voxel_side_lengths(string id)
     if(obj != nullptr)
             return obj->get_voxel_side_lengths();
     return Vector3f::Zero();
+}
+
+void Scene::set_friction_coefficient(string mat_name1, string mat_name2, float friction_coefficient)
+{
+    this->friction_coefficients[make_pair(mat_name1, mat_name2)] = friction_coefficient;
+    this->friction_coefficients[make_pair(mat_name2, mat_name1)] = friction_coefficient;
+}
+
+float Scene::get_friction_coefficient(string mat_name1, string mat_name2)
+{
+    if(this->friction_coefficients.find(make_pair(mat_name1, mat_name2)) == this->friction_coefficients.end()){
+        cout << "Friction coefficient not found for " << mat_name1 << " and " << mat_name2 << endl;
+        return 0.5;
+    }
+
+    return this->friction_coefficients[make_pair(mat_name1, mat_name2)];
 }
