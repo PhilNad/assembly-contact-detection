@@ -49,9 +49,8 @@ bool ContactsManager::needs_update(string object_id)
 /// @param is_penetrating Whether the contact points are embedded in the volume of the objects (default: false).
 void ContactsManager::add_contacts(std::vector<Contact> contacts, bool is_penetrating)
 {
-    //TODO: Record contact normal (currently not supported by add_contact())
     for (auto it = contacts.begin(); it != contacts.end(); ++it){
-        this->add_contact(it->get_object_ids().first, it->get_object_ids().second, it->get_position(), is_penetrating);
+        this->add_contact(*it, is_penetrating);
     }
 
     //All objects have been updated
@@ -62,25 +61,26 @@ void ContactsManager::add_contacts(std::vector<Contact> contacts, bool is_penetr
     #endif
 }
 
-/// @brief Record the position of a contact point between two objects.
-/// @param id1 Unique ID of the first object.
-/// @param id2 Unique ID of the second object.
-/// @param position 3D position of the contact point.
+/// @brief Record a contact point between two objects.
+/// @param contact Contact object representing the contact point.
 /// @param is_penetrating Whether the contact point is embedded in the volume of the objects.
-void ContactsManager::add_contact(string id1, string id2, Vector3f position, bool is_penetrating)
+void ContactsManager::add_contact(Contact contact, bool is_penetrating)
 {
-    //If the contact points is the first to be added to a map, create the map
-    if (this->surface_contact_positions.find(make_pair(id1, id2)) == this->surface_contact_positions.end()){
-        this->surface_contact_positions[make_pair(id1, id2)] = std::vector<Vector3f>();
+    string id1 = contact.get_object_ids().first;
+    string id2 = contact.get_object_ids().second;
+
+    //If the contact point is the first to be added to a map, create the map
+    if (this->surface_points.find(make_pair(id1, id2)) == this->surface_points.end()){
+        this->surface_points[make_pair(id1, id2)] = std::vector<Contact>();
     }
-    if (this->surface_contact_positions.find(make_pair(id2, id1)) == this->surface_contact_positions.end()){
-        this->surface_contact_positions[make_pair(id2, id1)] = std::vector<Vector3f>();
+    if (this->surface_points.find(make_pair(id2, id1)) == this->surface_points.end()){
+        this->surface_points[make_pair(id2, id1)] = std::vector<Contact>();
     }
-    if (this->penetration_contact_positions.find(make_pair(id1, id2)) == this->penetration_contact_positions.end()){
-        this->penetration_contact_positions[make_pair(id1, id2)] = std::vector<Vector3f>();
+    if (this->penetration_points.find(make_pair(id1, id2)) == this->penetration_points.end()){
+        this->penetration_points[make_pair(id1, id2)] = std::vector<Contact>();
     }
-    if (this->penetration_contact_positions.find(make_pair(id2, id1)) == this->penetration_contact_positions.end()){
-        this->penetration_contact_positions[make_pair(id2, id1)] = std::vector<Vector3f>();
+    if (this->penetration_points.find(make_pair(id2, id1)) == this->penetration_points.end()){
+        this->penetration_points[make_pair(id2, id1)] = std::vector<Contact>();
     }
     if (this->contacting_object_ids.find(id1) == this->contacting_object_ids.end()){
         this->contacting_object_ids[id1] = unordered_set<string>();
@@ -97,13 +97,13 @@ void ContactsManager::add_contact(string id1, string id2, Vector3f position, boo
 
     //Add the contact point to the map
     if (is_penetrating){
-        this->penetration_contact_positions[make_pair(id1, id2)].push_back(position);
-        this->penetration_contact_positions[make_pair(id2, id1)].push_back(position);
+        this->penetration_points[make_pair(id1, id2)].push_back(contact);
+        this->penetration_points[make_pair(id2, id1)].push_back(contact);
         this->penetrating_object_ids[id1].insert(id2);
         this->penetrating_object_ids[id2].insert(id1);
     }else{
-        this->surface_contact_positions[make_pair(id1, id2)].push_back(position);
-        this->surface_contact_positions[make_pair(id2, id1)].push_back(position);
+        this->surface_points[make_pair(id1, id2)].push_back(contact);
+        this->surface_points[make_pair(id2, id1)].push_back(contact);
         this->contacting_object_ids[id1].insert(id2);
         this->contacting_object_ids[id2].insert(id1);
     }
@@ -117,8 +117,8 @@ void ContactsManager::remove_object(string object_id)
     unordered_set<string> surface_contact_ids = this->contacting_object_ids[object_id];
     for (auto it = surface_contact_ids.begin(); it != surface_contact_ids.end(); ++it){
         //Remove the contact points between the two objects
-        this->surface_contact_positions.erase(make_pair(object_id, *it));
-        this->surface_contact_positions.erase(make_pair(*it, object_id));
+        this->surface_points.erase(make_pair(object_id, *it));
+        this->surface_points.erase(make_pair(*it, object_id));
         //Remove the object from the contacting object ids map
         this->contacting_object_ids[*it].erase(object_id);
     }
@@ -126,8 +126,8 @@ void ContactsManager::remove_object(string object_id)
     unordered_set<string> volume_contact_ids = this->penetrating_object_ids[object_id];
     for (auto it = volume_contact_ids.begin(); it != volume_contact_ids.end(); ++it){
         //Remove the contact points between the two objects
-        this->penetration_contact_positions.erase(make_pair(object_id, *it));
-        this->penetration_contact_positions.erase(make_pair(*it, object_id));
+        this->penetration_points.erase(make_pair(object_id, *it));
+        this->penetration_points.erase(make_pair(*it, object_id));
         //Remove the object from the contacting object ids map
         this->penetrating_object_ids[*it].erase(object_id);
     }
@@ -148,8 +148,8 @@ void ContactsManager::remove_object(string object_id)
 /// @brief Remove all contact points associated with all objects.
 void ContactsManager::remove_all_objects()
 {
-    this->surface_contact_positions.clear();
-    this->penetration_contact_positions.clear();
+    this->surface_points.clear();
+    this->penetration_points.clear();
     this->contacting_object_ids.clear();
     this->penetrating_object_ids.clear();
     this->objects_waiting_for_contacts.clear();
@@ -160,37 +160,37 @@ void ContactsManager::remove_all_objects()
 /// @param id2 Unique ID of the second object.
 /// @param penetrating Whether to return the penetrating contact points. If false, return the surface contact points (default).
 /// @return List of 3D positions of contact points.
-std::vector<Vector3f> ContactsManager::get_contact_positions(string id1, string id2, bool penetrating)
+std::vector<Contact> ContactsManager::get_contact_points(string id1, string id2, bool penetrating)
 {
     if (penetrating){
-        return this->penetration_contact_positions[make_pair(id1, id2)];
+        return this->penetration_points[make_pair(id1, id2)];
     }else{
-        return this->surface_contact_positions[make_pair(id1, id2)];
+        return this->surface_points[make_pair(id1, id2)];
     }
 }
 
 /// @brief Return the list of contact points between an object and all other objects.
 /// @param id1 Unique ID of the object.
 /// @param penetrating Whether to return the penetrating contact points. If false, return the surface contact points (default).
-/// @return List of 3D positions of contact points.
-std::vector<Vector3f> ContactsManager::get_contact_positions(string id1, bool penetrating)
+/// @return List of contact points (Contact objects).
+std::vector<Contact> ContactsManager::get_contact_points(string id1, bool penetrating)
 {
     //Concatenate the lists of contact points between the object and all other objects
-    std::vector<Vector3f> contact_positions;
+    std::vector<Contact> contact_points;
     if (penetrating){
         //Iterate over all objects in volume contact with the object
         for (auto it = this->penetrating_object_ids[id1].begin(); it != this->penetrating_object_ids[id1].end(); ++it){
             //Add the contact points between the two objects
-            contact_positions.insert(contact_positions.end(), this->penetration_contact_positions[make_pair(id1, *it)].begin(), this->penetration_contact_positions[make_pair(id1, *it)].end());
+            contact_points.insert(contact_points.end(), this->penetration_points[make_pair(id1, *it)].begin(), this->penetration_points[make_pair(id1, *it)].end());
         }
     }else{
         //Iterate over all objects in surface contact with the object
         for (auto it = this->contacting_object_ids[id1].begin(); it != this->contacting_object_ids[id1].end(); ++it){
             //Add the contact points between the two objects
-            contact_positions.insert(contact_positions.end(), this->surface_contact_positions[make_pair(id1, *it)].begin(), this->surface_contact_positions[make_pair(id1, *it)].end());
+            contact_points.insert(contact_points.end(), this->surface_points[make_pair(id1, *it)].begin(), this->surface_points[make_pair(id1, *it)].end());
         }
     }
-    return contact_positions;
+    return contact_points;
 }
 
 std::unordered_set<string> ContactsManager::get_contacted_object_ids(string target_object)

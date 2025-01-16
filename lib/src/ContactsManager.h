@@ -23,9 +23,9 @@ class ContactsManager
         };
 
         //Positions of contact points at the interface of two objects (non-penetrating)
-        unordered_map<pair<string, string>, std::vector<Vector3f>, ObjectIDHashFunction> surface_contact_positions;
+        unordered_map<pair<string, string>, std::vector<Contact>, ObjectIDHashFunction> surface_points;
         //Positions of contact points embedded in the volume of two objects (penetrating)
-        unordered_map<pair<string, string>, std::vector<Vector3f>, ObjectIDHashFunction> penetration_contact_positions;
+        unordered_map<pair<string, string>, std::vector<Contact>, ObjectIDHashFunction> penetration_points;
         //List of objects that are in surface contact with a given object (non-penetrating)
         unordered_map<string, unordered_set<string>> contacting_object_ids;
         //List of objects that are in volume contact with a given object (penetrating)
@@ -35,10 +35,10 @@ class ContactsManager
     public:
         ContactsManager();
         ~ContactsManager();
-        void add_contact(string id1, string id2, Vector3f position, bool is_penetrating = false);
+        void add_contact(Contact contact, bool is_penetrating = false);
         void add_contacts(std::vector<Contact> contacts, bool is_penetrating = false);
-        std::vector<Vector3f> get_contact_positions(string id1, string id2, bool penetrating = false);
-        std::vector<Vector3f> get_contact_positions(string id1, bool penetrating = false);
+        std::vector<Contact> get_contact_points(string id1, string id2, bool penetrating = false);
+        std::vector<Contact> get_contact_points(string id1, bool penetrating = false);
         std::unordered_set<string> get_contacted_object_ids(string target_object);
         std::unordered_set<string> get_penetrating_object_ids(string target_object);
         void invalidate_object_state(string object_id);

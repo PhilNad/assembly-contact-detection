@@ -47,9 +47,6 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
     //Get all object IDs
     vector<string> object_ids = this->scene->get_all_object_ids();
 
-    //Map each object pair to the contact points between them
-    unordered_map<pair<string, string>, vector<ContactForce>, ObjectIDHashFunction> contact_forces;
-
     //Get all combinations of objects in contact, and select the N farthest contact points
     // between each pair of objects to locate the contact forces.
     int nb_nonfixed_objects = 0;
@@ -67,19 +64,24 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
             Object* obj1 = this->scene->get_object_by_id(id1);
             Object* obj2 = this->scene->get_object_by_id(id2);
 
-            //Get the points on the convex hull over the contact points
-            MatrixX3f points = this->scene->get_contact_convex_hull(id1, id2, this->nb_contacts_per_object_pair);
+            //OPTION 1:
+            // Get the points on the convex hull over the contact points
+            //MatrixX3f points = this->scene->get_contact_convex_hull(id1, id2, this->nb_contacts_per_object_pair);
+
+            //OPTION 2:
+            // Get all surface contact points and select a random subset of them.
+            // With this option, it is possible to be unlucky and get a subset of points that
+            // cannot possibly create equilibrium. With more points, it is more likely to get a good subset.
+            std::vector<Contact> contact_points = this->scene->get_contact_points(id1, id2, false);
+            std::random_device rd;
+            std::mt19937 g(rd());
+            std::shuffle(contact_points.begin(), contact_points.end(), g);
             
             //For each point, create a ContactForce object
-            vector<ContactForce> obj_pair_contact_forces;
-            for (size_t k = 0; k < points.rows(); k++){
-                Vector3f position = points.row(k);
-                //The normal is outward from object1 and inward to object2
-                OrientedPoint op1 = obj1->get_closest_point_on_surface(position);
-                OrientedPoint op2 = obj2->get_closest_point_on_surface(position);
-
-                //NOTE: op1.normal and op2.normal are not necessarily opposed when the point position is close to an edge.
-                Vector3f normal = (op1.position - op2.position).normalized();
+            for (size_t k = 0; k < this->nb_contacts_per_object_pair; k++){
+                Contact contact = contact_points[k];
+                Vector3f position = contact.get_position();
+                Vector3f normal = contact.get_normal();
 
                 //Define vectors tangent to the surface at the contact point
                 Vector3f tangent_u = normal.cross(Vector3f(1.0f, 0.0f, 0.0f));
@@ -101,13 +103,39 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
                                                             id1,
                                                             id2,
                                                             mu);
-
-                obj_pair_contact_forces.push_back(contact_force);
                 all_contact_forces.push_back(contact_force);
             }
-            contact_forces[make_pair(id1, id2)] = obj_pair_contact_forces;
         }
     }
+
+    // DEBUG CODE - TO REMOVE AFTER USE
+    // all_contact_forces.clear();
+    // ContactForce cf1 = ContactForce(Vector3f(-0.5f, 0.0f, 1.0f), 
+    //                                 Vector3f(0.0f, 0.0f, 1.0f), 
+    //                                 Vector3f(1.0f, 0.0f, 0.0f), 
+    //                                 Vector3f(0.0f, 1.0f, 0.0f),
+    //                                 "bot_cube",
+    //                                 "top_cube",
+    //                                 0.5);
+    // ContactForce cf2 = ContactForce(Vector3f(0.0f, 0.5f, 1.0f), 
+    //                                 Vector3f(0.0f, 0.0f, 1.0f), 
+    //                                 Vector3f(1.0f, 0.0f, 0.0f), 
+    //                                 Vector3f(0.0f, 1.0f, 0.0f),
+    //                                 "bot_cube",
+    //                                 "top_cube",
+    //                                 0.5);
+    // ContactForce cf3 = ContactForce(Vector3f(0.5f, -0.5f, 1.0f), 
+    //                                 Vector3f(0.0f, 0.0f, 1.0f), 
+    //                                 Vector3f(1.0f, 0.0f, 0.0f), 
+    //                                 Vector3f(0.0f, 1.0f, 0.0f),
+    //                                 "bot_cube",
+    //                                 "top_cube",
+    //                                 0.5);
+    // all_contact_forces.push_back(cf1);
+    // all_contact_forces.push_back(cf2);
+    // all_contact_forces.push_back(cf3);
+    // this->nb_coulomb_polygon_sides = 4;
+    // END DEBUG CODE
 
     this->nb_contact_forces = all_contact_forces.size();
     //This is OSQP's n
@@ -115,7 +143,7 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
     //This is OSQP's m 
     this->nb_constraints = 6*nb_nonfixed_objects 
             + this->nb_coulomb_polygon_sides*this->nb_contact_forces 
-            + 3*this->nb_contact_forces; 
+            + this->nb_contact_forces; 
 
     //Shorthands
     int n = this->nb_optim_variables;
@@ -137,12 +165,14 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
     l.resize(m); l.setZero();
     //The last (m-6J) elements of l are -inf
     Eigen::VectorXf l_inf(m-6*J);
-    l_inf.setConstant(-std::numeric_limits<float>::infinity());
+    l_inf.setConstant(-OSQP_INFTY);
     l.segment(6*J, m-6*J) = l_inf;
 
-    //Equilibrium of each object
-    for (size_t j = 0; j < object_ids.size(); j++){
-        string id = object_ids[j];
+    //Equilibrium of each object. As t will iterate over all objects, including those that are fixed,
+    // we will use j to keep track of the index of non-fixed objects.
+    int j = 0;
+    for (size_t t = 0; t < object_ids.size(); t++){
+        string id = object_ids[t];
         Object* obj = this->scene->get_object_by_id(id);
 
         //Only consider objects that are not fixed
@@ -178,19 +208,20 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
             if(contact_force.object1_by_id == id){
                 //The contact force is exerted on o2 by o1 so we need to flip the sign of the wrench
                 // if o1 and o2 are inverted because we want the force exerted on o1 by o2.
-                Bj.block<6, 3>(i, 3*i) = -1*this->build_B_matrix(contact_force);
+                Bj.block<6, 3>(0, 3*i) = -1*this->build_B_matrix(contact_force);
             }
             else if(contact_force.object2_to_id == id){
-                Bj.block<6, 3>(i, 3*i) = this->build_B_matrix(contact_force);
+                Bj.block<6, 3>(0, 3*i) = this->build_B_matrix(contact_force);
             }
             else{
                 //The object is not involved in the contact force
-                Bj.block<6, 3>(i, 3*i).setZero();
+                Bj.block<6, 3>(0, 3*i).setZero();
             }
         }
 
         //Add the Bj matrix to the A matrix
         A.block(6*j, 0, 6, 3*I) = Bj;
+        j++;
     }
 
     //Iterate over all contact forces to encode the Coulomb friction constraints in matrix A.
@@ -257,25 +288,51 @@ std::vector<ContactForce> ForceSolver::solve_forces()
                 this->osqp_settings);
     
     if(setup_failure){
+        #ifndef NDEBUG
         cout << "OSQP setup failed with error code: " << setup_failure << endl;
+        #endif
         return std::vector<ContactForce>();
     }
 
     OSQPInt solver_failure = osqp_solve(this->osqp_solver);
     if(solver_failure){
+        #ifndef NDEBUG
         cout << "OSQP solver failed with error code: " << solver_failure << endl;
+        #endif
         return std::vector<ContactForce>();
     }
 
-    //The solution corresponds to the scalar forces x = [f1_u, f1_v, f1_n, f2_u, f2_v, f2_n, ...]
-    for(int i = 0; i < this->nb_contact_forces; i++){
-        ContactForce contact_force = this->all_contact_forces[i];
-        contact_force.local_force = Eigen::Vector3f(osqp_solver->solution->x[3*i], 
-                                                    osqp_solver->solution->x[3*i+1], 
-                                                    osqp_solver->solution->x[3*i+2]);
+    //Solver status.
+    // If we get: 
+    //   OSQP_SOLVED : The problem was solved to optimality. Congrats!
+    //   OSQP_PRIMAL_INFEASIBLE : The problem is infeasible, possibly due to unlucky contact point selection. Retry with more contact points.
+    //   OSQP_MAX_ITER_REACHED : There is probably a bug in the code. The problem should be solvable within few iterations.
+    this->osqp_status = this->osqp_solver->info->status_val;
+    #ifndef NDEBUG
+    cout << "OSQP solver status: " << this->osqp_solver->info->status << endl;
+    #endif
+
+    if(this->osqp_status == OSQP_MAX_ITER_REACHED){
+        cout << "OSQP solver reached the maximum number of iterations. Check problem formulation." << endl;
+        return std::vector<ContactForce>();
     }
 
-    return this->all_contact_forces;
+    if(this->osqp_status == OSQP_PRIMAL_INFEASIBLE){
+        cout << "OSQP solver found the problem to be infeasible. Retry with more contact points." << endl;
+        return std::vector<ContactForce>();
+    }
+
+    if(this->osqp_status == OSQP_SOLVED){
+        //The solution corresponds to the scalar forces x = [f1_u, f1_v, f1_n, f2_u, f2_v, f2_n, ...]
+        for(int i = 0; i < this->nb_contact_forces; i++){
+            this->all_contact_forces[i].local_force = Eigen::Vector3f(osqp_solver->solution->x[3*i], 
+                                                        osqp_solver->solution->x[3*i+1], 
+                                                        osqp_solver->solution->x[3*i+2]);
+        }
+        return this->all_contact_forces;
+    }else{
+        return std::vector<ContactForce>();
+    }
 }
 
 /// @brief Encode a Eigen::Matrix into a OSQP CSC matrix as per the format of https://people.sc.fsu.edu/~jburkardt/data/cc/cc.html
@@ -301,7 +358,7 @@ void ForceSolver::encode_matrix_to_csc(Eigen::Matrix<float, -1, -1> matrix, OSQP
     int n = matrix.cols();
 
     //Count the number of non-zero elements
-    int nnz = (matrix.array() > 0).count() + (matrix.array() < 0).count();
+    int nnz = (matrix.array() != 0).count();
 
     //Allocate memory for the CSC matrix
     csc_matrix->n = n;
@@ -361,7 +418,7 @@ Eigen::Matrix<float, -1, 3> ForceSolver::build_C_matrix(ContactForce contact_for
     //The Coulomb polygon is a regular polygon with N sides that is
     // inscribed in a circle of radius mu. 
     for(int k = 0; k < N; k++){
-        Ci << cos(2*M_PI*k/N), sin(2*M_PI*k/N), -mu*cos(M_PI*N);
+        Ci.row(k) << cos(2*M_PI*k/N), sin(2*M_PI*k/N), -mu*cos(M_PI/N);
     }
 
     return Ci;
@@ -375,9 +432,9 @@ Eigen::Matrix<float, -1, -1> ForceSolver::build_D_matrix()
     Eigen::Matrix<float, -1, -1> D(I, 3*I);
     D.setZero();
 
-    //All entries of D are zeros except for (i, 3i-1), which are -1.
+    //All entries of D are zeros except for (i, 3*(i+1)-1), which are -1.
     for(int i = 0; i < I; i++){
-        D(i, 3*i-1) = -1;
+        D(i, 3*(i+1)-1) = -1;
     }
 
     return D;
@@ -405,5 +462,20 @@ std::vector<ContactForce> ForceSolver::get_contact_forces()
         return this->solve_forces();
     }else{
         return this->all_contact_forces;
+    }
+}
+
+/// @brief Return the status of the solver.
+/// @return Either UNSOLVED, STABLE, UNSTABLE, or FAILURE.
+ForceSolver::result_status ForceSolver::get_status()
+{
+    if(!this->osqp_solver){
+        return UNSOLVED;
+    }else if(this->osqp_status == OSQP_SOLVED){
+        return STABLE;
+    }else if(this->osqp_status == OSQP_PRIMAL_INFEASIBLE){
+        return UNSTABLE;
+    }else{
+        return FAILURE;
     }
 }

@@ -620,31 +620,45 @@ unordered_set<string> Scene::get_contacted_objects(string target_object)
 
 /// @brief Get the contact points between two objects that are not penetrating.
 /// @param id1 id of the first object
+/// @param id2 id of the second object (optional)
+/// @param penetrating If true, return penetrating contact points. Otherwise, return surface contact points (default).
+/// @return vector of contact points between the two objects
+/// @note If id2 is not set, returns all contact points involving id1.
+std::vector<Contact> Scene::get_contact_points(string id1, string id2, bool penetrating)
+
+{
+    //If id2 is set to an empty string, we return all contact points involving id1
+    bool return_all_contact_points = (id2 == "");
+    vector<Contact> contact_points;
+    if(return_all_contact_points){
+        if(contacts_manager.needs_update(id1)){
+            this->step_simulation(1/1000.0f);
+        }
+        contact_points = contacts_manager.get_contact_points(id1, penetrating);
+    }else{
+        if(contacts_manager.needs_update(id1) || contacts_manager.needs_update(id2)){
+            this->step_simulation(1/1000.0f);
+        }
+        contact_points = contacts_manager.get_contact_points(id1, id2, penetrating);
+    }
+
+    return contact_points;
+}
+
+/// @brief Get the contact points between two objects that are not penetrating.
+/// @param id1 id of the first object
 /// @param id2 id of the second object
 /// @return Nx3 matrix representing the contact points between the two objects
 /// @note If id2 is set to an empty string, returns all contact points involving id1.
 MatrixX3f Scene::get_contact_points_positions(string id1, string id2)
 {
-    //If id2 is set to an empty string, we return all contact points involving id1
-    bool return_all_contact_points = (id2 == "");
-    vector<Vector3f> contact_points;
-    if(return_all_contact_points){
-        if(contacts_manager.needs_update(id1)){
-            this->step_simulation(1/1000.0f);
-        }
-        contact_points = contacts_manager.get_contact_positions(id1);
-    }else{
-        if(contacts_manager.needs_update(id1) || contacts_manager.needs_update(id2)){
-            this->step_simulation(1/1000.0f);
-        }
-        contact_points = contacts_manager.get_contact_positions(id1, id2);
-    }
+    std::vector<Contact> contact_points = this->get_contact_points(id1, id2, false);
 
     //Convert the vector of contact points to a matrix
     MatrixX3f contact_points_matrix(contact_points.size(), 3);
     for (int i = 0; i < contact_points.size(); i++){
         //The contact point is a column vector, but we want to store it as a row vector.
-        contact_points_matrix.row(i) = contact_points[i].transpose();
+        contact_points_matrix.row(i) = contact_points[i].get_position().transpose();
     }
     return contact_points_matrix;
 }
@@ -656,26 +670,13 @@ MatrixX3f Scene::get_contact_points_positions(string id1, string id2)
 /// @note If id2 is set to an empty string, returns all contact points involving id1.
 MatrixX3f Scene::get_penetrating_contact_point_positions(string id1, string id2)
 {
-   //If id2 is set to an empty string, we return all contact points involving id1
-    bool return_all_contact_points = (id2 == "");
-    vector<Vector3f> contact_points;
-    if(return_all_contact_points){
-        if(contacts_manager.needs_update(id1)){
-            this->step_simulation(1/1000.0f);
-        }
-        contact_points = contacts_manager.get_contact_positions(id1, true);
-    }else{
-        if(contacts_manager.needs_update(id1) || contacts_manager.needs_update(id2)){
-            this->step_simulation(1/1000.0f);
-        }
-        contact_points = contacts_manager.get_contact_positions(id1, id2, true);
-    }
+   std::vector<Contact> contact_points = this->get_contact_points(id1, id2, true);
 
     //Convert the vector of contact points to a matrix
     MatrixX3f contact_points_matrix(contact_points.size(), 3);
     for (int i = 0; i < contact_points.size(); i++){
         //The contact point is a column vector, but we want to store it as a row vector.
-        contact_points_matrix.row(i) = contact_points[i].transpose();
+        contact_points_matrix.row(i) = contact_points[i].get_position().transpose();
     }
     return contact_points_matrix;
 }
@@ -774,11 +775,15 @@ MatrixX3f Scene::get_contact_convex_hull(string id1, string id2, int vertex_limi
 }
 
 /// @brief Get the contact forces between objects in the scene.
-/// @return List of contact forces.
-std::vector<ContactForce> Scene::get_contact_forces()
+/// @param nb_contacts_per_object_pair Number of contact points to consider for each object pair.
+/// @param nb_coulomb_polygon_sides Number of sides of the Coulomb friction polygon.
+/// @return List of contact forces (empty if the forces could not be computed).
+std::vector<ContactForce> Scene::get_contact_forces(int nb_contacts_per_object_pair, int nb_coulomb_polygon_sides)
 {
-    ForceSolver force_solver = ForceSolver(this);
-    return force_solver.get_contact_forces();
+    ForceSolver force_solver = ForceSolver(this, nb_contacts_per_object_pair, nb_coulomb_polygon_sides);
+    std::vector<ContactForce> contact_forces = force_solver.get_contact_forces();
+    ForceSolver::result_status status = force_solver.get_status();
+    return contact_forces;
 }
 
 /// @brief Find the contact point between two objects that is the closest to the given point.

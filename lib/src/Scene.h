@@ -93,13 +93,14 @@ class Scene
         void step_simulation(float dt);
         vector<string> get_all_object_ids();
         unordered_set<string> get_contacted_objects(string target_object);
+        vector<Contact> get_contact_points(string id1, string id2 = "", bool penetrating = false);
         MatrixX3f get_contact_points_positions(string id1, string id2 = "");
         Vector3f get_closest_contact_point(string id1, string id2, const Vector3f point);
         MatrixX3f get_penetrating_contact_point_positions(string id1, string id2);
         MatrixX3f get_all_contact_points(string id);
         MatrixX3f get_all_penetrating_contact_points(string id);
         MatrixX3f get_contact_convex_hull(string id1, string id2 = "", int vertex_limit = 255);
-        std::vector<ContactForce> get_contact_forces();
+        vector<ContactForce> get_contact_forces(int nb_contacts_per_object_pair = 10, int nb_coulomb_polygon_sides = 8);
         Matrix3f get_best_contact_triangle(string id, vector<Triangle<Vector3f>> triangles, bool stable, int max_tri_to_consider = -1);
         vector<pair<string, Vector3f>> get_three_most_stable_contact_points(string id, int hull_max_size = 255, bool random_third_point = false);
         void merge_similar_contact_points(vector<Contact> contact_points, float position_threshold, float normal_threshold);

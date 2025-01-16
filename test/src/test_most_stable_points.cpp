@@ -1,0 +1,1 @@
+//vector<pair<string, Vector3f>> stable_contact_points = scene.get_three_most_stable_contact_points("cube2", 30, true);

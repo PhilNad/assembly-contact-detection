@@ -2,6 +2,8 @@
 
 #include <memory>
 #include <unordered_map>
+#include <random>
+#include <algorithm>
 #include "PxPhysicsAPI.h"
 #include <eigen3/Eigen/Eigen>
 #include <osqp/osqp.h>
@@ -48,7 +50,7 @@ class ForceSolver
 {
     private:
         Scene* scene;
-        int nb_contacts_per_object_pair = 5;
+        int nb_contacts_per_object_pair = 10;
         int nb_coulomb_polygon_sides = 8;
         int nb_optim_variables;
         int nb_constraints;
@@ -87,10 +89,13 @@ class ForceSolver
         //OSQP Data structures
         OSQPSolver* osqp_solver = NULL;
         OSQPSettings* osqp_settings = NULL;
+        OSQPInt osqp_status;
     public:
-        ForceSolver(Scene* scene, int nb_contacts_per_object_pair = 5, int nb_coulomb_polygon_sides = 8);
+        ForceSolver(Scene* scene, int nb_contacts_per_object_pair = 10, int nb_coulomb_polygon_sides = 8);
         ~ForceSolver();
         //Update the OSQP bound vectors and re-solve the force distribution.
         void set_acceleration(Vector3f acceleration);
         std::vector<ContactForce> get_contact_forces();
+        enum result_status {UNSOLVED, STABLE, UNSTABLE, FAILURE};
+        result_status get_status();
 };
