@@ -76,9 +76,11 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
             std::random_device rd;
             std::mt19937 g(rd());
             std::shuffle(contact_points.begin(), contact_points.end(), g);
+
+            int max_points = std::min(this->nb_contacts_per_object_pair, (int)contact_points.size());
             
             //For each point, create a ContactForce object
-            for (size_t k = 0; k < this->nb_contacts_per_object_pair; k++){
+            for (size_t k = 0; k < max_points; k++){
                 Contact contact = contact_points[k];
                 Vector3f position = contact.get_position();
                 Vector3f normal = contact.get_normal();

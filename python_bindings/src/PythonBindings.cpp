@@ -8,6 +8,42 @@ namespace py = pybind11;
 PYBIND11_MODULE(assembly_cd, m) {
     m.doc() = "Interface with PhysX to get the contact points between input shapes.";
 
+    py::class_<Contact>(m, "Contact")
+        .def(py::init<string, string, Vector3f, Vector3f, float>(), "Initialize a contact object with position, normal, object IDs.",
+                py::arg("object1_id"), 
+                py::arg("object2_id"), 
+                py::arg("position"), 
+                py::arg("normal"), 
+                py::arg("separation"))
+        .def("get_position", &Contact::get_position, "Get the position of the contact point.")
+        .def("get_normal", &Contact::get_normal, "Get the normal of the contact point.")
+        .def("get_separation", &Contact::get_separation, "Get the separation of the contact point.")
+        .def("get_object_ids", &Contact::get_object_ids, "Get the object IDs of the contact point.")
+        .def("set_position", &Contact::set_position, "Set the position of the contact point.",
+                py::arg("position"))
+        .def("set_normal", &Contact::set_normal, "Set the normal of the contact point.",
+                py::arg("normal"));
+
+    py::class_<ContactForce>(m, "ContactForce")
+        .def(py::init<Vector3f, Vector3f, Vector3f, Vector3f, string, string, float>(), "Initialize a contact force object with position, normal, tangent vectors, object IDs, and friction coefficient.",
+                py::arg("position"), 
+                py::arg("normal_dir"), 
+                py::arg("tangent_dir_u"), 
+                py::arg("tangent_dir_v"), 
+                py::arg("object1_by_id"), 
+                py::arg("object2_to_id"), 
+                py::arg("friction_coefficient"))
+        .def("get_global_wrench", &ContactForce::get_global_wrench, "Get the global wrench of the contact force.")
+        .def_readwrite("position", &ContactForce::position)
+        .def_readwrite("normal_dir", &ContactForce::normal_dir)
+        .def_readwrite("tangent_dir_u", &ContactForce::tangent_dir_u)
+        .def_readwrite("tangent_dir_v", &ContactForce::tangent_dir_v)
+        .def_readwrite("object1_by_id", &ContactForce::object1_by_id)
+        .def_readwrite("object2_to_id", &ContactForce::object2_to_id)
+        .def_readwrite("local_force", &ContactForce::local_force)
+        .def_readwrite("friction_coefficient", &ContactForce::friction_coefficient);
+
+
     py::class_<Scene>(m, "Scene")
         .def(py::init<>(), "Initialize the PhysX scene.")
         .def("add_object", &Scene::add_object, "Add an object to the scene.",
@@ -34,6 +70,13 @@ PYBIND11_MODULE(assembly_cd, m) {
                 py::arg("mass") = 1.0f, 
                 py::arg("com") = (Vector3f() << 0.0f, 0.0f, 0.0f).finished(),
                 py::arg("material_name") = "wood")
+        .def("set_friction_coefficient", &Scene::set_friction_coefficient, "Set the friction coefficient between two materials.",
+                py::arg("mat_name1"), 
+                py::arg("mat_name2"), 
+                py::arg("friction_coefficient"))
+        .def("get_friction_coefficient", &Scene::get_friction_coefficient, "Get the friction coefficient between two materials.",
+                py::arg("mat_name1"), 
+                py::arg("mat_name2"))
         .def("get_all_object_ids", &Scene::get_all_object_ids, "Get the list of object ids in the scene.")
         .def("remove_object", &Scene::remove_object, "Remove an object from the scene.",
                 py::arg("id"))
@@ -48,6 +91,13 @@ PYBIND11_MODULE(assembly_cd, m) {
                 py::arg("dt"))
         .def("get_contacted_objects", &Scene::get_contacted_objects, "Get the list of objects in contact with a given object.",
                 py::arg("target_object"))
+        .def("get_contact_forces", &Scene::get_contact_forces, "Get the contact forces between objects.",
+                py::arg("nb_contacts_per_object_pair") = 10, 
+                py::arg("nb_coulomb_polygon_sides") = 8)
+        .def("get_contact_points", &Scene::get_contact_points, "Get the contact points between two objects.",
+                py::arg("id1"), 
+                py::arg("id2") = "",
+                py::arg("penetrating") = false)
         .def("get_contact_point_positions", &Scene::get_contact_points_positions, "Get the positions of the contact points between two objects.",
                 py::arg("id1"), 
                 py::arg("id2"))

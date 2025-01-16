@@ -25,14 +25,21 @@ int main(int argc, char** argv) {
     Cube bot_cube = Cube(1, 1, 1);
     scene.add_object("bot_cube", pose, bot_cube.vertices, bot_cube.triangles, 15, true, true);
 
-    //Create a top cube
+    //Create a mid cube
     pose << 1, 0, 0, 0,
             0, 1, 0, 0,
             0, 0, 1, 1.5,
             0, 0, 0, 1;
+    Cube mid_cube = Cube(1, 1, 1);
+    scene.add_object("mid_cube", pose, mid_cube.vertices, mid_cube.triangles, 15, true);
+
+    //Create a top cube
+    pose << 1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 2.5,
+            0, 0, 0, 1;
     Cube top_cube = Cube(1, 1, 1);
     scene.add_object("top_cube", pose, top_cube.vertices, top_cube.triangles, 15, true);
-
 
     // Get contact forces between the objects
     vector<ContactForce> contact_forces = scene.get_contact_forces();

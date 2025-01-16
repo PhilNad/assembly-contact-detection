@@ -245,7 +245,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                         PxTransform actor_pose = actor1->getGlobalPose();
                         p = actor_pose.transform(p);
                     }
-                    Contact contact(obj0, obj1, Vector3f(p.x, p.y, p.z), Vector3f(0,0,1), 0.0f);
+                    Contact contact(obj0->id, obj1->id, Vector3f(p.x, p.y, p.z), Vector3f(0,0,1), 0.0f);
                     thread_pen_contacts.push_back(contact);
                     //Mark the two objects as being in contact
                     thread_contacted_objects.push_back(make_pair(id_obj0, id_obj1));
@@ -267,7 +267,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                         PointSet3D intersections = all_triangles_overlap_over_AARectangle(*gridCell0, *gridCell1, max_distance_factor);
                         for(auto& p : intersections){
                             //Add a new contact point to the list
-                            Contact contact(obj0, obj1, Vector3f(p[0], p[1], p[2]), p.normal, 0.0f);
+                            Contact contact(obj0->id, obj1->id, Vector3f(p[0], p[1], p[2]), p.normal, 0.0f);
                             thread_contacts.push_back(contact);
                         }
                         //Mark the two objects as being in contact
@@ -1354,9 +1354,9 @@ void Scene::merge_similar_contact_points(vector<Contact> contact_points, float p
         Contact contact1 = contact_points[i];
 
         if(compute_adaptive_threshold){
-            pair<Object*, Object*> objects = contact1.get_objects();
-            Object* object1 = objects.first;
-            Object* object2 = objects.second;
+            pair<string, string> object_ids = contact1.get_object_ids();
+            Object* object1 = this->get_object_by_id(object_ids.first);
+            Object* object2 = this->get_object_by_id(object_ids.second);
             Vector3f o1_sides = object1->get_voxel_side_lengths();
             Vector3f o2_sides = object2->get_voxel_side_lengths();
             float max_side = max(o1_sides.maxCoeff(), o2_sides.maxCoeff());
@@ -1368,9 +1368,9 @@ void Scene::merge_similar_contact_points(vector<Contact> contact_points, float p
             Contact contact2 = contact_points[j];
 
             if(compute_adaptive_threshold){
-                pair<Object*, Object*> objects = contact1.get_objects();
-                Object* object1 = objects.first;
-                Object* object2 = objects.second;
+                pair<string, string> object_ids = contact1.get_object_ids();
+                Object* object1 = this->get_object_by_id(object_ids.first);
+                Object* object2 = this->get_object_by_id(object_ids.second);
                 Vector3f o1_sides = object1->get_voxel_side_lengths();
                 Vector3f o2_sides = object2->get_voxel_side_lengths();
                 float max_side = max(o1_sides.maxCoeff(), o2_sides.maxCoeff());
