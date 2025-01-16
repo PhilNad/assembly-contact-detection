@@ -1,0 +1,67 @@
+\hypertarget{classPointSet3D}{}\doxysection{Point\+Set3D Class Reference}
+\label{classPointSet3D}\index{PointSet3D@{PointSet3D}}
+
+
+Inheritance diagram for Point\+Set3D\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=268pt]{classPointSet3D__inherit__graph}
+\end{center}
+\end{figure}
+
+
+Collaboration diagram for Point\+Set3D\+:
+\nopagebreak
+\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[width=268pt]{classPointSet3D__coll__graph}
+\end{center}
+\end{figure}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classPointSet3D_a4edf3f902a252ae59f564e7f62947eac}\label{classPointSet3D_a4edf3f902a252ae59f564e7f62947eac}} 
+{\bfseries Point\+Set3D} (const std\+::vector$<$ Eigen\+::\+Vector3f $>$ \&points)
+\item 
+\mbox{\Hypertarget{classPointSet3D_acb01f09a32d0367247dffcad0c9061fb}\label{classPointSet3D_acb01f09a32d0367247dffcad0c9061fb}} 
+{\bfseries Point\+Set3D} (const std\+::unordered\+\_\+set$<$ \mbox{\hyperlink{classPoint3D}{Point3D}}, \mbox{\hyperlink{structPoint3D_1_1HashFunction}{Point3\+D\+::\+Hash\+Function}}, \mbox{\hyperlink{structEpsilonEquality3D}{Epsilon\+Equality3D}} $>$ \&points)
+\item 
+\mbox{\Hypertarget{classPointSet3D_a8facfb2cc14ec932025c20330ffb3241}\label{classPointSet3D_a8facfb2cc14ec932025c20330ffb3241}} 
+{\bfseries Point\+Set3D} (const \mbox{\hyperlink{classPointSet3D}{Point\+Set3D}} \&other)
+\item 
+\mbox{\Hypertarget{classPointSet3D_ac2283fc9879af06547a01afeac6c7123}\label{classPointSet3D_ac2283fc9879af06547a01afeac6c7123}} 
+\mbox{\hyperlink{classPointSet3D}{Point\+Set3D}} \& {\bfseries operator=} (const std\+::vector$<$ Eigen\+::\+Vector3f $>$ \&points)
+\item 
+\mbox{\Hypertarget{classPointSet3D_a056d6d958a8d40681d6db8b1de99fb83}\label{classPointSet3D_a056d6d958a8d40681d6db8b1de99fb83}} 
+std\+::pair$<$ iterator, bool $>$ {\bfseries insert} (const Eigen\+::\+Vector3f \&point)
+\item 
+\mbox{\Hypertarget{classPointSet3D_a02f6a25064b8b63fe70342fdffa5f142}\label{classPointSet3D_a02f6a25064b8b63fe70342fdffa5f142}} 
+std\+::pair$<$ iterator, bool $>$ {\bfseries insert} (const \mbox{\hyperlink{classPoint3D}{Point3D}} \&point)
+\item 
+\mbox{\Hypertarget{classPointSet3D_a1efbcfa063b8ad16dc724392a613fb08}\label{classPointSet3D_a1efbcfa063b8ad16dc724392a613fb08}} 
+std\+::pair$<$ iterator, bool $>$ {\bfseries insert} (const \mbox{\hyperlink{classPointSet3D}{Point\+Set3D}} \&pointset)
+\item 
+\mbox{\Hypertarget{classPointSet3D_a20b17b85b9489f80bbb411698e307470}\label{classPointSet3D_a20b17b85b9489f80bbb411698e307470}} 
+std\+::unordered\+\_\+set$<$ \mbox{\hyperlink{classPoint3D}{Point3D}}, \mbox{\hyperlink{structPoint3D_1_1HashFunction}{Point3\+D\+::\+Hash\+Function}}, \mbox{\hyperlink{structEpsilonEquality3D}{Epsilon\+Equality3D}} $>$\+::iterator {\bfseries begin} ()
+\item 
+\mbox{\Hypertarget{classPointSet3D_a558f4b5dbf3b57a61c35a1dd526625c4}\label{classPointSet3D_a558f4b5dbf3b57a61c35a1dd526625c4}} 
+std\+::unordered\+\_\+set$<$ \mbox{\hyperlink{classPoint3D}{Point3D}}, \mbox{\hyperlink{structPoint3D_1_1HashFunction}{Point3\+D\+::\+Hash\+Function}}, \mbox{\hyperlink{structEpsilonEquality3D}{Epsilon\+Equality3D}} $>$\+::iterator {\bfseries end} ()
+\item 
+\mbox{\Hypertarget{classPointSet3D_a23b4a2aa0c56301bde527b02015b1a81}\label{classPointSet3D_a23b4a2aa0c56301bde527b02015b1a81}} 
+std\+::unordered\+\_\+set$<$ \mbox{\hyperlink{classPoint3D}{Point3D}}, \mbox{\hyperlink{structPoint3D_1_1HashFunction}{Point3\+D\+::\+Hash\+Function}}, \mbox{\hyperlink{structEpsilonEquality3D}{Epsilon\+Equality3D}} $>$\+::const\+\_\+iterator {\bfseries begin} () const
+\item 
+\mbox{\Hypertarget{classPointSet3D_a4bf5beeac5c43228d76d26341b2922b3}\label{classPointSet3D_a4bf5beeac5c43228d76d26341b2922b3}} 
+std\+::unordered\+\_\+set$<$ \mbox{\hyperlink{classPoint3D}{Point3D}}, \mbox{\hyperlink{structPoint3D_1_1HashFunction}{Point3\+D\+::\+Hash\+Function}}, \mbox{\hyperlink{structEpsilonEquality3D}{Epsilon\+Equality3D}} $>$\+::const\+\_\+iterator {\bfseries end} () const
+\item 
+\mbox{\Hypertarget{classPointSet3D_a9af0fb7ce7a7736286a4f91627c46a68}\label{classPointSet3D_a9af0fb7ce7a7736286a4f91627c46a68}} 
+size\+\_\+t {\bfseries size} () const
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+lib/src/Point\+Set.\+h\item 
+lib/src/Point\+Set.\+cpp\end{DoxyCompactItemize}

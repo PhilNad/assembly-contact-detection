@@ -1,0 +1,249 @@
+\hypertarget{classConvex2DPolygon}{}\doxysection{Convex2\+DPolygon Class Reference}
+\label{classConvex2DPolygon}\index{Convex2DPolygon@{Convex2DPolygon}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classConvex2DPolygon_a7e67a3ba066fdf91699475e6dde802c5}\label{classConvex2DPolygon_a7e67a3ba066fdf91699475e6dde802c5}} 
+\mbox{\hyperlink{classConvex2DPolygon_a7e67a3ba066fdf91699475e6dde802c5}{Convex2\+DPolygon}} ()
+\begin{DoxyCompactList}\small\item\em Default constructor representing a zero area polygon. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classConvex2DPolygon_ac1e5b5bb160084fba394ccc939b54784}{Convex2\+DPolygon}} (const \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Eigen\+::\+Vector2f $>$ \&triangle)
+\begin{DoxyCompactList}\small\item\em Build a representation of a 2D convex polygon from a triangle. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classConvex2DPolygon_a8957ce334ca5502e96e053ae7bce15ba}{Convex2\+DPolygon}} (\mbox{\hyperlink{classAARectangle}{AARectangle}} \&rectangle)
+\begin{DoxyCompactList}\small\item\em Build a representation of a 2D convex polygon from a rectangle. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classConvex2DPolygon_a2b14eeb6b8c7d2d99ab2b8af391c3f94}{Convex2\+DPolygon}} (const \mbox{\hyperlink{classPointSet2D}{Point\+Set2D}} \&\mbox{\hyperlink{classConvex2DPolygon_a7c130c459bb152b6a4bf3fb5101fa3e2}{vertices}})
+\begin{DoxyCompactList}\small\item\em Build a representation of a 2D convex polygon from a set of vertices. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classConvex2DPolygon_a7bfe0a5c2d036eab6432cef197ba274b}{Convex2\+DPolygon}} (const std\+::vector$<$ std\+::pair$<$ \mbox{\hyperlink{classPoint2D}{Point2D}}, \mbox{\hyperlink{classPoint2D}{Point2D}} $>$$>$ \mbox{\hyperlink{classConvex2DPolygon_a4dafc36187aca54cd427c49cdb014a05}{edges}})
+\begin{DoxyCompactList}\small\item\em Build a representation of a 2D convex polygon from a set of edges. \end{DoxyCompactList}\item 
+std\+::vector$<$ std\+::pair$<$ \mbox{\hyperlink{classPoint2D}{Point2D}}, \mbox{\hyperlink{classPoint2D}{Point2D}} $>$ $>$ \mbox{\hyperlink{classConvex2DPolygon_a4dafc36187aca54cd427c49cdb014a05}{edges}} ()
+\begin{DoxyCompactList}\small\item\em Get the edges of the polygon as a vector of tuples of two 2D points. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classPointSet2D}{Point\+Set2D}} \mbox{\hyperlink{classConvex2DPolygon_a7c130c459bb152b6a4bf3fb5101fa3e2}{vertices}} ()
+\begin{DoxyCompactList}\small\item\em Get the vertices of the polygon as a 2D Point\+Set. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classConvex2DPolygon_aee761f20d17d97e0f88d5d7d876a3dac}{contains}} (const \mbox{\hyperlink{classPoint2D}{Point2D}} \&point)
+\begin{DoxyCompactList}\small\item\em Determines whether a given point is inside the polygon. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{classConvex2DPolygon_a06f2d82c4b5505fe2ea3bf59086ed3f5}{nb\+\_\+points\+\_\+inside}} (const \mbox{\hyperlink{classPointSet2D}{Point\+Set2D}} \&points)
+\begin{DoxyCompactList}\small\item\em Determine if the polygon contains a set of points and return the number of points inside the polygon. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classPointSet2D}{Point\+Set2D}} \mbox{\hyperlink{classConvex2DPolygon_a772f60c731ee5927a2ba67b54622f443}{line\+\_\+intersection}} (const Eigen\+::\+Vector2f \&segment\+\_\+p0, const Eigen\+::\+Vector2f \&segment\+\_\+p1)
+\begin{DoxyCompactList}\small\item\em Find the intersection points (if any) between a line segment and the polygon. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classConvex2DPolygon}{Convex2\+DPolygon}} \mbox{\hyperlink{classConvex2DPolygon_aeec469bcaaf90a0c5c1741e5f6c35421}{polygon\+\_\+intersection}} (\mbox{\hyperlink{classConvex2DPolygon}{Convex2\+DPolygon}} \&polygon)
+\begin{DoxyCompactList}\small\item\em Compute the convex polygon resulting from the intersection of this polygon with another polygon. \end{DoxyCompactList}\item 
+float \mbox{\hyperlink{classConvex2DPolygon_a55d2b3fd6d95dfafd80ada98b6d8d992}{get\+\_\+area}} ()
+\begin{DoxyCompactList}\small\item\em Return the area of the convex polygon. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Friends}
+\begin{DoxyCompactItemize}
+\item 
+std\+::ostream \& \mbox{\hyperlink{classConvex2DPolygon_a0fc5b8b1518e2d0a6c2c560b7b3ea4fa}{operator$<$$<$}} (std\+::ostream \&os, \mbox{\hyperlink{classConvex2DPolygon}{Convex2\+DPolygon}} \&polygon)
+\begin{DoxyCompactList}\small\item\em Overload the $<$$<$ operator for printing the polygon. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classConvex2DPolygon_ac1e5b5bb160084fba394ccc939b54784}\label{classConvex2DPolygon_ac1e5b5bb160084fba394ccc939b54784}} 
+\index{Convex2DPolygon@{Convex2DPolygon}!Convex2DPolygon@{Convex2DPolygon}}
+\index{Convex2DPolygon@{Convex2DPolygon}!Convex2DPolygon@{Convex2DPolygon}}
+\doxysubsubsection{\texorpdfstring{Convex2DPolygon()}{Convex2DPolygon()}\hspace{0.1cm}{\footnotesize\ttfamily [1/4]}}
+{\footnotesize\ttfamily Convex2\+DPolygon\+::\+Convex2\+DPolygon (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Eigen\+::\+Vector2f $>$ \&}]{triangle }\end{DoxyParamCaption})}
+
+
+
+Build a representation of a 2D convex polygon from a triangle. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em triangle} & The triangle. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classConvex2DPolygon_a8957ce334ca5502e96e053ae7bce15ba}\label{classConvex2DPolygon_a8957ce334ca5502e96e053ae7bce15ba}} 
+\index{Convex2DPolygon@{Convex2DPolygon}!Convex2DPolygon@{Convex2DPolygon}}
+\index{Convex2DPolygon@{Convex2DPolygon}!Convex2DPolygon@{Convex2DPolygon}}
+\doxysubsubsection{\texorpdfstring{Convex2DPolygon()}{Convex2DPolygon()}\hspace{0.1cm}{\footnotesize\ttfamily [2/4]}}
+{\footnotesize\ttfamily Convex2\+DPolygon\+::\+Convex2\+DPolygon (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classAARectangle}{AARectangle}} \&}]{rectangle }\end{DoxyParamCaption})}
+
+
+
+Build a representation of a 2D convex polygon from a rectangle. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em rectangle} & The axis-\/aligned rectangle. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classConvex2DPolygon_a2b14eeb6b8c7d2d99ab2b8af391c3f94}\label{classConvex2DPolygon_a2b14eeb6b8c7d2d99ab2b8af391c3f94}} 
+\index{Convex2DPolygon@{Convex2DPolygon}!Convex2DPolygon@{Convex2DPolygon}}
+\index{Convex2DPolygon@{Convex2DPolygon}!Convex2DPolygon@{Convex2DPolygon}}
+\doxysubsubsection{\texorpdfstring{Convex2DPolygon()}{Convex2DPolygon()}\hspace{0.1cm}{\footnotesize\ttfamily [3/4]}}
+{\footnotesize\ttfamily Convex2\+DPolygon\+::\+Convex2\+DPolygon (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classPointSet2D}{Point\+Set2D}} \&}]{vertices }\end{DoxyParamCaption})}
+
+
+
+Build a representation of a 2D convex polygon from a set of vertices. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em vertices} & The vertices of the polygon, in no specific order. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyNote}{Note}
+For a convex polygon, the vertices are the convex hull. 
+\end{DoxyNote}
+\mbox{\Hypertarget{classConvex2DPolygon_a7bfe0a5c2d036eab6432cef197ba274b}\label{classConvex2DPolygon_a7bfe0a5c2d036eab6432cef197ba274b}} 
+\index{Convex2DPolygon@{Convex2DPolygon}!Convex2DPolygon@{Convex2DPolygon}}
+\index{Convex2DPolygon@{Convex2DPolygon}!Convex2DPolygon@{Convex2DPolygon}}
+\doxysubsubsection{\texorpdfstring{Convex2DPolygon()}{Convex2DPolygon()}\hspace{0.1cm}{\footnotesize\ttfamily [4/4]}}
+{\footnotesize\ttfamily Convex2\+DPolygon\+::\+Convex2\+DPolygon (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ std\+::pair$<$ \mbox{\hyperlink{classPoint2D}{Point2D}}, \mbox{\hyperlink{classPoint2D}{Point2D}} $>$$>$}]{edges }\end{DoxyParamCaption})}
+
+
+
+Build a representation of a 2D convex polygon from a set of edges. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em edges} & Each edge is a tuple of two 2D points. \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classConvex2DPolygon_aee761f20d17d97e0f88d5d7d876a3dac}\label{classConvex2DPolygon_aee761f20d17d97e0f88d5d7d876a3dac}} 
+\index{Convex2DPolygon@{Convex2DPolygon}!contains@{contains}}
+\index{contains@{contains}!Convex2DPolygon@{Convex2DPolygon}}
+\doxysubsubsection{\texorpdfstring{contains()}{contains()}}
+{\footnotesize\ttfamily bool Convex2\+DPolygon\+::contains (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classPoint2D}{Point2D}} \&}]{point }\end{DoxyParamCaption})}
+
+
+
+Determines whether a given point is inside the polygon. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em point} & The point to check. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+True if the point is inside the polygon, false otherwise. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classConvex2DPolygon_a4dafc36187aca54cd427c49cdb014a05}\label{classConvex2DPolygon_a4dafc36187aca54cd427c49cdb014a05}} 
+\index{Convex2DPolygon@{Convex2DPolygon}!edges@{edges}}
+\index{edges@{edges}!Convex2DPolygon@{Convex2DPolygon}}
+\doxysubsubsection{\texorpdfstring{edges()}{edges()}}
+{\footnotesize\ttfamily std\+::vector$<$ std\+::pair$<$ \mbox{\hyperlink{classPoint2D}{Point2D}}, \mbox{\hyperlink{classPoint2D}{Point2D}} $>$ $>$ Convex2\+DPolygon\+::edges (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Get the edges of the polygon as a vector of tuples of two 2D points. 
+
+\begin{DoxyReturn}{Returns}
+Edge list. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classConvex2DPolygon_a55d2b3fd6d95dfafd80ada98b6d8d992}\label{classConvex2DPolygon_a55d2b3fd6d95dfafd80ada98b6d8d992}} 
+\index{Convex2DPolygon@{Convex2DPolygon}!get\_area@{get\_area}}
+\index{get\_area@{get\_area}!Convex2DPolygon@{Convex2DPolygon}}
+\doxysubsubsection{\texorpdfstring{get\_area()}{get\_area()}}
+{\footnotesize\ttfamily float Convex2\+DPolygon\+::get\+\_\+area (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Return the area of the convex polygon. 
+
+\begin{DoxyReturn}{Returns}
+Surface area. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classConvex2DPolygon_a772f60c731ee5927a2ba67b54622f443}\label{classConvex2DPolygon_a772f60c731ee5927a2ba67b54622f443}} 
+\index{Convex2DPolygon@{Convex2DPolygon}!line\_intersection@{line\_intersection}}
+\index{line\_intersection@{line\_intersection}!Convex2DPolygon@{Convex2DPolygon}}
+\doxysubsubsection{\texorpdfstring{line\_intersection()}{line\_intersection()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classPointSet2D}{Point\+Set2D}} Convex2\+DPolygon\+::line\+\_\+intersection (\begin{DoxyParamCaption}\item[{const Eigen\+::\+Vector2f \&}]{segment\+\_\+p0,  }\item[{const Eigen\+::\+Vector2f \&}]{segment\+\_\+p1 }\end{DoxyParamCaption})}
+
+
+
+Find the intersection points (if any) between a line segment and the polygon. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em segment\+\_\+p0} & Start point of the line segment. \\
+\hline
+{\em segment\+\_\+p1} & End point of the line segment. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Point set with up to two points representing the intersection points. 
+\end{DoxyReturn}
+\begin{DoxyNote}{Note}
+See Real-\/\+Time Collision Detection page 198. 
+\end{DoxyNote}
+\mbox{\Hypertarget{classConvex2DPolygon_a06f2d82c4b5505fe2ea3bf59086ed3f5}\label{classConvex2DPolygon_a06f2d82c4b5505fe2ea3bf59086ed3f5}} 
+\index{Convex2DPolygon@{Convex2DPolygon}!nb\_points\_inside@{nb\_points\_inside}}
+\index{nb\_points\_inside@{nb\_points\_inside}!Convex2DPolygon@{Convex2DPolygon}}
+\doxysubsubsection{\texorpdfstring{nb\_points\_inside()}{nb\_points\_inside()}}
+{\footnotesize\ttfamily int Convex2\+DPolygon\+::nb\+\_\+points\+\_\+inside (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classPointSet2D}{Point\+Set2D}} \&}]{points }\end{DoxyParamCaption})}
+
+
+
+Determine if the polygon contains a set of points and return the number of points inside the polygon. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em points} & 2D Point\+Set of points to check. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The number of points inside the polygon. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classConvex2DPolygon_aeec469bcaaf90a0c5c1741e5f6c35421}\label{classConvex2DPolygon_aeec469bcaaf90a0c5c1741e5f6c35421}} 
+\index{Convex2DPolygon@{Convex2DPolygon}!polygon\_intersection@{polygon\_intersection}}
+\index{polygon\_intersection@{polygon\_intersection}!Convex2DPolygon@{Convex2DPolygon}}
+\doxysubsubsection{\texorpdfstring{polygon\_intersection()}{polygon\_intersection()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classConvex2DPolygon}{Convex2\+DPolygon}} Convex2\+DPolygon\+::polygon\+\_\+intersection (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classConvex2DPolygon}{Convex2\+DPolygon}} \&}]{polygon }\end{DoxyParamCaption})}
+
+
+
+Compute the convex polygon resulting from the intersection of this polygon with another polygon. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em polygon} & The other polygon. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The intersection polygon whose area is the intersection of the two polygons. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classConvex2DPolygon_a7c130c459bb152b6a4bf3fb5101fa3e2}\label{classConvex2DPolygon_a7c130c459bb152b6a4bf3fb5101fa3e2}} 
+\index{Convex2DPolygon@{Convex2DPolygon}!vertices@{vertices}}
+\index{vertices@{vertices}!Convex2DPolygon@{Convex2DPolygon}}
+\doxysubsubsection{\texorpdfstring{vertices()}{vertices()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classPointSet2D}{Point\+Set2D}} Convex2\+DPolygon\+::vertices (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Get the vertices of the polygon as a 2D Point\+Set. 
+
+\begin{DoxyReturn}{Returns}
+Point set. 
+\end{DoxyReturn}
+
+
+\doxysubsection{Friends And Related Function Documentation}
+\mbox{\Hypertarget{classConvex2DPolygon_a0fc5b8b1518e2d0a6c2c560b7b3ea4fa}\label{classConvex2DPolygon_a0fc5b8b1518e2d0a6c2c560b7b3ea4fa}} 
+\index{Convex2DPolygon@{Convex2DPolygon}!operator$<$$<$@{operator$<$$<$}}
+\index{operator$<$$<$@{operator$<$$<$}!Convex2DPolygon@{Convex2DPolygon}}
+\doxysubsubsection{\texorpdfstring{operator$<$$<$}{operator<<}}
+{\footnotesize\ttfamily std\+::ostream\& operator$<$$<$ (\begin{DoxyParamCaption}\item[{std\+::ostream \&}]{os,  }\item[{\mbox{\hyperlink{classConvex2DPolygon}{Convex2\+DPolygon}} \&}]{polygon }\end{DoxyParamCaption})\hspace{0.3cm}{\ttfamily [friend]}}
+
+
+
+Overload the $<$$<$ operator for printing the polygon. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em os} & The output stream. \\
+\hline
+{\em polygon} & The polygon to print. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The output stream. 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+lib/src/Polygon.\+h\item 
+lib/src/Polygon.\+cpp\end{DoxyCompactItemize}

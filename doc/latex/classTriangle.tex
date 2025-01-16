@@ -1,0 +1,196 @@
+\hypertarget{classTriangle}{}\doxysection{Triangle$<$ T $>$ Class Template Reference}
+\label{classTriangle}\index{Triangle$<$ T $>$@{Triangle$<$ T $>$}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classTriangle_a9e38ba4751573b2e5c93379e4c80e2a2}\label{classTriangle_a9e38ba4751573b2e5c93379e4c80e2a2}} 
+{\bfseries Triangle} (T vertex\+\_\+0, T vertex\+\_\+1, T vertex\+\_\+2)
+\item 
+\mbox{\Hypertarget{classTriangle_a9009f6e0ec33170327b80e6f63aa04b7}\label{classTriangle_a9009f6e0ec33170327b80e6f63aa04b7}} 
+Eigen\+::\+Vector3f {\bfseries normal} ()
+\item 
+bool \mbox{\hyperlink{classTriangle_ae5848691287d50eb3ba3b0b1550e15a7}{contains}} (const T \&point, bool boundary\+\_\+included)
+\begin{DoxyCompactList}\small\item\em Determines whether a given point is inside a triangle defined by three vertices. \end{DoxyCompactList}\item 
+\mbox{\Hypertarget{classTriangle_ab30a9f335f6c7c0acad640923e2e8fb4}\label{classTriangle_ab30a9f335f6c7c0acad640923e2e8fb4}} 
+float {\bfseries shortest\+\_\+distance\+\_\+to\+\_\+plane} (const Eigen\+::\+Vector3f \&point)
+\item 
+\mbox{\Hypertarget{classTriangle_a7429eba9eed0cca33dc6f22562d5c206}\label{classTriangle_a7429eba9eed0cca33dc6f22562d5c206}} 
+Eigen\+::\+Vector3f {\bfseries project\+\_\+on\+\_\+triangle} (const Eigen\+::\+Vector3f \&point)
+\item 
+\mbox{\Hypertarget{classTriangle_a9857569580af532ee43af78d181dad07}\label{classTriangle_a9857569580af532ee43af78d181dad07}} 
+Eigen\+::\+Vector3f {\bfseries closest\+\_\+point\+\_\+in\+\_\+triangle} (Eigen\+::\+Vector3f p)
+\item 
+\mbox{\Hypertarget{classTriangle_a134181c4925450e39b940d6ef1ac1fd2}\label{classTriangle_a134181c4925450e39b940d6ef1ac1fd2}} 
+int {\bfseries nb\+\_\+points\+\_\+inside} (const \mbox{\hyperlink{classPointSet2D}{Point\+Set2D}} \&points)
+\item 
+\mbox{\Hypertarget{classTriangle_aa9ee1b034942a190cd4891164451d28e}\label{classTriangle_aa9ee1b034942a190cd4891164451d28e}} 
+int {\bfseries nb\+\_\+points\+\_\+inside} (const \mbox{\hyperlink{classPointSet3D}{Point\+Set3D}} \&points)
+\item 
+Eigen\+::\+Vector3f \mbox{\hyperlink{classTriangle_a0f1baf16e45787a417cdda622878903b}{normal}} ()
+\begin{DoxyCompactList}\small\item\em Compute the normal vector to the triangle surface. \end{DoxyCompactList}\item 
+Eigen\+::\+Vector3f \mbox{\hyperlink{classTriangle_ac2b8611f622eb1bc9859ceb1e6045d4e}{project\+\_\+on\+\_\+triangle}} (const Eigen\+::\+Vector3f \&point)
+\begin{DoxyCompactList}\small\item\em Project a 3D point onto the plane of the triangle and return its 3D coordinates. \end{DoxyCompactList}\item 
+float \mbox{\hyperlink{classTriangle_ad281feeaf9eb91a0531bde03bd797c61}{shortest\+\_\+distance\+\_\+to\+\_\+plane}} (const Eigen\+::\+Vector3f \&point)
+\begin{DoxyCompactList}\small\item\em Compute the shortest distance between a point and the plane of the triangle. \end{DoxyCompactList}\item 
+Eigen\+::\+Vector3f \mbox{\hyperlink{classTriangle_a1a192a00f93ceac5ce85e90ef658a4d3}{closest\+\_\+point\+\_\+in\+\_\+triangle}} (Eigen\+::\+Vector3f p)
+\begin{DoxyCompactList}\small\item\em Find the closest point on a triangle to a given point. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{classTriangle_a9c411cf2000fdf00eddedf4d054549ba}{nb\+\_\+points\+\_\+inside}} (const \mbox{\hyperlink{classPointSet2D}{Point\+Set2D}} \&points)
+\begin{DoxyCompactList}\small\item\em Determine if the polygon contains a set of points and return the number of points inside the polygon. \end{DoxyCompactList}\item 
+int \mbox{\hyperlink{classTriangle_a35f9c84120d666880233354f5b2f2e36}{nb\+\_\+points\+\_\+inside}} (const \mbox{\hyperlink{classPointSet3D}{Point\+Set3D}} \&points)
+\begin{DoxyCompactList}\small\item\em Determine if the polygon contains a set of points and return the number of points inside the polygon. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classTriangle_a61feec864b467b01913ea07c865c5bff}\label{classTriangle_a61feec864b467b01913ea07c865c5bff}} 
+T {\bfseries vertex\+\_\+0}
+\item 
+\mbox{\Hypertarget{classTriangle_a503bba60d7be8d2a3f7ad82ee6afbb06}\label{classTriangle_a503bba60d7be8d2a3f7ad82ee6afbb06}} 
+T {\bfseries vertex\+\_\+1}
+\item 
+\mbox{\Hypertarget{classTriangle_ad96a5c7118610ef6e26453301bc97e74}\label{classTriangle_ad96a5c7118610ef6e26453301bc97e74}} 
+T {\bfseries vertex\+\_\+2}
+\item 
+\mbox{\Hypertarget{classTriangle_a20036dd8556a529f0c8e851186585c32}\label{classTriangle_a20036dd8556a529f0c8e851186585c32}} 
+float {\bfseries signed\+\_\+area} = 0
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classTriangle_a1a192a00f93ceac5ce85e90ef658a4d3}\label{classTriangle_a1a192a00f93ceac5ce85e90ef658a4d3}} 
+\index{Triangle$<$ T $>$@{Triangle$<$ T $>$}!closest\_point\_in\_triangle@{closest\_point\_in\_triangle}}
+\index{closest\_point\_in\_triangle@{closest\_point\_in\_triangle}!Triangle$<$ T $>$@{Triangle$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{closest\_point\_in\_triangle()}{closest\_point\_in\_triangle()}}
+{\footnotesize\ttfamily Eigen\+::\+Vector3f \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Eigen\+::\+Vector3f $>$\+::closest\+\_\+point\+\_\+in\+\_\+triangle (\begin{DoxyParamCaption}\item[{Eigen\+::\+Vector3f}]{p }\end{DoxyParamCaption})}
+
+
+
+Find the closest point on a triangle to a given point. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em p} & The point to find the closest point to. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Coordinates of the closest point on the triangle to the given point. 
+\end{DoxyReturn}
+\begin{DoxyNote}{Note}
+See\+: This code is from Real-\/\+Time Collision Detection page 141. 
+\end{DoxyNote}
+\mbox{\Hypertarget{classTriangle_ae5848691287d50eb3ba3b0b1550e15a7}\label{classTriangle_ae5848691287d50eb3ba3b0b1550e15a7}} 
+\index{Triangle$<$ T $>$@{Triangle$<$ T $>$}!contains@{contains}}
+\index{contains@{contains}!Triangle$<$ T $>$@{Triangle$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{contains()}{contains()}}
+{\footnotesize\ttfamily template$<$typename T $>$ \\
+bool \mbox{\hyperlink{classTriangle}{Triangle}}$<$ T $>$\+::contains (\begin{DoxyParamCaption}\item[{const T \&}]{point,  }\item[{bool}]{boundary\+\_\+included }\end{DoxyParamCaption})}
+
+
+
+Determines whether a given point is inside a triangle defined by three vertices. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em point} & The point to check. \\
+\hline
+{\em boundary\+\_\+included} & If true, points on the triangle edges are considered to be inside the triangle. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+True if the point is inside the triangle, false otherwise. 
+\end{DoxyReturn}
+\begin{DoxyNote}{Note}
+See\+: \href{https://en.wikipedia.org/wiki/Barycentric_coordinate_system\#Barycentric_coordinates_on_triangles}{\texttt{ https\+://en.\+wikipedia.\+org/wiki/\+Barycentric\+\_\+coordinate\+\_\+system\#\+Barycentric\+\_\+coordinates\+\_\+on\+\_\+triangles}} 
+
+See\+: Real-\/\+Time Collision Detection page 52. 
+\end{DoxyNote}
+\mbox{\Hypertarget{classTriangle_a9c411cf2000fdf00eddedf4d054549ba}\label{classTriangle_a9c411cf2000fdf00eddedf4d054549ba}} 
+\index{Triangle$<$ T $>$@{Triangle$<$ T $>$}!nb\_points\_inside@{nb\_points\_inside}}
+\index{nb\_points\_inside@{nb\_points\_inside}!Triangle$<$ T $>$@{Triangle$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{nb\_points\_inside()}{nb\_points\_inside()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily int \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Eigen\+::\+Vector2f $>$\+::nb\+\_\+points\+\_\+inside (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classPointSet2D}{Point\+Set2D}} \&}]{points }\end{DoxyParamCaption})}
+
+
+
+Determine if the polygon contains a set of points and return the number of points inside the polygon. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em points} & 2D Point\+Set of points to check. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The number of points inside the polygon. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classTriangle_a35f9c84120d666880233354f5b2f2e36}\label{classTriangle_a35f9c84120d666880233354f5b2f2e36}} 
+\index{Triangle$<$ T $>$@{Triangle$<$ T $>$}!nb\_points\_inside@{nb\_points\_inside}}
+\index{nb\_points\_inside@{nb\_points\_inside}!Triangle$<$ T $>$@{Triangle$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{nb\_points\_inside()}{nb\_points\_inside()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily int \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Eigen\+::\+Vector3f $>$\+::nb\+\_\+points\+\_\+inside (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classPointSet3D}{Point\+Set3D}} \&}]{points }\end{DoxyParamCaption})}
+
+
+
+Determine if the polygon contains a set of points and return the number of points inside the polygon. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em points} & 3D Point\+Set of points to check. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The number of points inside the polygon. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classTriangle_a0f1baf16e45787a417cdda622878903b}\label{classTriangle_a0f1baf16e45787a417cdda622878903b}} 
+\index{Triangle$<$ T $>$@{Triangle$<$ T $>$}!normal@{normal}}
+\index{normal@{normal}!Triangle$<$ T $>$@{Triangle$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{normal()}{normal()}}
+{\footnotesize\ttfamily Eigen\+::\+Vector3f \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Eigen\+::\+Vector3f $>$\+::normal (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Compute the normal vector to the triangle surface. 
+
+\begin{DoxyReturn}{Returns}
+Unit-\/length 3D normal vector. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classTriangle_ac2b8611f622eb1bc9859ceb1e6045d4e}\label{classTriangle_ac2b8611f622eb1bc9859ceb1e6045d4e}} 
+\index{Triangle$<$ T $>$@{Triangle$<$ T $>$}!project\_on\_triangle@{project\_on\_triangle}}
+\index{project\_on\_triangle@{project\_on\_triangle}!Triangle$<$ T $>$@{Triangle$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{project\_on\_triangle()}{project\_on\_triangle()}}
+{\footnotesize\ttfamily Eigen\+::\+Vector3f \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Eigen\+::\+Vector3f $>$\+::project\+\_\+on\+\_\+triangle (\begin{DoxyParamCaption}\item[{const Eigen\+::\+Vector3f \&}]{point }\end{DoxyParamCaption})}
+
+
+
+Project a 3D point onto the plane of the triangle and return its 3D coordinates. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em point} & Point to project onto the triangle. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+3D coordinates of the projected point. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classTriangle_ad281feeaf9eb91a0531bde03bd797c61}\label{classTriangle_ad281feeaf9eb91a0531bde03bd797c61}} 
+\index{Triangle$<$ T $>$@{Triangle$<$ T $>$}!shortest\_distance\_to\_plane@{shortest\_distance\_to\_plane}}
+\index{shortest\_distance\_to\_plane@{shortest\_distance\_to\_plane}!Triangle$<$ T $>$@{Triangle$<$ T $>$}}
+\doxysubsubsection{\texorpdfstring{shortest\_distance\_to\_plane()}{shortest\_distance\_to\_plane()}}
+{\footnotesize\ttfamily float \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Eigen\+::\+Vector3f $>$\+::shortest\+\_\+distance\+\_\+to\+\_\+plane (\begin{DoxyParamCaption}\item[{const Eigen\+::\+Vector3f \&}]{point }\end{DoxyParamCaption})}
+
+
+
+Compute the shortest distance between a point and the plane of the triangle. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em point} & Point to compute the distance to/from. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Distance between the point and the plane of the triangle. 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+lib/src/Triangle.\+h\item 
+lib/src/Triangle.\+cpp\end{DoxyCompactItemize}

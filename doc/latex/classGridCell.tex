@@ -1,0 +1,135 @@
+\hypertarget{classGridCell}{}\doxysection{Grid\+Cell Class Reference}
+\label{classGridCell}\index{GridCell@{GridCell}}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{classGridCell_aad52cbc8de8149e0af13a80e3300b4f7}{Grid\+Cell}} (uint32\+\_\+t id, shared\+\_\+ptr$<$ \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} $>$ surface\+\_\+point, const Vector3f \&cell\+\_\+size, const Vector3f \&cell\+\_\+centre, shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$$>$ triangle)
+\begin{DoxyCompactList}\small\item\em Build a grid cell that contains all necessary information for collision detection. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classGridCell_a2febf5f861375ab0d96888babb045259}{additional\+\_\+point}} (shared\+\_\+ptr$<$ \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} $>$ surface\+\_\+point)
+\begin{DoxyCompactList}\small\item\em Add information about a surface point to the grid cell. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{classGridCell_a347bcb486b7d4c022b3784aa5d71aca9}{additional\+\_\+triangle}} (shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$$>$ triangle)
+\begin{DoxyCompactList}\small\item\em Add information about a triangle to the grid cell. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} \mbox{\hyperlink{classGridCell_a3d708f3baea265178b29830ad2f66839}{weighted\+\_\+average}} (const Vector3f \&query\+\_\+point)
+\begin{DoxyCompactList}\small\item\em Compute the weighted average of the surface points positions and normals based on their distance to the query point. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classAARectangle}{AARectangle}} \mbox{\hyperlink{classGridCell_ae17bd0d8e7cd7798cb8bd7d3e2532633}{gridcell\+\_\+to\+\_\+gridcell\+\_\+intersection}} (const \mbox{\hyperlink{classGridCell}{Grid\+Cell}} \&other, const AARectangle\+::\+NORMAL\+\_\+\+AXIS normal\+\_\+axis)
+\begin{DoxyCompactList}\small\item\em Determine the intersection rectangle between two grid cells assumed to be in contact. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classGridCell_afd19f638523cd12b084bb132ffc926db}\label{classGridCell_afd19f638523cd12b084bb132ffc926db}} 
+uint32\+\_\+t {\bfseries id} = 0
+\item 
+\mbox{\Hypertarget{classGridCell_a0fa6c9fee133f54732d8f6144ae370f6}\label{classGridCell_a0fa6c9fee133f54732d8f6144ae370f6}} 
+vector$<$ shared\+\_\+ptr$<$ \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} $>$ $>$ {\bfseries surface\+\_\+points} = \{\}
+\item 
+\mbox{\Hypertarget{classGridCell_a21c35531eb5d0f3e67643ad616c1c386}\label{classGridCell_a21c35531eb5d0f3e67643ad616c1c386}} 
+vector$<$ shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$ $>$ $>$ {\bfseries triangles} = \{\}
+\item 
+\mbox{\Hypertarget{classGridCell_a62f4d1c19e4abc4043decbc542dabed4}\label{classGridCell_a62f4d1c19e4abc4043decbc542dabed4}} 
+Vector3f {\bfseries half\+\_\+extents}
+\item 
+\mbox{\Hypertarget{classGridCell_a530ae2b1d3990f722f28a4c7d0e420ce}\label{classGridCell_a530ae2b1d3990f722f28a4c7d0e420ce}} 
+Vector3f {\bfseries centre}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\mbox{\Hypertarget{classGridCell_aad52cbc8de8149e0af13a80e3300b4f7}\label{classGridCell_aad52cbc8de8149e0af13a80e3300b4f7}} 
+\index{GridCell@{GridCell}!GridCell@{GridCell}}
+\index{GridCell@{GridCell}!GridCell@{GridCell}}
+\doxysubsubsection{\texorpdfstring{GridCell()}{GridCell()}}
+{\footnotesize\ttfamily Grid\+Cell\+::\+Grid\+Cell (\begin{DoxyParamCaption}\item[{uint32\+\_\+t}]{id,  }\item[{shared\+\_\+ptr$<$ \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} $>$}]{surface\+\_\+point,  }\item[{const Vector3f \&}]{cell\+\_\+size,  }\item[{const Vector3f \&}]{cell\+\_\+centre,  }\item[{shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$$>$}]{triangle }\end{DoxyParamCaption})}
+
+
+
+Build a grid cell that contains all necessary information for collision detection. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em id} & The index of the cell in the grid. \\
+\hline
+{\em surface\+\_\+point} & Oriented point (position and normal) that was sampled on the surface. \\
+\hline
+{\em cell\+\_\+size} & Size of the cell along each dimension. \\
+\hline
+{\em cell\+\_\+centre} & Position of the centre of the cuboid that represents the cell. \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classGridCell_a2febf5f861375ab0d96888babb045259}\label{classGridCell_a2febf5f861375ab0d96888babb045259}} 
+\index{GridCell@{GridCell}!additional\_point@{additional\_point}}
+\index{additional\_point@{additional\_point}!GridCell@{GridCell}}
+\doxysubsubsection{\texorpdfstring{additional\_point()}{additional\_point()}}
+{\footnotesize\ttfamily void Grid\+Cell\+::additional\+\_\+point (\begin{DoxyParamCaption}\item[{shared\+\_\+ptr$<$ \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} $>$}]{surface\+\_\+point }\end{DoxyParamCaption})}
+
+
+
+Add information about a surface point to the grid cell. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em surface\+\_\+point} & Oriented point (position and normal) that was sampled on the surface. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classGridCell_a347bcb486b7d4c022b3784aa5d71aca9}\label{classGridCell_a347bcb486b7d4c022b3784aa5d71aca9}} 
+\index{GridCell@{GridCell}!additional\_triangle@{additional\_triangle}}
+\index{additional\_triangle@{additional\_triangle}!GridCell@{GridCell}}
+\doxysubsubsection{\texorpdfstring{additional\_triangle()}{additional\_triangle()}}
+{\footnotesize\ttfamily void Grid\+Cell\+::additional\+\_\+triangle (\begin{DoxyParamCaption}\item[{shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$$>$}]{triangle }\end{DoxyParamCaption})}
+
+
+
+Add information about a triangle to the grid cell. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em triangle} & \mbox{\hyperlink{classTriangle}{Triangle}} on which a surface point was sampled. \\
+\hline
+\end{DoxyParams}
+\mbox{\Hypertarget{classGridCell_ae17bd0d8e7cd7798cb8bd7d3e2532633}\label{classGridCell_ae17bd0d8e7cd7798cb8bd7d3e2532633}} 
+\index{GridCell@{GridCell}!gridcell\_to\_gridcell\_intersection@{gridcell\_to\_gridcell\_intersection}}
+\index{gridcell\_to\_gridcell\_intersection@{gridcell\_to\_gridcell\_intersection}!GridCell@{GridCell}}
+\doxysubsubsection{\texorpdfstring{gridcell\_to\_gridcell\_intersection()}{gridcell\_to\_gridcell\_intersection()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classAARectangle}{AARectangle}} Grid\+Cell\+::gridcell\+\_\+to\+\_\+gridcell\+\_\+intersection (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classGridCell}{Grid\+Cell}} \&}]{other,  }\item[{const AARectangle\+::\+NORMAL\+\_\+\+AXIS}]{normal\+\_\+axis }\end{DoxyParamCaption})}
+
+
+
+Determine the intersection rectangle between two grid cells assumed to be in contact. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em other} & \mbox{\hyperlink{classGridCell}{Grid\+Cell}} different from the current one that is in contact with it. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Axis Aligned Rectangle that represents the intersection between the two grid cells. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classGridCell_a3d708f3baea265178b29830ad2f66839}\label{classGridCell_a3d708f3baea265178b29830ad2f66839}} 
+\index{GridCell@{GridCell}!weighted\_average@{weighted\_average}}
+\index{weighted\_average@{weighted\_average}!GridCell@{GridCell}}
+\doxysubsubsection{\texorpdfstring{weighted\_average()}{weighted\_average()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} Grid\+Cell\+::weighted\+\_\+average (\begin{DoxyParamCaption}\item[{const Vector3f \&}]{query\+\_\+point }\end{DoxyParamCaption})}
+
+
+
+Compute the weighted average of the surface points positions and normals based on their distance to the query point. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em query\+\_\+point} & World frame coordinates of the query point. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+Oriented point (position and normal) that is the weighted average of the surface points. 
+\end{DoxyReturn}
+\begin{DoxyNote}{Note}
+This should work well only if the grid cells are small enough. In that case, intersections with edges is possible. 
+\end{DoxyNote}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+lib/src/Occupancy\+Grid.\+h\item 
+lib/src/Occupancy\+Grid.\+cpp\end{DoxyCompactItemize}

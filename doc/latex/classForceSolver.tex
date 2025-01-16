@@ -1,0 +1,60 @@
+\hypertarget{classForceSolver}{}\doxysection{Force\+Solver Class Reference}
+\label{classForceSolver}\index{ForceSolver@{ForceSolver}}
+\doxysubsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classForceSolver_a0368d0bf661c1ca7656afa076933f0f6}\label{classForceSolver_a0368d0bf661c1ca7656afa076933f0f6}} 
+enum {\bfseries result\+\_\+status} \{ {\bfseries UNSOLVED}
+, {\bfseries STABLE}
+, {\bfseries UNSTABLE}
+, {\bfseries FAILURE}
+ \}
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classForceSolver_af6fe1fc1dcad5b49eb561bc9d4cb75a1}\label{classForceSolver_af6fe1fc1dcad5b49eb561bc9d4cb75a1}} 
+{\bfseries Force\+Solver} (\mbox{\hyperlink{classScene}{Scene}} $\ast$scene, int nb\+\_\+contacts\+\_\+per\+\_\+object\+\_\+pair=10, int nb\+\_\+coulomb\+\_\+polygon\+\_\+sides=8)
+\item 
+\mbox{\Hypertarget{classForceSolver_a34133fc905e981e11194599e10f4037a}\label{classForceSolver_a34133fc905e981e11194599e10f4037a}} 
+void {\bfseries set\+\_\+acceleration} (Vector3f acceleration)
+\item 
+std\+::vector$<$ \mbox{\hyperlink{classContactForce}{Contact\+Force}} $>$ \mbox{\hyperlink{classForceSolver_a4394785b0ab86937cc65e7b5f7c7ec80}{get\+\_\+contact\+\_\+forces}} ()
+\begin{DoxyCompactList}\small\item\em Return the contact forces between objects in the scene (solve them if not already solved). \end{DoxyCompactList}\item 
+result\+\_\+status \mbox{\hyperlink{classForceSolver_a39209b7dde9d41857f70633caf72f666}{get\+\_\+status}} ()
+\begin{DoxyCompactList}\small\item\em Return the status of the solver. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classForceSolver_a4394785b0ab86937cc65e7b5f7c7ec80}\label{classForceSolver_a4394785b0ab86937cc65e7b5f7c7ec80}} 
+\index{ForceSolver@{ForceSolver}!get\_contact\_forces@{get\_contact\_forces}}
+\index{get\_contact\_forces@{get\_contact\_forces}!ForceSolver@{ForceSolver}}
+\doxysubsubsection{\texorpdfstring{get\_contact\_forces()}{get\_contact\_forces()}}
+{\footnotesize\ttfamily std\+::vector$<$ \mbox{\hyperlink{classContactForce}{Contact\+Force}} $>$ Force\+Solver\+::get\+\_\+contact\+\_\+forces (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Return the contact forces between objects in the scene (solve them if not already solved). 
+
+\begin{DoxyReturn}{Returns}
+A vector of \mbox{\hyperlink{classContactForce}{Contact\+Force}} objects. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classForceSolver_a39209b7dde9d41857f70633caf72f666}\label{classForceSolver_a39209b7dde9d41857f70633caf72f666}} 
+\index{ForceSolver@{ForceSolver}!get\_status@{get\_status}}
+\index{get\_status@{get\_status}!ForceSolver@{ForceSolver}}
+\doxysubsubsection{\texorpdfstring{get\_status()}{get\_status()}}
+{\footnotesize\ttfamily Force\+Solver\+::result\+\_\+status Force\+Solver\+::get\+\_\+status (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Return the status of the solver. 
+
+\begin{DoxyReturn}{Returns}
+Either UNSOLVED, STABLE, UNSTABLE, or FAILURE. 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+lib/src/Force\+Resolution.\+h\item 
+lib/src/Force\+Resolution.\+cpp\end{DoxyCompactItemize}

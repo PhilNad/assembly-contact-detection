@@ -1,0 +1,298 @@
+\hypertarget{classAARectangle}{}\doxysection{AARectangle Class Reference}
+\label{classAARectangle}\index{AARectangle@{AARectangle}}
+\doxysubsection*{Public Types}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classAARectangle_af45f9b094cb2d4d5d76db9297b1db049}\label{classAARectangle_af45f9b094cb2d4d5d76db9297b1db049}} 
+enum class {\bfseries NORMAL\+\_\+\+AXIS} \{ {\bfseries X}
+, {\bfseries Y}
+, {\bfseries Z}
+ \}
+\end{DoxyCompactItemize}
+\doxysubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classAARectangle_a3b1efce6479348c120477c1d0c650885}\label{classAARectangle_a3b1efce6479348c120477c1d0c650885}} 
+{\bfseries AARectangle} (physx\+::\+Px\+Plane plane, Eigen\+::\+Vector3f centre, Eigen\+::\+Vector3f half\+\_\+extents)
+\item 
+Eigen\+::\+Vector2f \mbox{\hyperlink{classAARectangle_a92246a1a73f4d64ef23c813e0b600fbd}{project\+\_\+point}} (const Eigen\+::\+Vector3f \&point)
+\begin{DoxyCompactList}\small\item\em Project a point onto the plane of the \mbox{\hyperlink{classAARectangle}{AARectangle}}. \end{DoxyCompactList}\item 
+Eigen\+::\+Vector3f \mbox{\hyperlink{classAARectangle_aa31e7dd9d01898be236cf717d7cc92ce}{unproject\+\_\+point}} (const Eigen\+::\+Vector2f \&point)
+\begin{DoxyCompactList}\small\item\em Unproject a point from the plane of the \mbox{\hyperlink{classAARectangle}{AARectangle}} to the world frame. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classTriangle}{Triangle}}$<$ Eigen\+::\+Vector2f $>$ \mbox{\hyperlink{classAARectangle_afcd4f22229b2743dac6393d01b4f6ada}{project\+\_\+triangle}} (const \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Eigen\+::\+Vector3f $>$ \&triangle)
+\begin{DoxyCompactList}\small\item\em Project a triangle onto the the plane of a \mbox{\hyperlink{classAARectangle}{AARectangle}}. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classAARectangle_a9b452c320fbf3fdb61272de8257e24b5}{contains}} (const Eigen\+::\+Vector3f \&point)
+\begin{DoxyCompactList}\small\item\em Check if the rectangle contains a given 3D point expressed in the world frame. \end{DoxyCompactList}\item 
+bool \mbox{\hyperlink{classAARectangle_ad48b92e5b361bdf106daf39efd95fbd0}{contains}} (const Eigen\+::\+Vector2f \&point)
+\begin{DoxyCompactList}\small\item\em Check if the rectangle contains a given 2D point expressed in the rectangle\textquotesingle{}s local frame. \end{DoxyCompactList}\item 
+Eigen\+::\+Vector2f \mbox{\hyperlink{classAARectangle_a0e7ea68d319c7da2880d0777e78c3079}{project\+\_\+and\+\_\+clamp}} (const Eigen\+::\+Vector3f \&point)
+\begin{DoxyCompactList}\small\item\em Project a point onto the plane of the \mbox{\hyperlink{classAARectangle}{AARectangle}} and clamp it to the rectangle boundaries. \end{DoxyCompactList}\item 
+Eigen\+::\+Vector2f \mbox{\hyperlink{classAARectangle_a675046ec0b63408f83c1f6d209f45939}{inside\+\_\+or\+\_\+on}} (const Eigen\+::\+Vector2f \&point)
+\begin{DoxyCompactList}\small\item\em Project a point onto the plane of the \mbox{\hyperlink{classAARectangle}{AARectangle}} and clamp it to the rectangle boundaries. \end{DoxyCompactList}\item 
+float \mbox{\hyperlink{classAARectangle_a736ba0c5fb048592a6e8b2c6697f4db6}{get\+\_\+min\+\_\+u}} ()
+\begin{DoxyCompactList}\small\item\em Get the minimal boundary of the rectangle along the u axis relative to the centre of the rectangle. \end{DoxyCompactList}\item 
+float \mbox{\hyperlink{classAARectangle_a48657161993a03161d708a5bad42546a}{get\+\_\+max\+\_\+u}} ()
+\begin{DoxyCompactList}\small\item\em Get the maximal boundary of the rectangle along the u axis relative to the centre of the rectangle. \end{DoxyCompactList}\item 
+float \mbox{\hyperlink{classAARectangle_ab62f66b39a22fe4a005866ca06bec4a7}{get\+\_\+min\+\_\+v}} ()
+\begin{DoxyCompactList}\small\item\em Get the minimal boundary of the rectangle along the v axis relative to the centre of the rectangle. \end{DoxyCompactList}\item 
+float \mbox{\hyperlink{classAARectangle_aa943f3530c8d381d1df2fc5ab119491f}{get\+\_\+max\+\_\+v}} ()
+\begin{DoxyCompactList}\small\item\em Get the maximal boundary of the rectangle along the v axis relative to the centre of the rectangle. \end{DoxyCompactList}\item 
+Eigen\+::\+Vector3f \mbox{\hyperlink{classAARectangle_a35019349a44ee45431a1bcac873af219}{get\+\_\+uv\+\_\+origin\+\_\+in\+\_\+world}} ()
+\begin{DoxyCompactList}\small\item\em Return the coordinates of the origin of the rectangle in the world frame. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classPointSet2D}{Point\+Set2D}} \mbox{\hyperlink{classAARectangle_a1a78d93bc394bc34095b7ac5b5cdfd33}{get\+\_\+2d\+\_\+vertices}} ()
+\begin{DoxyCompactList}\small\item\em Compute and return the 2D vertices of the rectangle in the local frame. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{classPointSet3D}{Point\+Set3D}} \mbox{\hyperlink{classAARectangle_aab8ce3d6b4833bbdfa1aa6672c62d4b4}{get\+\_\+3d\+\_\+vertices}} ()
+\begin{DoxyCompactList}\small\item\em Compute and return the 3D vertices of the rectangle in the world frame. \end{DoxyCompactList}\end{DoxyCompactItemize}
+\doxysubsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\Hypertarget{classAARectangle_a155d54e38661bd7a716ca69a0eab4db4}\label{classAARectangle_a155d54e38661bd7a716ca69a0eab4db4}} 
+physx\+::\+Px\+Plane {\bfseries plane}
+\item 
+\mbox{\Hypertarget{classAARectangle_ab99d5de3b4950c339df18d9363b503eb}\label{classAARectangle_ab99d5de3b4950c339df18d9363b503eb}} 
+Eigen\+::\+Vector3f {\bfseries centre}
+\item 
+\mbox{\Hypertarget{classAARectangle_ac2b143eca67d4883731b1e3c986f62f8}\label{classAARectangle_ac2b143eca67d4883731b1e3c986f62f8}} 
+Eigen\+::\+Vector3f {\bfseries half\+\_\+extents}
+\item 
+\mbox{\Hypertarget{classAARectangle_af24e2af649c459554e72281c8398467a}\label{classAARectangle_af24e2af649c459554e72281c8398467a}} 
+float {\bfseries area}
+\item 
+\mbox{\Hypertarget{classAARectangle_a2444e2f67b19982aa7fb82ad813ceea6}\label{classAARectangle_a2444e2f67b19982aa7fb82ad813ceea6}} 
+Eigen\+::\+Vector2f {\bfseries u\+\_\+extents}
+\item 
+\mbox{\Hypertarget{classAARectangle_a05b467c4f66b723dde73f041f952bf8e}\label{classAARectangle_a05b467c4f66b723dde73f041f952bf8e}} 
+Eigen\+::\+Vector2f {\bfseries v\+\_\+extents}
+\item 
+\mbox{\Hypertarget{classAARectangle_ae1bdab03e1c9a352f7c6f6f9b7c78c7b}\label{classAARectangle_ae1bdab03e1c9a352f7c6f6f9b7c78c7b}} 
+Eigen\+::\+Vector2f {\bfseries centre\+\_\+2d}
+\end{DoxyCompactItemize}
+
+
+\doxysubsection{Member Function Documentation}
+\mbox{\Hypertarget{classAARectangle_ad48b92e5b361bdf106daf39efd95fbd0}\label{classAARectangle_ad48b92e5b361bdf106daf39efd95fbd0}} 
+\index{AARectangle@{AARectangle}!contains@{contains}}
+\index{contains@{contains}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{contains()}{contains()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
+{\footnotesize\ttfamily bool AARectangle\+::contains (\begin{DoxyParamCaption}\item[{const Eigen\+::\+Vector2f \&}]{point }\end{DoxyParamCaption})}
+
+
+
+Check if the rectangle contains a given 2D point expressed in the rectangle\textquotesingle{}s local frame. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em point} & 2D coordinates of the point in the rectangle\textquotesingle{}s local frame. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+True if the point is inside the rectangle, false otherwise. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classAARectangle_a9b452c320fbf3fdb61272de8257e24b5}\label{classAARectangle_a9b452c320fbf3fdb61272de8257e24b5}} 
+\index{AARectangle@{AARectangle}!contains@{contains}}
+\index{contains@{contains}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{contains()}{contains()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
+{\footnotesize\ttfamily bool AARectangle\+::contains (\begin{DoxyParamCaption}\item[{const Eigen\+::\+Vector3f \&}]{point }\end{DoxyParamCaption})}
+
+
+
+Check if the rectangle contains a given 3D point expressed in the world frame. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em point} & 3D coordinates of the point in the world frame. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+True if the point is inside the rectangle, false otherwise. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classAARectangle_a1a78d93bc394bc34095b7ac5b5cdfd33}\label{classAARectangle_a1a78d93bc394bc34095b7ac5b5cdfd33}} 
+\index{AARectangle@{AARectangle}!get\_2d\_vertices@{get\_2d\_vertices}}
+\index{get\_2d\_vertices@{get\_2d\_vertices}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{get\_2d\_vertices()}{get\_2d\_vertices()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classPointSet2D}{Point\+Set2D}} AARectangle\+::get\+\_\+2d\+\_\+vertices (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Compute and return the 2D vertices of the rectangle in the local frame. 
+
+\begin{DoxyReturn}{Returns}
+2D Point\+Set containing the 2D vertices of the rectangle in the local frame. 
+\end{DoxyReturn}
+\begin{DoxyNote}{Note}
+The centre of the local frame is always \mbox{[}0,0\mbox{]}. 
+\end{DoxyNote}
+\mbox{\Hypertarget{classAARectangle_aab8ce3d6b4833bbdfa1aa6672c62d4b4}\label{classAARectangle_aab8ce3d6b4833bbdfa1aa6672c62d4b4}} 
+\index{AARectangle@{AARectangle}!get\_3d\_vertices@{get\_3d\_vertices}}
+\index{get\_3d\_vertices@{get\_3d\_vertices}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{get\_3d\_vertices()}{get\_3d\_vertices()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classPointSet3D}{Point\+Set3D}} AARectangle\+::get\+\_\+3d\+\_\+vertices (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Compute and return the 3D vertices of the rectangle in the world frame. 
+
+\begin{DoxyReturn}{Returns}
+3D Point\+Set containing the 3D vertices of the rectangle in the world frame. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classAARectangle_a48657161993a03161d708a5bad42546a}\label{classAARectangle_a48657161993a03161d708a5bad42546a}} 
+\index{AARectangle@{AARectangle}!get\_max\_u@{get\_max\_u}}
+\index{get\_max\_u@{get\_max\_u}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{get\_max\_u()}{get\_max\_u()}}
+{\footnotesize\ttfamily float AARectangle\+::get\+\_\+max\+\_\+u (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Get the maximal boundary of the rectangle along the u axis relative to the centre of the rectangle. 
+
+\begin{DoxyReturn}{Returns}
+The maximal boundary of the rectangle along the u axis relative to the centre of the rectangle. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classAARectangle_aa943f3530c8d381d1df2fc5ab119491f}\label{classAARectangle_aa943f3530c8d381d1df2fc5ab119491f}} 
+\index{AARectangle@{AARectangle}!get\_max\_v@{get\_max\_v}}
+\index{get\_max\_v@{get\_max\_v}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{get\_max\_v()}{get\_max\_v()}}
+{\footnotesize\ttfamily float AARectangle\+::get\+\_\+max\+\_\+v (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Get the maximal boundary of the rectangle along the v axis relative to the centre of the rectangle. 
+
+\begin{DoxyReturn}{Returns}
+The maximal boundary of the rectangle along the v axis relative to the centre of the rectangle. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classAARectangle_a736ba0c5fb048592a6e8b2c6697f4db6}\label{classAARectangle_a736ba0c5fb048592a6e8b2c6697f4db6}} 
+\index{AARectangle@{AARectangle}!get\_min\_u@{get\_min\_u}}
+\index{get\_min\_u@{get\_min\_u}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{get\_min\_u()}{get\_min\_u()}}
+{\footnotesize\ttfamily float AARectangle\+::get\+\_\+min\+\_\+u (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Get the minimal boundary of the rectangle along the u axis relative to the centre of the rectangle. 
+
+\begin{DoxyReturn}{Returns}
+The minimal boundary of the rectangle along the u axis relative to the centre of the rectangle. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classAARectangle_ab62f66b39a22fe4a005866ca06bec4a7}\label{classAARectangle_ab62f66b39a22fe4a005866ca06bec4a7}} 
+\index{AARectangle@{AARectangle}!get\_min\_v@{get\_min\_v}}
+\index{get\_min\_v@{get\_min\_v}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{get\_min\_v()}{get\_min\_v()}}
+{\footnotesize\ttfamily float AARectangle\+::get\+\_\+min\+\_\+v (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Get the minimal boundary of the rectangle along the v axis relative to the centre of the rectangle. 
+
+\begin{DoxyReturn}{Returns}
+The minimal boundary of the rectangle along the v axis relative to the centre of the rectangle. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classAARectangle_a35019349a44ee45431a1bcac873af219}\label{classAARectangle_a35019349a44ee45431a1bcac873af219}} 
+\index{AARectangle@{AARectangle}!get\_uv\_origin\_in\_world@{get\_uv\_origin\_in\_world}}
+\index{get\_uv\_origin\_in\_world@{get\_uv\_origin\_in\_world}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{get\_uv\_origin\_in\_world()}{get\_uv\_origin\_in\_world()}}
+{\footnotesize\ttfamily Eigen\+::\+Vector3f AARectangle\+::get\+\_\+uv\+\_\+origin\+\_\+in\+\_\+world (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+
+
+
+Return the coordinates of the origin of the rectangle in the world frame. 
+
+\begin{DoxyReturn}{Returns}
+3D coordinates of the origin of the rectangle in the world frame. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classAARectangle_a675046ec0b63408f83c1f6d209f45939}\label{classAARectangle_a675046ec0b63408f83c1f6d209f45939}} 
+\index{AARectangle@{AARectangle}!inside\_or\_on@{inside\_or\_on}}
+\index{inside\_or\_on@{inside\_or\_on}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{inside\_or\_on()}{inside\_or\_on()}}
+{\footnotesize\ttfamily Eigen\+::\+Vector2f AARectangle\+::inside\+\_\+or\+\_\+on (\begin{DoxyParamCaption}\item[{const Eigen\+::\+Vector2f \&}]{point }\end{DoxyParamCaption})}
+
+
+
+Project a point onto the plane of the \mbox{\hyperlink{classAARectangle}{AARectangle}} and clamp it to the rectangle boundaries. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em point} & 2D coordinates of the point in the rectangle\textquotesingle{}s local frame. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+2D coordinates of the clamped point in the rectangle\textquotesingle{}s local frame. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classAARectangle_a0e7ea68d319c7da2880d0777e78c3079}\label{classAARectangle_a0e7ea68d319c7da2880d0777e78c3079}} 
+\index{AARectangle@{AARectangle}!project\_and\_clamp@{project\_and\_clamp}}
+\index{project\_and\_clamp@{project\_and\_clamp}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{project\_and\_clamp()}{project\_and\_clamp()}}
+{\footnotesize\ttfamily Eigen\+::\+Vector2f AARectangle\+::project\+\_\+and\+\_\+clamp (\begin{DoxyParamCaption}\item[{const Eigen\+::\+Vector3f \&}]{point }\end{DoxyParamCaption})}
+
+
+
+Project a point onto the plane of the \mbox{\hyperlink{classAARectangle}{AARectangle}} and clamp it to the rectangle boundaries. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em point} & 3D coordinates of the point in the world frame. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+2D coordinates of the clamped point in the rectangle\textquotesingle{}s local frame. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classAARectangle_a92246a1a73f4d64ef23c813e0b600fbd}\label{classAARectangle_a92246a1a73f4d64ef23c813e0b600fbd}} 
+\index{AARectangle@{AARectangle}!project\_point@{project\_point}}
+\index{project\_point@{project\_point}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{project\_point()}{project\_point()}}
+{\footnotesize\ttfamily Eigen\+::\+Vector2f AARectangle\+::project\+\_\+point (\begin{DoxyParamCaption}\item[{const Eigen\+::\+Vector3f \&}]{point }\end{DoxyParamCaption})}
+
+
+
+Project a point onto the plane of the \mbox{\hyperlink{classAARectangle}{AARectangle}}. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em point} & The point to project. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The coordinates of the projected point in the rectangle\textquotesingle{}s local frame. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classAARectangle_afcd4f22229b2743dac6393d01b4f6ada}\label{classAARectangle_afcd4f22229b2743dac6393d01b4f6ada}} 
+\index{AARectangle@{AARectangle}!project\_triangle@{project\_triangle}}
+\index{project\_triangle@{project\_triangle}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{project\_triangle()}{project\_triangle()}}
+{\footnotesize\ttfamily \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Eigen\+::\+Vector2f $>$ AARectangle\+::project\+\_\+triangle (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Eigen\+::\+Vector3f $>$ \&}]{triangle }\end{DoxyParamCaption})}
+
+
+
+Project a triangle onto the the plane of a \mbox{\hyperlink{classAARectangle}{AARectangle}}. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em triangle} & The triangle to project. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The projected triangle. 
+\end{DoxyReturn}
+\mbox{\Hypertarget{classAARectangle_aa31e7dd9d01898be236cf717d7cc92ce}\label{classAARectangle_aa31e7dd9d01898be236cf717d7cc92ce}} 
+\index{AARectangle@{AARectangle}!unproject\_point@{unproject\_point}}
+\index{unproject\_point@{unproject\_point}!AARectangle@{AARectangle}}
+\doxysubsubsection{\texorpdfstring{unproject\_point()}{unproject\_point()}}
+{\footnotesize\ttfamily Eigen\+::\+Vector3f AARectangle\+::unproject\+\_\+point (\begin{DoxyParamCaption}\item[{const Eigen\+::\+Vector2f \&}]{point }\end{DoxyParamCaption})}
+
+
+
+Unproject a point from the plane of the \mbox{\hyperlink{classAARectangle}{AARectangle}} to the world frame. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em point} & 2D coordinates of the point in the rectangle\textquotesingle{}s local frame. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+3D coordinates of the unprojected point in the world frame. 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+lib/src/AARectangle.\+h\item 
+lib/src/AARectangle.\+cpp\end{DoxyCompactItemize}
