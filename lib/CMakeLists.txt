@@ -40,8 +40,10 @@ set(MISC_LIBRARIES
     Eigen3::Eigen
     pthread
     dl
-    osqp::osqp
 )
+
+#Use static OSQP library to make it easier to distribute
+target_link_libraries(${PROJECT_NAME} PRIVATE osqp::osqpstatic)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 

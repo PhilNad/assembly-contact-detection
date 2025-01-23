@@ -4,8 +4,17 @@ cmake_policy(SET CMP0057 NEW)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
 
 find_package(Eigen3 3.4 REQUIRED NO_MODULE)
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-#set(PYTHON_EXECUTABLE "/home/phil/mambaforge/envs/noetic_env/bin/python")
+
+#Add additional directory where to look for different python
+# to enable compiling bindings for different python versions
+list(APPEND CMAKE_PREFIX_PATH "/home/phil/mambaforge/envs/stable-placement/bin")
+
+#Use this to build bindings for Python 3.9
+#find_package(Python3 3.9...<3.10 COMPONENTS Interpreter Development REQUIRED)
+
+#Use this to build bindings for Python 3.10
+find_package(Python3 3.10...<3.11 COMPONENTS Interpreter Development REQUIRED)
+
 find_package(pybind11 REQUIRED)
 
 set(PROJECT_NAME "assembly_cd")

@@ -65,6 +65,7 @@ that will trigger the compilation of the PhysX libraries. Note that when develop
 > cmake --build build --config Release --target all
 ```
 which will compile the library with the `Release` configuration. If you want to compile the library with the `Debug` configuration, replace `Release` with `Debug`.
+
 6. Install everything with:
 ```bash
 > sudo cmake --install build
@@ -121,3 +122,7 @@ contact_point_cloud = o3d.geometry.PointCloud()
 contact_point_cloud.points = o3d.utility.Vector3dVector(contact_points)
 o3d.visualization.draw([cube, cone, contact_point_cloud])
 ```
+
+## Tips and Tricks
+- To update pybind11, run `git submodule update --recursive --remote --force` in the project's directory. Numpy v2.0 and above is incompatible with pybind11 v2.11 and below. If you encounter issues with the Python bindings, try updating pybind11.
+- To know what libraries are required to be installed on a system, run `ldd build/python_bindings/assembly_cd.cpython*` in the project's directory.
