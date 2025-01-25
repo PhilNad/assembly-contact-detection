@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.18)
 cmake_policy(SET CMP0057 NEW)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC")
@@ -9,11 +9,19 @@ find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 # to enable compiling bindings for different python versions
 list(APPEND CMAKE_PREFIX_PATH "/home/phil/mambaforge/envs/stable-placement/bin")
 
-#Use this to build bindings for Python 3.9
-#find_package(Python3 3.9...<3.10 COMPONENTS Interpreter Development REQUIRED)
-
-#Use this to build bindings for Python 3.10
-find_package(Python3 3.10...<3.11 COMPONENTS Interpreter Development REQUIRED)
+if(ACD_BUILD_PYTHON_VERSION VERSION_LESS 3.9)
+    message(FATAL_ERROR "Python version must be 3.9 or higher")
+elseif(ACD_BUILD_PYTHON_VERSION VERSION_LESS 3.10)
+    find_package(Python3 3.9...<3.10 COMPONENTS Interpreter Development REQUIRED)
+elseif(ACD_BUILD_PYTHON_VERSION VERSION_LESS 3.11)
+    find_package(Python3 3.10...<3.11 COMPONENTS Interpreter Development REQUIRED)
+elseif(ACD_BUILD_PYTHON_VERSION VERSION_LESS 3.12)
+    find_package(Python3 3.11...<3.12 COMPONENTS Interpreter Development REQUIRED)
+elseif(ACD_BUILD_PYTHON_VERSION VERSION_LESS 3.13)
+    find_package(Python3 3.12...<3.13 COMPONENTS Interpreter Development REQUIRED)
+else()
+    message(FATAL_ERROR "Python version must be between 3.9 and 3.12")
+endif()
 
 find_package(pybind11 REQUIRED)
 
@@ -27,7 +35,6 @@ set(PHYSX_BIN_PATH ${PHYSX_ROOT_DIR}/bin/linux.clang)
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/../lib/src/ ${PHYSX_ROOT_DIR}/include)
 
 target_link_libraries(${PROJECT_NAME} PRIVATE assembly-cd-lib)
-
 target_link_libraries(${PROJECT_NAME} PRIVATE Eigen3::Eigen)
 
 #Debug or Release libraries are linked depending on the build type

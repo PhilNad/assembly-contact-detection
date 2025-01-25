@@ -98,6 +98,8 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
                 float mu = this->scene->get_friction_coefficient(obj1->material_name, obj2->material_name);
 
                 //Create the ContactForce object and add it to the map
+                // NOTE: The normal that is used when defining Contact objects should be directed from object1 to object2.
+                //   See triangle_triangle_AARectangle_intersection() in Intersections.cpp
                 ContactForce contact_force = ContactForce(position, 
                                                             normal, 
                                                             tangent_u, 
@@ -109,35 +111,6 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
             }
         }
     }
-
-    // DEBUG CODE - TO REMOVE AFTER USE
-    // all_contact_forces.clear();
-    // ContactForce cf1 = ContactForce(Vector3f(-0.5f, 0.0f, 1.0f), 
-    //                                 Vector3f(0.0f, 0.0f, 1.0f), 
-    //                                 Vector3f(1.0f, 0.0f, 0.0f), 
-    //                                 Vector3f(0.0f, 1.0f, 0.0f),
-    //                                 "bot_cube",
-    //                                 "top_cube",
-    //                                 0.5);
-    // ContactForce cf2 = ContactForce(Vector3f(0.0f, 0.5f, 1.0f), 
-    //                                 Vector3f(0.0f, 0.0f, 1.0f), 
-    //                                 Vector3f(1.0f, 0.0f, 0.0f), 
-    //                                 Vector3f(0.0f, 1.0f, 0.0f),
-    //                                 "bot_cube",
-    //                                 "top_cube",
-    //                                 0.5);
-    // ContactForce cf3 = ContactForce(Vector3f(0.5f, -0.5f, 1.0f), 
-    //                                 Vector3f(0.0f, 0.0f, 1.0f), 
-    //                                 Vector3f(1.0f, 0.0f, 0.0f), 
-    //                                 Vector3f(0.0f, 1.0f, 0.0f),
-    //                                 "bot_cube",
-    //                                 "top_cube",
-    //                                 0.5);
-    // all_contact_forces.push_back(cf1);
-    // all_contact_forces.push_back(cf2);
-    // all_contact_forces.push_back(cf3);
-    // this->nb_coulomb_polygon_sides = 4;
-    // END DEBUG CODE
 
     this->nb_contact_forces = all_contact_forces.size();
     //This is OSQP's n

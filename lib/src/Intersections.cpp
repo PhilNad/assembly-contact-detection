@@ -90,7 +90,11 @@ PointSet3D triangle_triangle_AARectangle_intersection(AARectangle& aarec, std::s
         float shortest_dist_t1 = (closest_pt_t1 - p3d).norm();
         float shortest_dist_t2 = (closest_pt_t2 - p3d).norm();
 
-        //Define the normal at the intersection point to be the average of the normals of the two triangles.
+        //Define the normal at the intersection point to be the average of the normals of the two triangles
+        // when they are in the same direction.
+        // IMPORTANT: It is important that the normal be directed from the object that owns t1 towards the object that owns t2,
+        //  such that ContactForce objects created in ForceSolver have a normal direction consistent with the object1_by and object2_to IDs.
+        //  Hence, it is important that normal_t2 be flipped and normal_t1 be kept as is.
         Vector3f normal_t1 = t1->normal();
         Vector3f normal_t2 = t2->normal();
         //If the normals are in opposite directions, we flip one of them

@@ -267,6 +267,7 @@ class ContactReportCallbackForVoxelgrid: public PxSimulationEventCallback
                         PointSet3D intersections = all_triangles_overlap_over_AARectangle(*gridCell0, *gridCell1, max_distance_factor);
                         for(auto& p : intersections){
                             //Add a new contact point to the list
+                            //TODO: Make sure that p.normal is directed from obj0 to obj1
                             Contact contact(obj0->id, obj1->id, Vector3f(p[0], p[1], p[2]), p.normal, 0.0f);
                             thread_contacts.push_back(contact);
                         }
@@ -624,6 +625,7 @@ unordered_set<string> Scene::get_contacted_objects(string target_object)
 /// @param penetrating If true, return penetrating contact points. Otherwise, return surface contact points (default).
 /// @return vector of contact points between the two objects
 /// @note If id2 is not set, returns all contact points involving id1.
+/// @note The normal of a contact point is the one at the surface of object ID1. get_contact_points(id1, id2) =/= get_contact_points(id2, id1).
 std::vector<Contact> Scene::get_contact_points(string id1, string id2, bool penetrating)
 
 {

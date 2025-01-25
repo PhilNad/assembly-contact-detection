@@ -1,10 +1,10 @@
-cmake_minimum_required(VERSION 3.7)
+cmake_minimum_required(VERSION 3.18)
 
-find_package (Eigen3 3.4 REQUIRED NO_MODULE)
+find_package(Eigen3 3.4 REQUIRED NO_MODULE)
 find_package(osqp REQUIRED)
 
 SET(PROJECT_NAME "assembly-cd-lib")
-project(${PROJECT_NAME} VERSION 0.1.0 LANGUAGES C CXX)
+project(${PROJECT_NAME} VERSION 0.2.0 LANGUAGES C CXX)
 
 file(GLOB SRC_LIB_FILES src/*.cpp)
 add_library(${PROJECT_NAME} ${SRC_LIB_FILES})
@@ -37,7 +37,6 @@ set(NV_USE_DEBUG_WINCRT OFF CACHE BOOL "Use the debug version of the CRT")
 
 #Other libraries to use
 set(MISC_LIBRARIES
-    Eigen3::Eigen
     pthread
     dl
 )

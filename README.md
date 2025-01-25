@@ -26,7 +26,7 @@ With this technique, inter-penetration should not be triggered when one object t
 
 ## Dependencies
 - [PhysX](https://github.com/NVIDIA-Omniverse/PhysX) : Download the latest release, and unzip it in a convenient (permanent) location.
-- [Eigen](https://eigen.tuxfamily.org/)
+- [Eigen](https://eigen.tuxfamily.org/) : Download version 3.4 and follow the CMake instructions in the INSTALL file.
 - [OSQP](https://osqp.org/) : Follow the installation instructions on the website.
 - [PyBind11](https://pybind11.readthedocs.io/en/stable/index.html) (this is included in the repository as an external module).
 - `sudo apt install libglew-dev freeglut3-dev clang` to be able to compile PhysX's example snippets

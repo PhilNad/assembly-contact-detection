@@ -102,8 +102,14 @@ void ContactsManager::add_contact(Contact contact, bool is_penetrating)
         this->penetrating_object_ids[id1].insert(id2);
         this->penetrating_object_ids[id2].insert(id1);
     }else{
+        //We make sure that the contact normal is directed from obj_id_1 to obj_id_2 for the Contact
+        // obtained with this->surface_points[(obj_id_1, obj_id_2)], assuming that the normal 
+        // is directed from object1 to object2 in the Contact object.
         this->surface_points[make_pair(id1, id2)].push_back(contact);
+        //Flip the normal for reverse contact
+        contact.set_normal(-contact.get_normal());
         this->surface_points[make_pair(id2, id1)].push_back(contact);
+        
         this->contacting_object_ids[id1].insert(id2);
         this->contacting_object_ids[id2].insert(id1);
     }
