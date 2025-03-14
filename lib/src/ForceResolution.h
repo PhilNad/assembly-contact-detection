@@ -6,7 +6,7 @@
 #include <algorithm>
 #include "PxPhysicsAPI.h"
 #include <eigen3/Eigen/Eigen>
-#include <osqp/osqp.h>
+#include "osqp.h"
 #include "AssemblyCD.h"
 
 
