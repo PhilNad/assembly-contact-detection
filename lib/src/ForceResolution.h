@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <set>
 #include <unordered_map>
 #include <random>
 #include <algorithm>
@@ -57,6 +58,7 @@ class ForceSolver
         int nb_contact_forces;
         std::vector<ContactForce> all_contact_forces;
         void set_nb_contacts_per_object_pair(int nb_contacts_per_object_pair);
+        std::vector<Contact> select_contact_points(string id1, string id2);
         //The acceleration is the instantaneous acceleration of the center of mass of the objects.
         Vector3f acceleration = Vector3f(0.0f, 0.0f, -9.81f);
         

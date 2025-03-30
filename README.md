@@ -32,34 +32,14 @@ With this technique, inter-penetration should not be triggered when one object t
 - `sudo apt install libglew-dev freeglut3-dev clang` to be able to compile PhysX's example snippets
 - A compiler for C++ 11
 
-## Prerequisites
-1. Create a symlink to the PhysX directory in this project's directory:
+## Installation
+1. Clone the repository with:
 ```bash
-ln -s /home/phil/PhysX/physx physx
+> git clone https://github.com/PhilNad/assembly-contact-detection.git
+> cd assembly-contact-detection
 ```
-2. Navigate to the PhysX directory and run
-```bash
-./generate_projects.sh linux
-```
-3. Navigate to the `physx/compiler/linux-release` directory and run 
-```bash
-make
-```
-4. Navigate to the `physx/compiler/linux-checked` directory and run 
-```bash
-make
-``` 
-that will trigger the compilation of the PhysX libraries. Note that when developing the library, you should be using the `checked` version of the libraries, which can be compiled by navigating to the `physx/compiler/linux-checked` directory instead.
 
-4. Navigate to this project's directory and run these commands to install PyBind11 on the computer:
-```bash
-> git submodule update --init --recursive
-> cd extern/pybind11
-> cmake -S . -B build
-> cmake --build build
-> sudo cmake --install build
-```
-5. Build the library with: 
+2. Build the library with: 
 ```bash
 > cmake -S . -B build
 > cmake --build build --config Release --target all

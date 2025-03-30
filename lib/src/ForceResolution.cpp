@@ -37,6 +37,92 @@ Eigen::Vector<float, 6> ContactForce::get_global_wrench()
     return wrench;
 }
 
+std::vector<Contact> ForceSolver::select_contact_points(string id1, string id2)
+{
+    //Approximate a farthest point sampling of the contact points
+    // by randomly iteratively selecting a subset of points and computing the distance
+    // between each point and the already selected points. The point whose minimal
+    // distance to the already selected points is the farthest point is selected.
+    const int SUBSET_SIZE = 10;
+
+    std::vector<Contact> contact_points = this->scene->get_contact_points(id1, id2, false);
+
+    //If there are less contact points than the number of contacts to select,
+    // then return all contact points.
+    if(contact_points.size() <= this->nb_contacts_per_object_pair){
+        return contact_points;
+    }
+
+
+    //Vector to store indices of selected points
+    std::set<int> selected_indices;
+    std::set<int> not_selected_indices;
+    for (size_t i = 0; i < contact_points.size(); i++){
+        not_selected_indices.insert(i);
+    }
+    
+    //Randomly shuffle the contact points
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::shuffle(contact_points.begin(), contact_points.end(), g);
+
+    //Select the first point
+    selected_indices.insert(0);
+    not_selected_indices.erase(0);
+    
+
+    //Iteratively select the farthest point from the already selected points
+    for (size_t i = 0; i < this->nb_contacts_per_object_pair-1; i++){
+        //Select SUBSET_SIZE random points that are not selected
+        // If there are less than SUBSET_SIZE points, select all of them.
+        std::vector<int> random_indices;
+        if(not_selected_indices.size() > SUBSET_SIZE){
+            std::sample(not_selected_indices.begin(), not_selected_indices.end(), std::back_inserter(random_indices), SUBSET_SIZE, g);
+        }else{
+            random_indices.insert(random_indices.end(), not_selected_indices.begin(), not_selected_indices.end());
+        }
+        
+        //Amongst the random points, find the one that is farthest from the already selected points
+        int best_index = -1;
+        float best_distance = 0.0f;
+        for (size_t j = 0; j < random_indices.size(); j++){
+            int index = random_indices[j];
+            Contact contact = contact_points[index];
+            Vector3f position = contact.get_position();
+            
+            //Find the minimum distance between the point and the already selected points
+            float min_distance = std::numeric_limits<float>::max();
+            for (auto it = selected_indices.begin(); it != selected_indices.end(); ++it){
+                int selected_index = *it;
+                Contact selected_contact = contact_points[selected_index];
+                Vector3f selected_position = selected_contact.get_position();
+                float distance = (position - selected_position).norm();
+                if(distance < min_distance){
+                    min_distance = distance;
+                }
+            }
+            
+            //The best distance is the maximal one.
+            if(min_distance > best_distance){
+                best_distance = min_distance;
+                best_index = index;
+            }
+        }
+        //Select the point with the maximum distance
+        selected_indices.insert(best_index);
+        not_selected_indices.erase(best_index);
+    }
+
+    //Create a vector of selected points
+    std::vector<Contact> selected_points;
+    for (auto it = selected_indices.begin(); it != selected_indices.end(); ++it){
+        int index = *it;
+        Contact contact = contact_points[index];
+        selected_points.push_back(contact);
+    }
+    return selected_points;
+}
+
 ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_coulomb_polygon_sides): 
     scene(scene), 
     nb_coulomb_polygon_sides(nb_coulomb_polygon_sides)
@@ -72,10 +158,14 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
             // Get all surface contact points and select a random subset of them.
             // With this option, it is possible to be unlucky and get a subset of points that
             // cannot possibly create equilibrium. With more points, it is more likely to get a good subset.
-            std::vector<Contact> contact_points = this->scene->get_contact_points(id1, id2, false);
-            std::random_device rd;
-            std::mt19937 g(rd());
-            std::shuffle(contact_points.begin(), contact_points.end(), g);
+            // std::vector<Contact> contact_points = this->scene->get_contact_points(id1, id2, false);
+            // std::random_device rd;
+            // std::mt19937 g(rd());
+            // std::shuffle(contact_points.begin(), contact_points.end(), g);
+
+            //OPTION 3:
+            // Get all surface contact points and perform an approximate farthest point sampling
+            std::vector<Contact> contact_points = this->select_contact_points(id1, id2);
 
             int max_points = std::min(this->nb_contacts_per_object_pair, (int)contact_points.size());
             

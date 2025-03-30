@@ -59,7 +59,7 @@ int main(int argc, char** argv) {
         sum_torques += global_torque;
     }
 
-    //The sum of all forces should be close to [0, 0, 9.81]
+    //The sum of all forces should be close to [0, 0, 29.43]
     // and the sum of all torques should be close to [0, 0, 0].
     cout << "Sum of all forces: " << sum_forces.transpose() << endl;
     cout << "Sum of all torques: " << sum_torques.transpose() << endl;
