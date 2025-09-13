@@ -1,0 +1,86 @@
+\doxysection{Points.\+h}
+\hypertarget{Points_8h_source}{}\label{Points_8h_source}\index{lib/src/Points.h@{lib/src/Points.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{comment}{//Define\ classes\ Point2D\ and\ Point3D\ by\ extending\ Eigen::Vector2f\ and\ Eigen::Eigen::Vector3f\ respectively}}
+\DoxyCodeLine{00002\ \textcolor{comment}{//\ enabling\ their\ use\ in\ unordered\_set\ and\ unordered\_map\ by\ providing\ a\ hash\ function}}
+\DoxyCodeLine{00003\ \textcolor{comment}{//\ and\ overloading\ the\ comparison\ operators.}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00005\ }
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <eigen3/Eigen/Eigen>}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classPoint2D}{Point2D}}\ :\ \textcolor{keyword}{public}\ Eigen::Vector2f}
+\DoxyCodeLine{00010\ \{}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00012\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ EPSILON\ =\ 1e-\/6;}
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00014\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPoint2D}{Point2D}}();}
+\DoxyCodeLine{00015\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPoint2D}{Point2D}}(\textcolor{keywordtype}{float}\ x,\ \textcolor{keywordtype}{float}\ y);}
+\DoxyCodeLine{00016\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPoint2D}{Point2D}}(\textcolor{keyword}{const}\ Eigen::Vector2f\&\ other);}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPoint2D}{Point2D}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPoint2D}{Point2D}}\&\ other);}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ operator==(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPoint2D}{Point2D}}\&\ other)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ \ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structPoint2D_1_1HashFunction}{HashFunction}}}
+\DoxyCodeLine{00020\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00021\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ operator()(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPoint2D}{Point2D}}\&\ point)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00022\ \textcolor{keyword}{\ \ \ \ \ \ \ \ \ \ \ \ }\{}
+\DoxyCodeLine{00023\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ approx\_x\ =\ std::round(point[0]\ /\ point.EPSILON)\ *\ point.EPSILON;}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ approx\_y\ =\ std::round(point[1]\ /\ point.EPSILON)\ *\ point.EPSILON;}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ xHash\ =\ std::hash<float>()(approx\_x);}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ yHash\ =\ std::hash<float>()(approx\_y)\ <<\ 1;}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ xHash\ \string^\ yHash;}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ \textcolor{keyword}{friend}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structEpsilonEquality2D}{EpsilonEquality2D}};}
+\DoxyCodeLine{00031\ \};}
+\DoxyCodeLine{00032\ }
+\DoxyCodeLine{00033\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structEpsilonEquality2D}{EpsilonEquality2D}}}
+\DoxyCodeLine{00034\ \{}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keywordtype}{bool}\ operator()(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPoint2D}{Point2D}}\&\ lhs,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classPoint2D}{Point2D}}\&\ rhs)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00036\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ x\_dist\ =\ std::abs(lhs[0]\ -\/\ rhs[0]);}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ y\_dist\ =\ std::abs(lhs[1]\ -\/\ rhs[1]);}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ x\_dist\ <\ lhs.EPSILON\ }
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ \ \ \ \ \&\&\ y\_dist\ <\ lhs.EPSILON;}
+\DoxyCodeLine{00041\ \ \ \ \ \}}
+\DoxyCodeLine{00042\ \};}
+\DoxyCodeLine{00043\ }
+\DoxyCodeLine{00044\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classPoint3D}{Point3D}}\ :\ \textcolor{keyword}{public}\ Eigen::Vector3f}
+\DoxyCodeLine{00045\ \{}
+\DoxyCodeLine{00046\ \ \ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ EPSILON\ =\ 1e-\/6;}
+\DoxyCodeLine{00048\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPoint3D}{Point3D}}();}
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPoint3D}{Point3D}}(\textcolor{keywordtype}{float}\ x,\ \textcolor{keywordtype}{float}\ y,\ \textcolor{keywordtype}{float}\ z);}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPoint3D}{Point3D}}(\textcolor{keyword}{const}\ Eigen::Vector3f\&\ other);}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPoint3D}{Point3D}}(\textcolor{keyword}{const}\ Eigen::Vector3f\&\ other,\ \textcolor{keyword}{const}\ Eigen::Vector3f\&\ normal);}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPoint3D}{Point3D}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPoint3D}{Point3D}}\&\ other);}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ Eigen::Vector3f\ normal\ =\ Eigen::Vector3f::Zero();}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ operator==(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPoint3D}{Point3D}}\&\ other)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00056\ \ \ \ \ \ \ \ \ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structPoint3D_1_1HashFunction}{HashFunction}}}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ operator()(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPoint3D}{Point3D}}\&\ point)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00059\ \textcolor{keyword}{\ \ \ \ \ \ \ \ \ \ \ \ }\{}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ approx\_x\ =\ std::round(point[0]\ /\ point.EPSILON)\ *\ point.EPSILON;}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ approx\_y\ =\ std::round(point[1]\ /\ point.EPSILON)\ *\ point.EPSILON;}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ approx\_z\ =\ std::round(point[2]\ /\ point.EPSILON)\ *\ point.EPSILON;}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ xHash\ =\ std::hash<float>()(approx\_x);}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ yHash\ =\ std::hash<float>()(approx\_y)\ <<\ 1;}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ zHash\ =\ std::hash<float>()(approx\_z)\ <<\ 2;}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ (xHash\ \string^\ yHash)\ \string^\ zHash;}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00069\ \ \ \ \ \textcolor{keyword}{friend}\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structEpsilonEquality3D}{EpsilonEquality3D}};}
+\DoxyCodeLine{00070\ \};}
+\DoxyCodeLine{00071\ }
+\DoxyCodeLine{00072\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structEpsilonEquality3D}{EpsilonEquality3D}}}
+\DoxyCodeLine{00073\ \{}
+\DoxyCodeLine{00074\ \ \ \ \ \textcolor{keywordtype}{bool}\ operator()(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPoint3D}{Point3D}}\&\ lhs,\ \textcolor{keyword}{const}\ \mbox{\hyperlink{classPoint3D}{Point3D}}\&\ rhs)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00075\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ abs(lhs[0]\ -\/\ rhs[0])\ <\ lhs.EPSILON\ }
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \ \ \ \ \&\&\ abs(lhs[1]\ -\/\ rhs[1])\ <\ lhs.EPSILON\ }
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ \ \ \ \ \&\&\ abs(lhs[2]\ -\/\ rhs[2])\ <\ lhs.EPSILON;}
+\DoxyCodeLine{00079\ \ \ \ \ \}}
+\DoxyCodeLine{00080\ \};}
+
+\end{DoxyCode}

@@ -1,44 +1,44 @@
-\hypertarget{classOccupancyGrid}{}\doxysection{Occupancy\+Grid Class Reference}
-\label{classOccupancyGrid}\index{OccupancyGrid@{OccupancyGrid}}
-\doxysubsection*{Public Types}
+\doxysection{Occupancy\+Grid Class Reference}
+\hypertarget{classOccupancyGrid}{}\label{classOccupancyGrid}\index{OccupancyGrid@{OccupancyGrid}}
+\doxysubsubsection*{Public Types}
 \begin{DoxyCompactItemize}
 \item 
-\mbox{\Hypertarget{classOccupancyGrid_a9065ae6d5a81041028b576ceecabe1f6}\label{classOccupancyGrid_a9065ae6d5a81041028b576ceecabe1f6}} 
+\Hypertarget{classOccupancyGrid_a9065ae6d5a81041028b576ceecabe1f6}\label{classOccupancyGrid_a9065ae6d5a81041028b576ceecabe1f6} 
 enum {\bfseries sampling\+\_\+method} \{ {\bfseries uniform}
 , {\bfseries random}
  \}
 \end{DoxyCompactItemize}
-\doxysubsection*{Public Member Functions}
+\doxysubsubsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
 uint32\+\_\+t \mbox{\hyperlink{classOccupancyGrid_adbb22b2d9a5187a97c6fc5519334ef7d}{idx\+\_\+cell\+\_\+at}} (const Vector3f \&point)
 \begin{DoxyCompactList}\small\item\em Get the index of the cell that contains a given point. \end{DoxyCompactList}\item 
 vector$<$ int $>$ \mbox{\hyperlink{classOccupancyGrid_ac3ee41e8def4807e8394b40ecb443c93}{reverse\+\_\+cell\+\_\+idx}} (uint32\+\_\+t idx)
 \begin{DoxyCompactList}\small\item\em Get the coordinates of the cell with the given index. \end{DoxyCompactList}\item 
-unordered\+\_\+map$<$ uint32\+\_\+t, \mbox{\hyperlink{classGridCell}{Grid\+Cell}} $>$ $\ast$ \mbox{\hyperlink{classOccupancyGrid_ac54cbedd8ee0806cfee1dfe7b7ecf76d}{get\+\_\+grid\+\_\+cells}} ()
+unordered\+\_\+map$<$ uint32\+\_\+t, \mbox{\hyperlink{classGridCell}{Grid\+Cell}} $>$ \texorpdfstring{$\ast$}{*} \mbox{\hyperlink{classOccupancyGrid_ac54cbedd8ee0806cfee1dfe7b7ecf76d}{get\+\_\+grid\+\_\+cells}} ()
 \begin{DoxyCompactList}\small\item\em Get the list of grid cells. \end{DoxyCompactList}\item 
 \mbox{\hyperlink{classGridCell}{Grid\+Cell}} \mbox{\hyperlink{classOccupancyGrid_a484daafe6df4036219ffc13c23986d23}{get\+\_\+grid\+\_\+cell}} (uint32\+\_\+t idx)
 \begin{DoxyCompactList}\small\item\em Get the grid cell at the given index. \end{DoxyCompactList}\item 
 uint32\+\_\+t \mbox{\hyperlink{classOccupancyGrid_ac6402fe28271b4be7a26a2644c0cde2e}{is\+\_\+cell\+\_\+occupied}} (const Vector3f \&point)
 \begin{DoxyCompactList}\small\item\em Check is the given point is in a cell that is already occupied. \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{classOccupancyGrid_a4334aa3aa29b285ff32de582d75cbec3}\label{classOccupancyGrid_a4334aa3aa29b285ff32de582d75cbec3}} 
+\Hypertarget{classOccupancyGrid_a4334aa3aa29b285ff32de582d75cbec3}\label{classOccupancyGrid_a4334aa3aa29b285ff32de582d75cbec3} 
 uint32\+\_\+t {\bfseries is\+\_\+cell\+\_\+occupied} (uint32\+\_\+t cell\+\_\+idx)
 \item 
 \mbox{\hyperlink{classOccupancyGrid_aec5a2176af4ecba08b53e19f835be472}{Occupancy\+Grid}} (const Matrix\+X3f \&vertices, const Matrix\+X3i \&triangles, int resolution, int sampling\+\_\+method)
 \begin{DoxyCompactList}\small\item\em Builds a grid of cells that represent the volume of the object. \end{DoxyCompactList}\end{DoxyCompactItemize}
-\doxysubsection*{Public Attributes}
+\doxysubsubsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\mbox{\Hypertarget{classOccupancyGrid_ae25c13e8f4fd81d2566a5ff445cbc2c8}\label{classOccupancyGrid_ae25c13e8f4fd81d2566a5ff445cbc2c8}} 
+\Hypertarget{classOccupancyGrid_ae25c13e8f4fd81d2566a5ff445cbc2c8}\label{classOccupancyGrid_ae25c13e8f4fd81d2566a5ff445cbc2c8} 
 int {\bfseries resolution}
 \item 
-\mbox{\Hypertarget{classOccupancyGrid_ac4f482fea8fe0c5fad195e1dacb7ce50}\label{classOccupancyGrid_ac4f482fea8fe0c5fad195e1dacb7ce50}} 
+\Hypertarget{classOccupancyGrid_ac4f482fea8fe0c5fad195e1dacb7ce50}\label{classOccupancyGrid_ac4f482fea8fe0c5fad195e1dacb7ce50} 
 int {\bfseries sampling\+\_\+method\+\_\+used}
 \end{DoxyCompactItemize}
 
 
 \doxysubsection{Constructor \& Destructor Documentation}
-\mbox{\Hypertarget{classOccupancyGrid_aec5a2176af4ecba08b53e19f835be472}\label{classOccupancyGrid_aec5a2176af4ecba08b53e19f835be472}} 
+\Hypertarget{classOccupancyGrid_aec5a2176af4ecba08b53e19f835be472}\label{classOccupancyGrid_aec5a2176af4ecba08b53e19f835be472} 
 \index{OccupancyGrid@{OccupancyGrid}!OccupancyGrid@{OccupancyGrid}}
 \index{OccupancyGrid@{OccupancyGrid}!OccupancyGrid@{OccupancyGrid}}
 \doxysubsubsection{\texorpdfstring{OccupancyGrid()}{OccupancyGrid()}}
@@ -60,7 +60,7 @@ Builds a grid of cells that represent the volume of the object.
 
 
 \doxysubsection{Member Function Documentation}
-\mbox{\Hypertarget{classOccupancyGrid_a484daafe6df4036219ffc13c23986d23}\label{classOccupancyGrid_a484daafe6df4036219ffc13c23986d23}} 
+\Hypertarget{classOccupancyGrid_a484daafe6df4036219ffc13c23986d23}\label{classOccupancyGrid_a484daafe6df4036219ffc13c23986d23} 
 \index{OccupancyGrid@{OccupancyGrid}!get\_grid\_cell@{get\_grid\_cell}}
 \index{get\_grid\_cell@{get\_grid\_cell}!OccupancyGrid@{OccupancyGrid}}
 \doxysubsubsection{\texorpdfstring{get\_grid\_cell()}{get\_grid\_cell()}}
@@ -78,11 +78,11 @@ Get the grid cell at the given index.
 \begin{DoxyReturn}{Returns}
 Grid cell at the given index. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classOccupancyGrid_ac54cbedd8ee0806cfee1dfe7b7ecf76d}\label{classOccupancyGrid_ac54cbedd8ee0806cfee1dfe7b7ecf76d}} 
+\Hypertarget{classOccupancyGrid_ac54cbedd8ee0806cfee1dfe7b7ecf76d}\label{classOccupancyGrid_ac54cbedd8ee0806cfee1dfe7b7ecf76d} 
 \index{OccupancyGrid@{OccupancyGrid}!get\_grid\_cells@{get\_grid\_cells}}
 \index{get\_grid\_cells@{get\_grid\_cells}!OccupancyGrid@{OccupancyGrid}}
 \doxysubsubsection{\texorpdfstring{get\_grid\_cells()}{get\_grid\_cells()}}
-{\footnotesize\ttfamily unordered\+\_\+map$<$ uint32\+\_\+t, \mbox{\hyperlink{classGridCell}{Grid\+Cell}} $>$ $\ast$ Occupancy\+Grid\+::get\+\_\+grid\+\_\+cells (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily unordered\+\_\+map$<$ uint32\+\_\+t, \mbox{\hyperlink{classGridCell}{Grid\+Cell}} $>$ \texorpdfstring{$\ast$}{*} Occupancy\+Grid\+::get\+\_\+grid\+\_\+cells (\begin{DoxyParamCaption}{ }\end{DoxyParamCaption})}
 
 
 
@@ -91,7 +91,7 @@ Get the list of grid cells.
 \begin{DoxyReturn}{Returns}
 List of grid cells. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classOccupancyGrid_adbb22b2d9a5187a97c6fc5519334ef7d}\label{classOccupancyGrid_adbb22b2d9a5187a97c6fc5519334ef7d}} 
+\Hypertarget{classOccupancyGrid_adbb22b2d9a5187a97c6fc5519334ef7d}\label{classOccupancyGrid_adbb22b2d9a5187a97c6fc5519334ef7d} 
 \index{OccupancyGrid@{OccupancyGrid}!idx\_cell\_at@{idx\_cell\_at}}
 \index{idx\_cell\_at@{idx\_cell\_at}!OccupancyGrid@{OccupancyGrid}}
 \doxysubsubsection{\texorpdfstring{idx\_cell\_at()}{idx\_cell\_at()}}
@@ -109,7 +109,7 @@ Get the index of the cell that contains a given point.
 \begin{DoxyReturn}{Returns}
 Index of the cell that contains the point, or zero if the point is outside the grid. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classOccupancyGrid_ac6402fe28271b4be7a26a2644c0cde2e}\label{classOccupancyGrid_ac6402fe28271b4be7a26a2644c0cde2e}} 
+\Hypertarget{classOccupancyGrid_ac6402fe28271b4be7a26a2644c0cde2e}\label{classOccupancyGrid_ac6402fe28271b4be7a26a2644c0cde2e} 
 \index{OccupancyGrid@{OccupancyGrid}!is\_cell\_occupied@{is\_cell\_occupied}}
 \index{is\_cell\_occupied@{is\_cell\_occupied}!OccupancyGrid@{OccupancyGrid}}
 \doxysubsubsection{\texorpdfstring{is\_cell\_occupied()}{is\_cell\_occupied()}}
@@ -127,7 +127,7 @@ Check is the given point is in a cell that is already occupied.
 \begin{DoxyReturn}{Returns}
 Returns the index of the cell that contains the point if it is occupied, zero otherwise. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classOccupancyGrid_ac3ee41e8def4807e8394b40ecb443c93}\label{classOccupancyGrid_ac3ee41e8def4807e8394b40ecb443c93}} 
+\Hypertarget{classOccupancyGrid_ac3ee41e8def4807e8394b40ecb443c93}\label{classOccupancyGrid_ac3ee41e8def4807e8394b40ecb443c93} 
 \index{OccupancyGrid@{OccupancyGrid}!reverse\_cell\_idx@{reverse\_cell\_idx}}
 \index{reverse\_cell\_idx@{reverse\_cell\_idx}!OccupancyGrid@{OccupancyGrid}}
 \doxysubsubsection{\texorpdfstring{reverse\_cell\_idx()}{reverse\_cell\_idx()}}

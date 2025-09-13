@@ -1,0 +1,44 @@
+\doxysection{AARectangle.\+h}
+\hypertarget{AARectangle_8h_source}{}\label{AARectangle_8h_source}\index{lib/src/AARectangle.h@{lib/src/AARectangle.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ "{}PxPhysicsAPI.h"{}}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <eigen3/Eigen/Eigen>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}Triangle.h"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}PointSet.h"{}}}
+\DoxyCodeLine{00006\ }
+\DoxyCodeLine{00007\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classAARectangle}{AARectangle}}}
+\DoxyCodeLine{00008\ \{}
+\DoxyCodeLine{00009\ \ \ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00010\ \ \ \ \ \ \ \ \ Eigen::Vector3f\ u;}
+\DoxyCodeLine{00011\ \ \ \ \ \ \ \ \ Eigen::Vector3f\ v;}
+\DoxyCodeLine{00012\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ EPSILON\ =\ 1e-\/3;}
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00014\ \ \ \ \ \ \ \ \ \textcolor{keyword}{enum\ class}\ NORMAL\_AXIS\ \{\ X,\ Y,\ Z\ \};}
+\DoxyCodeLine{00015\ \ \ \ \ \ \ \ \ physx::PxPlane\ plane;}
+\DoxyCodeLine{00016\ \ \ \ \ \ \ \ \ Eigen::Vector3f\ centre;}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ \ \ Eigen::Vector3f\ half\_extents;}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ area;}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ \ Eigen::Vector2f\ u\_extents;}
+\DoxyCodeLine{00020\ \ \ \ \ \ \ \ \ Eigen::Vector2f\ v\_extents;}
+\DoxyCodeLine{00021\ \ \ \ \ \ \ \ \ \textcolor{comment}{//Origin\ of\ the\ AARectangle\ relative\ to\ the\ world\ frame\ projected\ onto\ the\ plane.}}
+\DoxyCodeLine{00022\ \ \ \ \ \ \ \ \ Eigen::Vector2f\ centre\_2d;}
+\DoxyCodeLine{00023\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classAARectangle}{AARectangle}}(physx::PxPlane\ plane,\ Eigen::Vector3f\ centre,\ Eigen::Vector3f\ half\_extents);}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \ \ Eigen::Vector2f\ \mbox{\hyperlink{classAARectangle_a92246a1a73f4d64ef23c813e0b600fbd}{project\_point}}(\textcolor{keyword}{const}\ Eigen::Vector3f\&\ point);}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ Eigen::Vector3f\ \mbox{\hyperlink{classAARectangle_aa31e7dd9d01898be236cf717d7cc92ce}{unproject\_point}}(\textcolor{keyword}{const}\ Eigen::Vector2f\&\ point);}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classTriangle}{Triangle<Eigen::Vector2f>}}\ \mbox{\hyperlink{classAARectangle_afcd4f22229b2743dac6393d01b4f6ada}{project\_triangle}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classTriangle}{Triangle<Eigen::Vector3f>}}\&\ triangle);}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classAARectangle_a9b452c320fbf3fdb61272de8257e24b5}{contains}}(\textcolor{keyword}{const}\ Eigen::Vector3f\&\ point);}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classAARectangle_a9b452c320fbf3fdb61272de8257e24b5}{contains}}(\textcolor{keyword}{const}\ Eigen::Vector2f\&\ point);}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ Eigen::Vector2f\ \mbox{\hyperlink{classAARectangle_a0e7ea68d319c7da2880d0777e78c3079}{project\_and\_clamp}}(\textcolor{keyword}{const}\ Eigen::Vector3f\&\ point);}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ Eigen::Vector2f\ \mbox{\hyperlink{classAARectangle_a675046ec0b63408f83c1f6d209f45939}{inside\_or\_on}}(\textcolor{keyword}{const}\ Eigen::Vector2f\&\ point);}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{classAARectangle_a736ba0c5fb048592a6e8b2c6697f4db6}{get\_min\_u}}();}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{classAARectangle_a48657161993a03161d708a5bad42546a}{get\_max\_u}}();}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{classAARectangle_ab62f66b39a22fe4a005866ca06bec4a7}{get\_min\_v}}();}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{classAARectangle_aa943f3530c8d381d1df2fc5ab119491f}{get\_max\_v}}();}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ Eigen::Vector3f\ \mbox{\hyperlink{classAARectangle_a35019349a44ee45431a1bcac873af219}{get\_uv\_origin\_in\_world}}();}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}\ \mbox{\hyperlink{classAARectangle_a1a78d93bc394bc34095b7ac5b5cdfd33}{get\_2d\_vertices}}();}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet3D}{PointSet3D}}\ \mbox{\hyperlink{classAARectangle_aab8ce3d6b4833bbdfa1aa6672c62d4b4}{get\_3d\_vertices}}();}
+\DoxyCodeLine{00038\ \};}
+
+\end{DoxyCode}

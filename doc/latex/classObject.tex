@@ -1,5 +1,5 @@
-\hypertarget{classObject}{}\doxysection{Object Class Reference}
-\label{classObject}\index{Object@{Object}}
+\doxysection{Object Class Reference}
+\hypertarget{classObject}{}\label{classObject}\index{Object@{Object}}
 
 
 Collaboration diagram for Object\+:
@@ -10,10 +10,10 @@ Collaboration diagram for Object\+:
 \includegraphics[width=136pt]{classObject__coll__graph}
 \end{center}
 \end{figure}
-\doxysubsection*{Public Member Functions}
+\doxysubsubsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\mbox{\hyperlink{classObject_a733f0084d44ef3f19a7445fbd90b4fd2}{Object}} (\mbox{\hyperlink{classScene}{Scene}} $\ast$scene, string id, Matrix4f pose, Matrix\+X3f vertices, Matrix\+X3i triangles, bool is\+\_\+volumetric, bool is\+\_\+fixed, float mass, Vector3f com, string material\+\_\+name)
+\mbox{\hyperlink{classObject_a733f0084d44ef3f19a7445fbd90b4fd2}{Object}} (\mbox{\hyperlink{classScene}{Scene}} \texorpdfstring{$\ast$}{*}scene, string id, Matrix4f pose, Matrix\+X3f vertices, Matrix\+X3i triangles, bool is\+\_\+volumetric, bool is\+\_\+fixed, float mass, Vector3f com, string material\+\_\+name)
 \begin{DoxyCompactList}\small\item\em Define an object in the scene with the following properties. \end{DoxyCompactList}\item 
 bool \mbox{\hyperlink{classObject_a0638f02e88ce81408daf923f7d14c1c4}{has\+\_\+tri\+\_\+mesh}} ()
 \begin{DoxyCompactList}\small\item\em Check if the object has a triangle mesh associated with it. \end{DoxyCompactList}\item 
@@ -47,8 +47,8 @@ bool \mbox{\hyperlink{classObject_a64f6158a6cf4398746a5de1d42e183c7}{validate\+\
 \begin{DoxyCompactList}\small\item\em Check the triangle mesh for any common issues that the tetrahedron meshing algorithm cannot handle. \end{DoxyCompactList}\item 
 void \mbox{\hyperlink{classObject_ada9a469202a62c32c7b586f6b9c5fe7b}{remesh\+\_\+surface\+\_\+trimesh}} ()
 \begin{DoxyCompactList}\small\item\em Redo the meshing of the surface mesh to make sure it is adequate for further processing. \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{classObject_a6b29f48e6f3bddf9c2f39d46fbad240f}\label{classObject_a6b29f48e6f3bddf9c2f39d46fbad240f}} 
-void \mbox{\hyperlink{classObject_a6b29f48e6f3bddf9c2f39d46fbad240f}{create\+\_\+tri\+\_\+mesh\+\_\+geometry}} ()
+\Hypertarget{classObject_a6b29f48e6f3bddf9c2f39d46fbad240f}\label{classObject_a6b29f48e6f3bddf9c2f39d46fbad240f} 
+void {\bfseries create\+\_\+tri\+\_\+mesh\+\_\+geometry} ()
 \begin{DoxyCompactList}\small\item\em Create a Px\+Triangle\+Mesh\+Geometry from the description of the triangle mesh in tri\+\_\+mesh and store the pointer to the result in tri\+\_\+mesh\+\_\+geometry. \end{DoxyCompactList}\item 
 bool \mbox{\hyperlink{classObject_a4afad3d5b097349b44e18488806f27f4}{create\+\_\+tetra\+\_\+mesh}} (Px\+Simple\+Triangle\+Mesh \&tri\+Surface\+Mesh, Px\+Array$<$ Px\+Vec3 $>$ \&tet\+Mesh\+Vertices, Px\+Array$<$ Px\+U32 $>$ \&tet\+Mesh\+Indices)
 \begin{DoxyCompactList}\small\item\em Perform the tetrahedralization of the surface mesh. \end{DoxyCompactList}\item 
@@ -58,65 +58,65 @@ shared\+\_\+ptr$<$ \mbox{\hyperlink{classOccupancyGrid}{Occupancy\+Grid}} $>$ \m
 \begin{DoxyCompactList}\small\item\em Create a grid of cells, defined in the world frame, that represents the volume of the object. \end{DoxyCompactList}\item 
 \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} \mbox{\hyperlink{classObject_a510d278a42dc9463e0cc10e8fb9a55d4}{get\+\_\+closest\+\_\+point\+\_\+on\+\_\+surface}} (Vector3f query\+\_\+point)
 \begin{DoxyCompactList}\small\item\em Get the closest point on the surface of the object to a query point and the normal at that point. \end{DoxyCompactList}\end{DoxyCompactItemize}
-\doxysubsection*{Public Attributes}
+\doxysubsubsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\mbox{\Hypertarget{classObject_a5f7915e8bfc65929d42c2444e96e6cda}\label{classObject_a5f7915e8bfc65929d42c2444e96e6cda}} 
+\Hypertarget{classObject_a5f7915e8bfc65929d42c2444e96e6cda}\label{classObject_a5f7915e8bfc65929d42c2444e96e6cda} 
 string {\bfseries id}
 \item 
-\mbox{\Hypertarget{classObject_ad6a91eebc60bce3e4284ac852cfae56a}\label{classObject_ad6a91eebc60bce3e4284ac852cfae56a}} 
+\Hypertarget{classObject_ad6a91eebc60bce3e4284ac852cfae56a}\label{classObject_ad6a91eebc60bce3e4284ac852cfae56a} 
 Matrix4f {\bfseries pose}
 \item 
-\mbox{\Hypertarget{classObject_a97eb3e7732ffef85b012162bc324942e}\label{classObject_a97eb3e7732ffef85b012162bc324942e}} 
+\Hypertarget{classObject_a97eb3e7732ffef85b012162bc324942e}\label{classObject_a97eb3e7732ffef85b012162bc324942e} 
 Matrix\+X3f {\bfseries tri\+\_\+vertices}
 \item 
-\mbox{\Hypertarget{classObject_a73d483342e4257a01d18a538b9b13f21}\label{classObject_a73d483342e4257a01d18a538b9b13f21}} 
+\Hypertarget{classObject_a73d483342e4257a01d18a538b9b13f21}\label{classObject_a73d483342e4257a01d18a538b9b13f21} 
 Matrix\+X3i {\bfseries tri\+\_\+triangles}
 \item 
-\mbox{\Hypertarget{classObject_ab467919ffc1043db2cdfd7bc629ecc29}\label{classObject_ab467919ffc1043db2cdfd7bc629ecc29}} 
+\Hypertarget{classObject_ab467919ffc1043db2cdfd7bc629ecc29}\label{classObject_ab467919ffc1043db2cdfd7bc629ecc29} 
 Matrix\+X3f {\bfseries tetra\+\_\+vertices}
 \item 
-\mbox{\Hypertarget{classObject_ad1a2bbc3661506e7ec8fa4126ce91325}\label{classObject_ad1a2bbc3661506e7ec8fa4126ce91325}} 
+\Hypertarget{classObject_ad1a2bbc3661506e7ec8fa4126ce91325}\label{classObject_ad1a2bbc3661506e7ec8fa4126ce91325} 
 Matrix\+X4i {\bfseries tetra\+\_\+indices}
 \item 
-\mbox{\Hypertarget{classObject_a8f61ba3e5457c54de2c94c635e0a9e75}\label{classObject_a8f61ba3e5457c54de2c94c635e0a9e75}} 
+\Hypertarget{classObject_a8f61ba3e5457c54de2c94c635e0a9e75}\label{classObject_a8f61ba3e5457c54de2c94c635e0a9e75} 
 Matrix\+X3f {\bfseries canary\+\_\+sphere\+\_\+positions}
 \item 
-\mbox{\Hypertarget{classObject_acc27de816cda7564614d46f270a6c736}\label{classObject_acc27de816cda7564614d46f270a6c736}} 
+\Hypertarget{classObject_acc27de816cda7564614d46f270a6c736}\label{classObject_acc27de816cda7564614d46f270a6c736} 
 bool {\bfseries is\+\_\+volumetric}
 \item 
-\mbox{\Hypertarget{classObject_a13c9011c796ea9593e678a9560b658e6}\label{classObject_a13c9011c796ea9593e678a9560b658e6}} 
+\Hypertarget{classObject_a13c9011c796ea9593e678a9560b658e6}\label{classObject_a13c9011c796ea9593e678a9560b658e6} 
 bool {\bfseries is\+\_\+fixed}
 \item 
-\mbox{\Hypertarget{classObject_a60866179af7cb2aad410ea01de546e4e}\label{classObject_a60866179af7cb2aad410ea01de546e4e}} 
+\Hypertarget{classObject_a60866179af7cb2aad410ea01de546e4e}\label{classObject_a60866179af7cb2aad410ea01de546e4e} 
 float {\bfseries mass}
 \item 
-\mbox{\Hypertarget{classObject_a9fcca15a0091d916f5745005889a28b3}\label{classObject_a9fcca15a0091d916f5745005889a28b3}} 
+\Hypertarget{classObject_a9fcca15a0091d916f5745005889a28b3}\label{classObject_a9fcca15a0091d916f5745005889a28b3} 
 Vector3f {\bfseries com}
 \item 
-\mbox{\Hypertarget{classObject_a595ca28e4a415c00d262e77880b75108}\label{classObject_a595ca28e4a415c00d262e77880b75108}} 
+\Hypertarget{classObject_a595ca28e4a415c00d262e77880b75108}\label{classObject_a595ca28e4a415c00d262e77880b75108} 
 string {\bfseries material\+\_\+name}
 \item 
-\mbox{\Hypertarget{classObject_a475554b11a908efae387e6a915d6fcc0}\label{classObject_a475554b11a908efae387e6a915d6fcc0}} 
+\Hypertarget{classObject_a475554b11a908efae387e6a915d6fcc0}\label{classObject_a475554b11a908efae387e6a915d6fcc0} 
 float {\bfseries max\+\_\+separation}
 \item 
-\mbox{\Hypertarget{classObject_a744d401eccddf4b19de9b2f7580df87f}\label{classObject_a744d401eccddf4b19de9b2f7580df87f}} 
-\mbox{\hyperlink{classScene}{Scene}} $\ast$ {\bfseries scene}
+\Hypertarget{classObject_a744d401eccddf4b19de9b2f7580df87f}\label{classObject_a744d401eccddf4b19de9b2f7580df87f} 
+\mbox{\hyperlink{classScene}{Scene}} \texorpdfstring{$\ast$}{*} {\bfseries scene}
 \item 
-\mbox{\Hypertarget{classObject_a864b037c26ccf26db074f753d8a8539e}\label{classObject_a864b037c26ccf26db074f753d8a8539e}} 
+\Hypertarget{classObject_a864b037c26ccf26db074f753d8a8539e}\label{classObject_a864b037c26ccf26db074f753d8a8539e} 
 shared\+\_\+ptr$<$ Px\+Simple\+Triangle\+Mesh $>$ {\bfseries tri\+\_\+mesh}
 \item 
-\mbox{\Hypertarget{classObject_a0452badc0980c03a63742b814c774788}\label{classObject_a0452badc0980c03a63742b814c774788}} 
+\Hypertarget{classObject_a0452badc0980c03a63742b814c774788}\label{classObject_a0452badc0980c03a63742b814c774788} 
 shared\+\_\+ptr$<$ \mbox{\hyperlink{classOccupancyGrid}{Occupancy\+Grid}} $>$ {\bfseries occupancy\+\_\+grid}
 \end{DoxyCompactItemize}
 
 
 \doxysubsection{Constructor \& Destructor Documentation}
-\mbox{\Hypertarget{classObject_a733f0084d44ef3f19a7445fbd90b4fd2}\label{classObject_a733f0084d44ef3f19a7445fbd90b4fd2}} 
+\Hypertarget{classObject_a733f0084d44ef3f19a7445fbd90b4fd2}\label{classObject_a733f0084d44ef3f19a7445fbd90b4fd2} 
 \index{Object@{Object}!Object@{Object}}
 \index{Object@{Object}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{Object()}{Object()}}
-{\footnotesize\ttfamily Object\+::\+Object (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classScene}{Scene}} $\ast$}]{scene,  }\item[{string}]{id,  }\item[{Matrix4f}]{pose,  }\item[{Matrix\+X3f}]{vertices,  }\item[{Matrix\+X3i}]{triangles,  }\item[{bool}]{is\+\_\+volumetric = {\ttfamily true},  }\item[{bool}]{is\+\_\+fixed = {\ttfamily false},  }\item[{float}]{mass = {\ttfamily 1.0f},  }\item[{Vector3f}]{com = {\ttfamily (Vector3f()~$<$$<$~0.0f,~0.0f,~0.0f).finished()},  }\item[{string}]{material\+\_\+name = {\ttfamily \char`\"{}wood\char`\"{}} }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily Object\+::\+Object (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{classScene}{Scene}} \texorpdfstring{$\ast$}{*}}]{scene,  }\item[{string}]{id,  }\item[{Matrix4f}]{pose,  }\item[{Matrix\+X3f}]{vertices,  }\item[{Matrix\+X3i}]{triangles,  }\item[{bool}]{is\+\_\+volumetric = {\ttfamily true},  }\item[{bool}]{is\+\_\+fixed = {\ttfamily false},  }\item[{float}]{mass = {\ttfamily 1.0f},  }\item[{Vector3f}]{com = {\ttfamily (Vector3f()~$<$$<$~0.0f,~0.0f,~0.0f).finished()},  }\item[{string}]{material\+\_\+name = {\ttfamily "{}wood"{}} }\end{DoxyParamCaption})}
 
 
 
@@ -144,7 +144,7 @@ Define an object in the scene with the following properties.
 
 
 \doxysubsection{Member Function Documentation}
-\mbox{\Hypertarget{classObject_a9c560fbb83fbba80268273e370accd72}\label{classObject_a9c560fbb83fbba80268273e370accd72}} 
+\Hypertarget{classObject_a9c560fbb83fbba80268273e370accd72}\label{classObject_a9c560fbb83fbba80268273e370accd72} 
 \index{Object@{Object}!create\_occupancy\_grid@{create\_occupancy\_grid}}
 \index{create\_occupancy\_grid@{create\_occupancy\_grid}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{create\_occupancy\_grid()}{create\_occupancy\_grid()}}
@@ -162,7 +162,7 @@ Create a grid of cells, defined in the world frame, that represents the volume o
 \begin{DoxyReturn}{Returns}
 Pointer to the occupancy grid 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classObject_a419f85b7055a23357f2a090e8de10182}\label{classObject_a419f85b7055a23357f2a090e8de10182}} 
+\Hypertarget{classObject_a419f85b7055a23357f2a090e8de10182}\label{classObject_a419f85b7055a23357f2a090e8de10182} 
 \index{Object@{Object}!create\_tetra\_convex\_set@{create\_tetra\_convex\_set}}
 \index{create\_tetra\_convex\_set@{create\_tetra\_convex\_set}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{create\_tetra\_convex\_set()}{create\_tetra\_convex\_set()}}
@@ -184,7 +184,7 @@ From a tetrahedral mesh, create a set of convex meshes, each describing a tetrah
 \begin{DoxyReturn}{Returns}
 True if the convex mesh descriptions were successfully created, false otherwise. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classObject_a4afad3d5b097349b44e18488806f27f4}\label{classObject_a4afad3d5b097349b44e18488806f27f4}} 
+\Hypertarget{classObject_a4afad3d5b097349b44e18488806f27f4}\label{classObject_a4afad3d5b097349b44e18488806f27f4} 
 \index{Object@{Object}!create\_tetra\_mesh@{create\_tetra\_mesh}}
 \index{create\_tetra\_mesh@{create\_tetra\_mesh}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{create\_tetra\_mesh()}{create\_tetra\_mesh()}}
@@ -206,7 +206,7 @@ Perform the tetrahedralization of the surface mesh.
 \begin{DoxyReturn}{Returns}
 True if the tetrahedralization was successful, false otherwise. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classObject_a510d278a42dc9463e0cc10e8fb9a55d4}\label{classObject_a510d278a42dc9463e0cc10e8fb9a55d4}} 
+\Hypertarget{classObject_a510d278a42dc9463e0cc10e8fb9a55d4}\label{classObject_a510d278a42dc9463e0cc10e8fb9a55d4} 
 \index{Object@{Object}!get\_closest\_point\_on\_surface@{get\_closest\_point\_on\_surface}}
 \index{get\_closest\_point\_on\_surface@{get\_closest\_point\_on\_surface}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{get\_closest\_point\_on\_surface()}{get\_closest\_point\_on\_surface()}}
@@ -222,9 +222,9 @@ Get the closest point on the surface of the object to a query point and the norm
 \hline
 \end{DoxyParams}
 \begin{DoxyReturn}{Returns}
-\mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} containing the position and normal of the closest point on the surface. 
+\doxylink{structOrientedPoint}{Oriented\+Point} containing the position and normal of the closest point on the surface. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classObject_a16ed03af77e5180eba817ce8b9c35104}\label{classObject_a16ed03af77e5180eba817ce8b9c35104}} 
+\Hypertarget{classObject_a16ed03af77e5180eba817ce8b9c35104}\label{classObject_a16ed03af77e5180eba817ce8b9c35104} 
 \index{Object@{Object}!get\_grid\_resolution@{get\_grid\_resolution}}
 \index{get\_grid\_resolution@{get\_grid\_resolution}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{get\_grid\_resolution()}{get\_grid\_resolution()}}
@@ -235,9 +235,9 @@ Get the closest point on the surface of the object to a query point and the norm
 Return the number of cells per unit of length of the occupancy grid. 
 
 \begin{DoxyReturn}{Returns}
-\mbox{\hyperlink{classOccupancyGrid}{Occupancy\+Grid}} resolution 
+\doxylink{classOccupancyGrid}{Occupancy\+Grid} resolution 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classObject_ac79db2a59f1a872882f9c0ee89a2e767}\label{classObject_ac79db2a59f1a872882f9c0ee89a2e767}} 
+\Hypertarget{classObject_ac79db2a59f1a872882f9c0ee89a2e767}\label{classObject_ac79db2a59f1a872882f9c0ee89a2e767} 
 \index{Object@{Object}!get\_pose@{get\_pose}}
 \index{get\_pose@{get\_pose}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{get\_pose()}{get\_pose()}}
@@ -248,9 +248,9 @@ Return the number of cells per unit of length of the occupancy grid.
 Return the pose of the object as a Px\+Transform. 
 
 \begin{DoxyReturn}{Returns}
-\mbox{\hyperlink{classObject}{Object}} pose. 
+\doxylink{classObject}{Object} pose. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classObject_a7d7317063b47fbb95e7a76dfa13ce3f5}\label{classObject_a7d7317063b47fbb95e7a76dfa13ce3f5}} 
+\Hypertarget{classObject_a7d7317063b47fbb95e7a76dfa13ce3f5}\label{classObject_a7d7317063b47fbb95e7a76dfa13ce3f5} 
 \index{Object@{Object}!get\_voxel\_centres@{get\_voxel\_centres}}
 \index{get\_voxel\_centres@{get\_voxel\_centres}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{get\_voxel\_centres()}{get\_voxel\_centres()}}
@@ -266,7 +266,7 @@ Nx3 matrix representing the centre positions
 \begin{DoxyNote}{Note}
 The centres are given in the world frame 
 \end{DoxyNote}
-\mbox{\Hypertarget{classObject_ad54c27b00bd12ae4f953a39a882cad57}\label{classObject_ad54c27b00bd12ae4f953a39a882cad57}} 
+\Hypertarget{classObject_ad54c27b00bd12ae4f953a39a882cad57}\label{classObject_ad54c27b00bd12ae4f953a39a882cad57} 
 \index{Object@{Object}!get\_voxel\_side\_lengths@{get\_voxel\_side\_lengths}}
 \index{get\_voxel\_side\_lengths@{get\_voxel\_side\_lengths}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{get\_voxel\_side\_lengths()}{get\_voxel\_side\_lengths()}}
@@ -282,7 +282,7 @@ Get the side lengths of each occupied cell in the occupancy grid.
 \begin{DoxyNote}{Note}
 All cells have the same side lengths, which are defined in the world frame 
 \end{DoxyNote}
-\mbox{\Hypertarget{classObject_a9d21340e1dab67c2867f37d969723ccf}\label{classObject_a9d21340e1dab67c2867f37d969723ccf}} 
+\Hypertarget{classObject_a9d21340e1dab67c2867f37d969723ccf}\label{classObject_a9d21340e1dab67c2867f37d969723ccf} 
 \index{Object@{Object}!has\_canary\_spheres@{has\_canary\_spheres}}
 \index{has\_canary\_spheres@{has\_canary\_spheres}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{has\_canary\_spheres()}{has\_canary\_spheres()}}
@@ -295,7 +295,7 @@ Check if the object has canary spheres associated with it.
 \begin{DoxyReturn}{Returns}
 True if the object has canary spheres, false otherwise. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classObject_a76c81edcfc6dfb92d683ef6b98a67028}\label{classObject_a76c81edcfc6dfb92d683ef6b98a67028}} 
+\Hypertarget{classObject_a76c81edcfc6dfb92d683ef6b98a67028}\label{classObject_a76c81edcfc6dfb92d683ef6b98a67028} 
 \index{Object@{Object}!has\_tetra\_mesh@{has\_tetra\_mesh}}
 \index{has\_tetra\_mesh@{has\_tetra\_mesh}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{has\_tetra\_mesh()}{has\_tetra\_mesh()}}
@@ -308,7 +308,7 @@ Check if the object has a tetrahedral mesh associated with it.
 \begin{DoxyReturn}{Returns}
 True if the object has a tetrahedral mesh, false otherwise. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classObject_a0638f02e88ce81408daf923f7d14c1c4}\label{classObject_a0638f02e88ce81408daf923f7d14c1c4}} 
+\Hypertarget{classObject_a0638f02e88ce81408daf923f7d14c1c4}\label{classObject_a0638f02e88ce81408daf923f7d14c1c4} 
 \index{Object@{Object}!has\_tri\_mesh@{has\_tri\_mesh}}
 \index{has\_tri\_mesh@{has\_tri\_mesh}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{has\_tri\_mesh()}{has\_tri\_mesh()}}
@@ -321,7 +321,7 @@ Check if the object has a triangle mesh associated with it.
 \begin{DoxyReturn}{Returns}
 True if the object has a triangle mesh, false otherwise. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classObject_a9c59439266f1869b1fc03f29e661773c}\label{classObject_a9c59439266f1869b1fc03f29e661773c}} 
+\Hypertarget{classObject_a9c59439266f1869b1fc03f29e661773c}\label{classObject_a9c59439266f1869b1fc03f29e661773c} 
 \index{Object@{Object}!is\_valid\_pose\_matrix@{is\_valid\_pose\_matrix}}
 \index{is\_valid\_pose\_matrix@{is\_valid\_pose\_matrix}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{is\_valid\_pose\_matrix()}{is\_valid\_pose\_matrix()}}
@@ -339,7 +339,7 @@ Test if the supplied matrix is a 4x4 homogeneous transformation matrix.
 \begin{DoxyReturn}{Returns}
 True is the matrix can describe a pose or a transformation in 3D space, false otherwise. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classObject_ada9a469202a62c32c7b586f6b9c5fe7b}\label{classObject_ada9a469202a62c32c7b586f6b9c5fe7b}} 
+\Hypertarget{classObject_ada9a469202a62c32c7b586f6b9c5fe7b}\label{classObject_ada9a469202a62c32c7b586f6b9c5fe7b} 
 \index{Object@{Object}!remesh\_surface\_trimesh@{remesh\_surface\_trimesh}}
 \index{remesh\_surface\_trimesh@{remesh\_surface\_trimesh}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{remesh\_surface\_trimesh()}{remesh\_surface\_trimesh()}}
@@ -352,7 +352,7 @@ Redo the meshing of the surface mesh to make sure it is adequate for further pro
 \begin{DoxyNote}{Note}
 This function can make the mesh worse. 
 \end{DoxyNote}
-\mbox{\Hypertarget{classObject_a588a896d452b1b5d204212e5632836fa}\label{classObject_a588a896d452b1b5d204212e5632836fa}} 
+\Hypertarget{classObject_a588a896d452b1b5d204212e5632836fa}\label{classObject_a588a896d452b1b5d204212e5632836fa} 
 \index{Object@{Object}!reset\_pose@{reset\_pose}}
 \index{reset\_pose@{reset\_pose}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{reset\_pose()}{reset\_pose()}}
@@ -367,7 +367,7 @@ Change the pose of the object and updates the occupancy grid.
 {\em pose} & Homogeneous transformation matrix describing the new pose of the object. \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classObject_a6dddaca0c70909801fe9726188cf036c}\label{classObject_a6dddaca0c70909801fe9726188cf036c}} 
+\Hypertarget{classObject_a6dddaca0c70909801fe9726188cf036c}\label{classObject_a6dddaca0c70909801fe9726188cf036c} 
 \index{Object@{Object}!set\_max\_separation@{set\_max\_separation}}
 \index{set\_max\_separation@{set\_max\_separation}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{set\_max\_separation()}{set\_max\_separation()}}
@@ -382,7 +382,7 @@ Set the maximal distance from the object to a valid contact point.
 {\em max\+\_\+separation} & Distance in the object\textquotesingle{}s units \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classObject_a69c33b0d668eac04feefa18c460a4a1b}\label{classObject_a69c33b0d668eac04feefa18c460a4a1b}} 
+\Hypertarget{classObject_a69c33b0d668eac04feefa18c460a4a1b}\label{classObject_a69c33b0d668eac04feefa18c460a4a1b} 
 \index{Object@{Object}!set\_tetra\_mesh@{set\_tetra\_mesh}}
 \index{set\_tetra\_mesh@{set\_tetra\_mesh}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{set\_tetra\_mesh()}{set\_tetra\_mesh()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
@@ -399,7 +399,7 @@ Record the description of the tetrahedral mesh that represents the volume of the
 {\em indices} & Indices of the mesh, referring to the vertices, 4 per tetrahedron \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classObject_abd8fa8d9bb2ac4819485cc362757c67f}\label{classObject_abd8fa8d9bb2ac4819485cc362757c67f}} 
+\Hypertarget{classObject_abd8fa8d9bb2ac4819485cc362757c67f}\label{classObject_abd8fa8d9bb2ac4819485cc362757c67f} 
 \index{Object@{Object}!set\_tetra\_mesh@{set\_tetra\_mesh}}
 \index{set\_tetra\_mesh@{set\_tetra\_mesh}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{set\_tetra\_mesh()}{set\_tetra\_mesh()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
@@ -416,7 +416,7 @@ Record the description of the tetrahedral mesh that represents the volume of the
 {\em indices} & Indices of the mesh, referring to the vertices, 4 per tetrahedron \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classObject_a433eab90a67abed853dfeb3dfabc5531}\label{classObject_a433eab90a67abed853dfeb3dfabc5531}} 
+\Hypertarget{classObject_a433eab90a67abed853dfeb3dfabc5531}\label{classObject_a433eab90a67abed853dfeb3dfabc5531} 
 \index{Object@{Object}!set\_tri\_mesh@{set\_tri\_mesh}}
 \index{set\_tri\_mesh@{set\_tri\_mesh}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{set\_tri\_mesh()}{set\_tri\_mesh()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
@@ -433,7 +433,7 @@ Record the description of the triangle mesh that represents the surface of the o
 {\em triangles} & Mx3 matrix with each row representing the indices of a triangle \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classObject_a4c204e0f31d7dd82c958f90462dfb0bd}\label{classObject_a4c204e0f31d7dd82c958f90462dfb0bd}} 
+\Hypertarget{classObject_a4c204e0f31d7dd82c958f90462dfb0bd}\label{classObject_a4c204e0f31d7dd82c958f90462dfb0bd} 
 \index{Object@{Object}!set\_tri\_mesh@{set\_tri\_mesh}}
 \index{set\_tri\_mesh@{set\_tri\_mesh}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{set\_tri\_mesh()}{set\_tri\_mesh()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
@@ -445,10 +445,10 @@ Record the description of the triangle mesh that represents the surface of the o
 
 
 \begin{DoxyParams}{Parameters}
-{\em simple\+Tri\+Mesh} & \mbox{\hyperlink{classTriangle}{Triangle}} mesh \\
+{\em simple\+Tri\+Mesh} & \doxylink{classTriangle}{Triangle} mesh \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classObject_a64f6158a6cf4398746a5de1d42e183c7}\label{classObject_a64f6158a6cf4398746a5de1d42e183c7}} 
+\Hypertarget{classObject_a64f6158a6cf4398746a5de1d42e183c7}\label{classObject_a64f6158a6cf4398746a5de1d42e183c7} 
 \index{Object@{Object}!validate\_mesh@{validate\_mesh}}
 \index{validate\_mesh@{validate\_mesh}!Object@{Object}}
 \doxysubsubsection{\texorpdfstring{validate\_mesh()}{validate\_mesh()}}

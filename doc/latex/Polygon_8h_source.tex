@@ -1,0 +1,40 @@
+\doxysection{Polygon.\+h}
+\hypertarget{Polygon_8h_source}{}\label{Polygon_8h_source}\index{lib/src/Polygon.h@{lib/src/Polygon.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <eigen3/Eigen/Eigen>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}PointSet.h"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}Points.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}Triangle.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}AARectangle.h"{}}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{comment}{//A\ polygon\ is\ defined\ by\ a\ set\ of\ edges,\ each\ of\ which\ is\ a\ tuple\ of\ two\ points.}}
+\DoxyCodeLine{00010\ \textcolor{comment}{//\ See\ https://en.wikipedia.org/wiki/Convex\_polygon\ for\ useful\ properties.}}
+\DoxyCodeLine{00011\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classConvex2DPolygon}{Convex2DPolygon}}\ }
+\DoxyCodeLine{00012\ \{}
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00014\ \ \ \ \ \ \ \ \ std::vector<std::pair<Point2D,\ Point2D>>\ \_edges;}
+\DoxyCodeLine{00015\ \ \ \ \ \ \ \ \ std::vector<Eigen::Vector2f>\ \_edge\_normals;}
+\DoxyCodeLine{00016\ \ \ \ \ \ \ \ \ std::vector<Triangle<Eigen::Vector2f>>\ \_triangles;}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}\ \_vertices;}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPoint2D}{Point2D}}\ \_centroid;}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \_area\ =\ 0;}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00021\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classConvex2DPolygon_a7e67a3ba066fdf91699475e6dde802c5}{Convex2DPolygon}}();}
+\DoxyCodeLine{00022\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classConvex2DPolygon_a7e67a3ba066fdf91699475e6dde802c5}{Convex2DPolygon}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classTriangle}{Triangle<Eigen::Vector2f>}}\&\ triangle);}
+\DoxyCodeLine{00023\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classConvex2DPolygon_a7e67a3ba066fdf91699475e6dde802c5}{Convex2DPolygon}}(\mbox{\hyperlink{classAARectangle}{AARectangle}}\&\ rectangle);}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classConvex2DPolygon_a7e67a3ba066fdf91699475e6dde802c5}{Convex2DPolygon}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}\&\ \mbox{\hyperlink{classConvex2DPolygon_a7c130c459bb152b6a4bf3fb5101fa3e2}{vertices}});}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classConvex2DPolygon_a7e67a3ba066fdf91699475e6dde802c5}{Convex2DPolygon}}(\textcolor{keyword}{const}\ std::vector<std::pair<Point2D,\ Point2D>>\ \mbox{\hyperlink{classConvex2DPolygon_a4dafc36187aca54cd427c49cdb014a05}{edges}});}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \ \ std::vector<std::pair<Point2D,\ Point2D>>\ \mbox{\hyperlink{classConvex2DPolygon_a4dafc36187aca54cd427c49cdb014a05}{edges}}();}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}\ \mbox{\hyperlink{classConvex2DPolygon_a7c130c459bb152b6a4bf3fb5101fa3e2}{vertices}}();}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classConvex2DPolygon_aee761f20d17d97e0f88d5d7d876a3dac}{contains}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPoint2D}{Point2D}}\&\ point);}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classConvex2DPolygon_a06f2d82c4b5505fe2ea3bf59086ed3f5}{nb\_points\_inside}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}\&\ points);}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}\ \mbox{\hyperlink{classConvex2DPolygon_a772f60c731ee5927a2ba67b54622f443}{line\_intersection}}(\textcolor{keyword}{const}\ Eigen::Vector2f\&\ segment\_p0,\ \textcolor{keyword}{const}\ Eigen::Vector2f\&\ segment\_p1);}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classConvex2DPolygon}{Convex2DPolygon}}\ \mbox{\hyperlink{classConvex2DPolygon_aeec469bcaaf90a0c5c1741e5f6c35421}{polygon\_intersection}}(\mbox{\hyperlink{classConvex2DPolygon}{Convex2DPolygon}}\&\ polygon);}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ \mbox{\hyperlink{classConvex2DPolygon_a55d2b3fd6d95dfafd80ada98b6d8d992}{get\_area}}();}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \textcolor{keyword}{friend}\ std::ostream\&\ \mbox{\hyperlink{classConvex2DPolygon_aaa13780e009bc23b06a1ebd32f07092a}{operator<<}}(std::ostream\&\ os,\ \mbox{\hyperlink{classConvex2DPolygon}{Convex2DPolygon}}\&\ polygon);}
+\DoxyCodeLine{00034\ \};}
+
+\end{DoxyCode}

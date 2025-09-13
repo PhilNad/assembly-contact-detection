@@ -1,0 +1,82 @@
+\doxysection{Occupancy\+Grid.\+h}
+\hypertarget{OccupancyGrid_8h_source}{}\label{OccupancyGrid_8h_source}\index{lib/src/OccupancyGrid.h@{lib/src/OccupancyGrid.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <iostream>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <chrono>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <unordered\_map>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ "{}PxPhysicsAPI.h"{}}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <eigen3/Eigen/Eigen>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ "{}Triangle.h"{}}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ "{}AARectangle.h"{}}}
+\DoxyCodeLine{00013\ \textcolor{preprocessor}{\#include\ "{}OccupancyGrid.h"{}}}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{keyword}{using\ namespace\ }std;}
+\DoxyCodeLine{00016\ \textcolor{keyword}{using\ namespace\ }Eigen;}
+\DoxyCodeLine{00017\ \textcolor{keyword}{using\ namespace\ }physx;}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structOrientedPoint}{OrientedPoint}}}
+\DoxyCodeLine{00020\ \{}
+\DoxyCodeLine{00021\ \ \ \ \ Vector3f\ position;}
+\DoxyCodeLine{00022\ \ \ \ \ Vector3f\ normal;}
+\DoxyCodeLine{00023\ \};}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classGridCell}{GridCell}}}
+\DoxyCodeLine{00026\ \{}
+\DoxyCodeLine{00027\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ uint32\_t\ \textcolor{keywordtype}{id}\ =\ 0;}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ vector<shared\_ptr<OrientedPoint>>\ surface\_points\ =\ \{\};}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ vector<shared\_ptr<Triangle<Vector3f>>>\ triangles\ =\ \{\};}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ Vector3f\ half\_extents;}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ Vector3f\ centre;}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classGridCell}{GridCell}}(uint32\_t\ \textcolor{keywordtype}{id},\ shared\_ptr<OrientedPoint>\ surface\_point,\ \textcolor{keyword}{const}\ Vector3f\&\ cell\_size,\ \textcolor{keyword}{const}\ Vector3f\&\ cell\_centre,\ shared\_ptr<\mbox{\hyperlink{classTriangle}{Triangle<Vector3f>}}>\ triangle);}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classGridCell_a2febf5f861375ab0d96888babb045259}{additional\_point}}(shared\_ptr<OrientedPoint>\ surface\_point);}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classGridCell_a6dcfa4228fe6d39b951a28503e0969d4}{additional\_triangle}}(shared\_ptr<\mbox{\hyperlink{classTriangle}{Triangle<Vector3f>}}>\ triangle);}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structOrientedPoint}{OrientedPoint}}\ \mbox{\hyperlink{classGridCell_a3d708f3baea265178b29830ad2f66839}{weighted\_average}}(\textcolor{keyword}{const}\ Vector3f\&\ query\_point);}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classAARectangle}{AARectangle}}\ \mbox{\hyperlink{classGridCell_ae17bd0d8e7cd7798cb8bd7d3e2532633}{gridcell\_to\_gridcell\_intersection}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classGridCell}{GridCell}}\&\ other,\ \textcolor{keyword}{const}\ AARectangle::NORMAL\_AXIS\ normal\_axis);}
+\DoxyCodeLine{00038\ \};}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classOccupancyGrid}{OccupancyGrid}}}
+\DoxyCodeLine{00042\ \{}
+\DoxyCodeLine{00043\ \ \ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ Vector3f\ bb\_origin;}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ Vector3f\ bb\_extents;}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ Vector3f\ cell\_size;}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ unordered\_map<uint32\_t,\ GridCell>\ grid\_cells;}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ Vector3f\ cell\_centre(uint32\_t\ idx);}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \textcolor{keyword}{struct\ }point\_inside\_triangle\_computations\_cache\ \{}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ active\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ \ \ \ \ Vector3f\ v0\ =\ Vector3f::Zero();}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \ \ \ \ Vector3f\ v1\ =\ Vector3f::Zero();}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ \ \ \ \ Vector3f\ v2\ =\ Vector3f::Zero();}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ \ \ \ \ Vector3f\ v0r;}
+\DoxyCodeLine{00056\ \ \ \ \ \ \ \ \ \ \ \ \ Vector3f\ v1r;}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ d00;}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ d01;}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ d11;}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ inv\_denom;}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ point\_inside\_triangle(\textcolor{keyword}{const}\ Vector3f\&\ p,\ \textcolor{keyword}{const}\ Vector3f\&\ v0,\ \textcolor{keyword}{const}\ Vector3f\&\ v1,\ \textcolor{keyword}{const}\ Vector3f\&\ v2,\ point\_inside\_triangle\_computations\_cache\&\ cache);}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ vector<Vector3f>\ sample\_uniform\_points\_in\_triangle(\textcolor{keyword}{const}\ Vector3f\&\ v0,\ \textcolor{keyword}{const}\ Vector3f\&\ v1,\ \textcolor{keyword}{const}\ Vector3f\&\ v2,\ \textcolor{keywordtype}{float}\ density);}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ vector<Vector3f>\ sample\_random\_points\_in\_triangle(\textcolor{keyword}{const}\ Vector3f\&\ v0,\ \textcolor{keyword}{const}\ Vector3f\&\ v1,\ \textcolor{keyword}{const}\ Vector3f\&\ v2,\ \textcolor{keywordtype}{float}\ density);}
+\DoxyCodeLine{00065\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ uint32\_t\ \mbox{\hyperlink{classOccupancyGrid_adbb22b2d9a5187a97c6fc5519334ef7d}{idx\_cell\_at}}(\textcolor{keyword}{const}\ Vector3f\&\ point);}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ vector<int>\ \mbox{\hyperlink{classOccupancyGrid_ac3ee41e8def4807e8394b40ecb443c93}{reverse\_cell\_idx}}(uint32\_t\ idx);}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ unordered\_map<uint32\_t,\ GridCell>*\ \mbox{\hyperlink{classOccupancyGrid_ac54cbedd8ee0806cfee1dfe7b7ecf76d}{get\_grid\_cells}}();}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classGridCell}{GridCell}}\ \mbox{\hyperlink{classOccupancyGrid_a484daafe6df4036219ffc13c23986d23}{get\_grid\_cell}}(uint32\_t\ idx);}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ uint32\_t\ \mbox{\hyperlink{classOccupancyGrid_ac6402fe28271b4be7a26a2644c0cde2e}{is\_cell\_occupied}}(\textcolor{keyword}{const}\ Vector3f\&\ point);}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ uint32\_t\ \mbox{\hyperlink{classOccupancyGrid_ac6402fe28271b4be7a26a2644c0cde2e}{is\_cell\_occupied}}(uint32\_t\ cell\_idx);}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \textcolor{keyword}{enum}\ sampling\_method\ \{uniform,\ random\};}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classOccupancyGrid}{OccupancyGrid}}(\textcolor{keyword}{const}\ MatrixX3f\&\ vertices,\ \textcolor{keyword}{const}\ MatrixX3i\&\ triangles,\ \textcolor{keywordtype}{int}\ resolution,\ \textcolor{keywordtype}{int}\ sampling\_method);}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ resolution;}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ sampling\_method\_used;}
+\DoxyCodeLine{00076\ \};}
+
+\end{DoxyCode}

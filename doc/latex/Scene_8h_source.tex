@@ -1,0 +1,108 @@
+\doxysection{Scene.\+h}
+\hypertarget{Scene_8h_source}{}\label{Scene_8h_source}\index{lib/src/Scene.h@{lib/src/Scene.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classScene}{Scene}};}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <unordered\_set>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ <iostream>}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ "{}PxPhysicsAPI.h"{}}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ <eigen3/Eigen/Eigen>}}
+\DoxyCodeLine{00012\ \textcolor{preprocessor}{\#include\ "{}Object.h"{}}}
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \textcolor{keyword}{using\ namespace\ }std;}
+\DoxyCodeLine{00015\ \textcolor{keyword}{using\ namespace\ }Eigen;}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{comment}{//Forward\ declaration}}
+\DoxyCodeLine{00018\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classContact}{Contact}};}
+\DoxyCodeLine{00019\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classContactForce}{ContactForce}};}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classScene}{Scene}}}
+\DoxyCodeLine{00022\ \{}
+\DoxyCodeLine{00023\ \ \ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \ \ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structObjectIDHashFunction}{ObjectIDHashFunction}}}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \ \ \ \ \ \ std::hash<string>\ hasher;}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ operator()(\textcolor{keyword}{const}\ std::pair<string,\ string>\ \&obj\_id\_pair)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00028\ \textcolor{keyword}{\ \ \ \ \ \ \ \ \ \ \ \ }\{}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ obj1\_id\_hash\ =\ this-\/>hasher(obj\_id\_pair.first);}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ obj2\_id\_hash\ =\ this-\/>hasher(obj\_id\_pair.second);}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//This\ is\ the\ hash\ function\ used\ by\ boost::hash\_combine}}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ obj1\_id\_hash\ \string^\ obj2\_id\_hash\ +\ 0x9e3779b9\ +\ (obj1\_id\_hash\ <<\ 6)\ +\ (obj1\_id\_hash\ >>\ 2);}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00035\ }
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ physx::PxSimulationEventCallback*\ gContactReportCallback\ =\ \textcolor{keyword}{nullptr};}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ vector<shared\_ptr<Object>>\ object\_ptrs;}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ startupPhysics();}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ cleanupPhysics();}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ wake\_all\_actors();}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ remove\_all\_actors();}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ create\_object\_shapes(\mbox{\hyperlink{classObject}{Object}}*\ obj,\ Matrix4f\ pose,\ \textcolor{keywordtype}{int}\ resolution,\ \textcolor{keywordtype}{bool}\ is\_volumetric,\ \textcolor{keywordtype}{bool}\ is\_fixed,\ \textcolor{keywordtype}{float}\ mass,\ Vector3f\ com);}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ PxRigidActor*\ get\_actor(\textcolor{keywordtype}{string}\ name);}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ vector<PxShape*>\ get\_actor\_shapes(PxRigidActor*\ actor);}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ PxArray<PxShape*>\ make\_tetmesh(\mbox{\hyperlink{classObject}{Object}}*\ obj);}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ PxArray<PxShape*>\ make\_canary\_spheres(\mbox{\hyperlink{classObject}{Object}}*\ obj,\ PxArray<PxShape*>\ tetConvexShapes);}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ PxShape*\ create\_voxel\_shape(\mbox{\hyperlink{classGridCell}{GridCell}}*\ cell,\ Matrix4f\ obj\_world\_pose);}
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ Matrix3f\ tetra\_local\_frame(\textcolor{keyword}{const}\ vector<Vector3f>\&\ vertices);}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ VectorXd\ check\_points\_in\_tetra(\textcolor{keyword}{const}\ Matrix3Xf\&\ points,\ \textcolor{keyword}{const}\ Matrix3f\&\ T\_world\_to\_local,\ \textcolor{keyword}{const}\ Vector3f\&\ origin);}
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ points\_in\_tetrahedron(Matrix3Xf\ voxel\_vertices\_matrix,\ vector<vector<Vector3f>>\ tetra\_vertices\_list,\ \textcolor{keywordtype}{int}\ index\_first\_tet,\ \textcolor{keywordtype}{int}\ index\_last\_tet,\ VectorXd\&\ inside\_volume);}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classObject}{Object}}*\ get\_object\_by\_id(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id});}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{string}\ get\_contact\_id\_at\_point(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id},\ Vector3f\ point,\ \textcolor{keywordtype}{float}\ max\_distance\ =\ 1e-\/3,\ \textcolor{keywordtype}{int}\ max\_num\_iterations\ =\ 3);}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ Eigen::Vector3f\ get\_normal\_at\_point(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id},\ Eigen::Vector3f\ query\_point);}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ unordered\_map<pair<string,\ string>,\ float,\ \mbox{\hyperlink{structObjectIDHashFunction}{ObjectIDHashFunction}}>\ friction\_coefficients;}
+\DoxyCodeLine{00056\ }
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \textcolor{keyword}{friend}\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classForceSolver}{ForceSolver}};}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00059\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ max\_distance\_factor\ =\ 0.2;}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classScene}{Scene}}();}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classScene}{\string~Scene}}();}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classScene_aee6917e724a22fdec4de1cf57da753f6}{add\_object}}(}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id},\ }
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \ \ \ \ Matrix4f\ pose,\ }
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \ \ \ \ MatrixX3f\ tri\_vertices,\ }
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \ \ \ \ MatrixX3i\ tri\_indices,}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ resolution\ =\ 15,}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ compute\_volume\ =\ \textcolor{keyword}{false},}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ is\_fixed\ =\ \textcolor{keyword}{false},}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ mass\ =\ 1,}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \ \ \ \ Vector3f\ com\ =\ Vector3f::Zero(),}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{string}\ material\_name\ =\ \textcolor{stringliteral}{"{}wood"{}}}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classScene_a0205ad8a99750d032191d671d79f6476}{remove\_object}}(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id});}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classScene_aeeb3111f0c212358d055d1fcd21283b5}{set\_max\_distance\_factor}}(\textcolor{keywordtype}{float}\ max\_distance\_factor);}
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ Matrix4f\ \mbox{\hyperlink{classScene_abc0cf870d3897b6df183a09852627e6c}{get\_object\_pose}}(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id});}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classScene_adb6f6da9d5edde0db30dac2eccbd2a5c}{set\_object\_pose}}(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id},\ Matrix4f\ pose);}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classScene_a34629922d26ba75ce4ce3eaf59934693}{step\_simulation}}(\textcolor{keywordtype}{float}\ dt);}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ vector<string>\ \mbox{\hyperlink{classScene_a010e0eeae41d71bd4d4a67c4f60ca2b1}{get\_all\_object\_ids}}();}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \ \ unordered\_set<string>\ \mbox{\hyperlink{classScene_a2050e56325f8a18187a21d2d126b781a}{get\_contacted\_objects}}(\textcolor{keywordtype}{string}\ target\_object);}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ vector<Contact>\ \mbox{\hyperlink{classScene_a6ed847a33a37f7b482c39509860cf159}{get\_contact\_points}}(\textcolor{keywordtype}{string}\ id1,\ \textcolor{keywordtype}{string}\ id2\ =\ \textcolor{stringliteral}{"{}"{}},\ \textcolor{keywordtype}{bool}\ penetrating\ =\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00083\ \ \ \ \ \ \ \ \ MatrixX3f\ \mbox{\hyperlink{classScene_aab1236c10994c3b243d54355588d27c2}{get\_contact\_points\_positions}}(\textcolor{keywordtype}{string}\ id1,\ \textcolor{keywordtype}{string}\ id2\ =\ \textcolor{stringliteral}{"{}"{}});}
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ Vector3f\ \mbox{\hyperlink{classScene_a893a5a7f10a7610e2ce019c8dca2cc28}{get\_closest\_contact\_point}}(\textcolor{keywordtype}{string}\ id1,\ \textcolor{keywordtype}{string}\ id2,\ \textcolor{keyword}{const}\ Vector3f\ point);}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ MatrixX3f\ \mbox{\hyperlink{classScene_a58bdcb77e3b4adfd85f433da3c1ac32c}{get\_penetrating\_contact\_point\_positions}}(\textcolor{keywordtype}{string}\ id1,\ \textcolor{keywordtype}{string}\ id2);}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ MatrixX3f\ \mbox{\hyperlink{classScene_ab07f56e7072a6d809fc6add0cf0f29cd}{get\_all\_contact\_points}}(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id});}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ MatrixX3f\ \mbox{\hyperlink{classScene_ac1781bdc0be970a7412af0bc35d38d7e}{get\_all\_penetrating\_contact\_points}}(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id});}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ MatrixX3f\ \mbox{\hyperlink{classScene_ab09d0b38f74bf4ad5efbbd56682dd71f}{get\_contact\_convex\_hull}}(\textcolor{keywordtype}{string}\ id1,\ \textcolor{keywordtype}{string}\ id2\ =\ \textcolor{stringliteral}{"{}"{}},\ \textcolor{keywordtype}{int}\ vertex\_limit\ =\ 255);}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ vector<ContactForce>\ \mbox{\hyperlink{classScene_a95dc13076ec4fe94824c30c5aa2e1058}{get\_contact\_forces}}(\textcolor{keywordtype}{int}\ nb\_contacts\_per\_object\_pair\ =\ 10,\ \textcolor{keywordtype}{int}\ nb\_coulomb\_polygon\_sides\ =\ 8);}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classScene_a70613e44035e9ea2660ddcd424488cd3}{merge\_similar\_contact\_points}}(vector<Contact>\ contact\_points,\ \textcolor{keywordtype}{float}\ position\_threshold,\ \textcolor{keywordtype}{float}\ normal\_threshold);}
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ MatrixX3f\ \mbox{\hyperlink{classScene_a4d5d2bc18bd1b7265c1391584db1bc38}{get\_tri\_vertices}}(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id});}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ MatrixX3i\ \mbox{\hyperlink{classScene_a4d8bfae52b4a52bfc523461a8956ec34}{get\_tri\_triangles}}(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id});}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ MatrixX3f\ \mbox{\hyperlink{classScene_ab5511afad0a0b6ac7324771eca451f57}{get\_tetra\_vertices}}(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id});}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ MatrixX4i\ \mbox{\hyperlink{classScene_a521c492c9da2f3dc10d65c6b3b2cc6a3}{get\_tetra\_indices}}(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id});}
+\DoxyCodeLine{00095\ \ \ \ \ \ \ \ \ MatrixX3f\ \mbox{\hyperlink{classScene_a6fc7e0abb4cc5a9ca0b03aadf47ab96b}{get\_voxel\_centres}}(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id});}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ Vector3f\ \mbox{\hyperlink{classScene_a7f1eadae442ffeb914a78e40585e4c31}{get\_voxel\_side\_lengths}}(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id});}
+\DoxyCodeLine{00097\ \ \ \ \ \ \ \ \ MatrixX3f\ \mbox{\hyperlink{classScene_a2ec34211e9903b9811a139ac2b4d98a3}{get\_canary\_sphere\_positions}}(\textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id});}
+\DoxyCodeLine{00098\ }
+\DoxyCodeLine{00099\ \ \ \ \ \ \ \ \ \textcolor{comment}{//Friction\ coefficients}}
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ get\_friction\_coefficient(\textcolor{keywordtype}{string}\ mat\_name1,\ \textcolor{keywordtype}{string}\ mat\_name2);}
+\DoxyCodeLine{00101\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ set\_friction\_coefficient(\textcolor{keywordtype}{string}\ mat\_name1,\ \textcolor{keywordtype}{string}\ mat\_name2,\ \textcolor{keywordtype}{float}\ friction\_coefficient);}
+\DoxyCodeLine{00102\ \};}
+
+\end{DoxyCode}

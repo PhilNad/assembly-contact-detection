@@ -1,0 +1,54 @@
+\doxysection{Point\+Set.\+h}
+\hypertarget{PointSet_8h_source}{}\label{PointSet_8h_source}\index{lib/src/PointSet.h@{lib/src/PointSet.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{comment}{//Define\ 2D\ and\ 3D\ point\ set\ classes\ such\ that\ a\ point\ set\ is\ an\ unordered\ set\ of\ Point2D\ and\ Point3D\ respectively.}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <unordered\_set>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <eigen3/Eigen/Eigen>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}Points.h"{}}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classPointSet2D}{PointSet2D}}\ :\ \textcolor{keyword}{public}\ std::unordered\_set<Point2D,\ Point2D::HashFunction,\ EpsilonEquality2D>}
+\DoxyCodeLine{00010\ \{}
+\DoxyCodeLine{00011\ \ \ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00012\ \ \ \ \ \ \ \ \ std::unordered\_set<Point2D,\ Point2D::HashFunction,\ EpsilonEquality2D>\ \_pointset;}
+\DoxyCodeLine{00013\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00014\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}();}
+\DoxyCodeLine{00015\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}(\textcolor{keyword}{const}\ std::vector<Eigen::Vector2f>\&\ points);}
+\DoxyCodeLine{00016\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}(\textcolor{keyword}{const}\ std::unordered\_set<Point2D,\ Point2D::HashFunction,\ EpsilonEquality2D>\&\ points);}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}\&\ other);}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}\&\ operator=(\textcolor{keyword}{const}\ std::vector<Eigen::Vector2f>\&\ points);}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ \ std::pair<iterator,\ bool>\ insert(\textcolor{keyword}{const}\ Eigen::Vector2f\&\ point);}
+\DoxyCodeLine{00020\ \ \ \ \ \ \ \ \ std::pair<iterator,\ bool>\ insert(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPoint2D}{Point2D}}\&\ point);}
+\DoxyCodeLine{00021\ \ \ \ \ \ \ \ \ std::pair<iterator,\ bool>\ insert(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}\&\ pointset);}
+\DoxyCodeLine{00022\ \ \ \ \ \ \ \ \ std::unordered\_set<Point2D,\ Point2D::HashFunction,\ EpsilonEquality2D>::iterator\ begin();}
+\DoxyCodeLine{00023\ \ \ \ \ \ \ \ \ std::unordered\_set<Point2D,\ Point2D::HashFunction,\ EpsilonEquality2D>::iterator\ end();}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \ \ std::unordered\_set<Point2D,\ Point2D::HashFunction,\ EpsilonEquality2D>::const\_iterator\ begin()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ std::unordered\_set<Point2D,\ Point2D::HashFunction,\ EpsilonEquality2D>::const\_iterator\ end()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ size()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00027\ \};}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ }
+\DoxyCodeLine{00030\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classPointSet3D}{PointSet3D}}\ :\ \textcolor{keyword}{public}\ std::unordered\_set<Point3D,\ Point3D::HashFunction,\ EpsilonEquality3D>}
+\DoxyCodeLine{00031\ \{}
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ std::unordered\_set<Point3D,\ Point3D::HashFunction,\ EpsilonEquality3D>\ \_pointset;}
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet3D}{PointSet3D}}();}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet3D}{PointSet3D}}(\textcolor{keyword}{const}\ std::vector<Eigen::Vector3f>\&\ points);}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet3D}{PointSet3D}}(\textcolor{keyword}{const}\ std::unordered\_set<Point3D,\ Point3D::HashFunction,\ EpsilonEquality3D>\&\ points);}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet3D}{PointSet3D}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPointSet3D}{PointSet3D}}\&\ other);}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet3D}{PointSet3D}}\&\ operator=(\textcolor{keyword}{const}\ std::vector<Eigen::Vector3f>\&\ points);}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ std::pair<iterator,\ bool>\ insert(\textcolor{keyword}{const}\ Eigen::Vector3f\&\ point);}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ std::pair<iterator,\ bool>\ insert(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPoint3D}{Point3D}}\&\ point);}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \ \ std::pair<iterator,\ bool>\ insert(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPointSet3D}{PointSet3D}}\&\ pointset);}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ std::unordered\_set<Point3D,\ Point3D::HashFunction,\ EpsilonEquality3D>::iterator\ begin();}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ std::unordered\_set<Point3D,\ Point3D::HashFunction,\ EpsilonEquality3D>::iterator\ end();}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ std::unordered\_set<Point3D,\ Point3D::HashFunction,\ EpsilonEquality3D>::const\_iterator\ begin()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ std::unordered\_set<Point3D,\ Point3D::HashFunction,\ EpsilonEquality3D>::const\_iterator\ end()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ size()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00048\ \};}
+
+\end{DoxyCode}

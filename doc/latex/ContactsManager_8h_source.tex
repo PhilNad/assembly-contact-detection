@@ -1,0 +1,54 @@
+\doxysection{Contacts\+Manager.\+h}
+\hypertarget{ContactsManager_8h_source}{}\label{ContactsManager_8h_source}\index{lib/src/ContactsManager.h@{lib/src/ContactsManager.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <unordered\_map>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <unordered\_set>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <eigen3/Eigen/Eigen>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}Contact.h"{}}}
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ }
+\DoxyCodeLine{00010\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classContactsManager}{ContactsManager}}}
+\DoxyCodeLine{00011\ \{}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00013\ \ \ \ \ \ \ \ \ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structObjectIDHashFunction}{ObjectIDHashFunction}}}
+\DoxyCodeLine{00014\ \ \ \ \ \ \ \ \ \{}
+\DoxyCodeLine{00015\ \ \ \ \ \ \ \ \ \ \ \ \ std::hash<string>\ hasher;}
+\DoxyCodeLine{00016\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ operator()(\textcolor{keyword}{const}\ std::pair<string,\ string>\ \&obj\_id\_pair)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00017\ \textcolor{keyword}{\ \ \ \ \ \ \ \ \ \ \ \ }\{}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ obj1\_id\_hash\ =\ this-\/>hasher(obj\_id\_pair.first);}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ obj2\_id\_hash\ =\ this-\/>hasher(obj\_id\_pair.second);}
+\DoxyCodeLine{00020\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{comment}{//This\ is\ the\ hash\ function\ used\ by\ boost::hash\_combine}}
+\DoxyCodeLine{00021\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ obj1\_id\_hash\ \string^\ obj2\_id\_hash\ +\ 0x9e3779b9\ +\ (obj1\_id\_hash\ <<\ 6)\ +\ (obj1\_id\_hash\ >>\ 2);}
+\DoxyCodeLine{00022\ \ \ \ \ \ \ \ \ \ \ \ \ \}}
+\DoxyCodeLine{00023\ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ \textcolor{comment}{//Positions\ of\ contact\ points\ at\ the\ interface\ of\ two\ objects\ (non-\/penetrating)}}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \ \ unordered\_map<pair<string,\ string>,\ std::vector<Contact>,\ \mbox{\hyperlink{structObjectIDHashFunction}{ObjectIDHashFunction}}>\ surface\_points;}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \textcolor{comment}{//Positions\ of\ contact\ points\ embedded\ in\ the\ volume\ of\ two\ objects\ (penetrating)}}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ unordered\_map<pair<string,\ string>,\ std::vector<Contact>,\ \mbox{\hyperlink{structObjectIDHashFunction}{ObjectIDHashFunction}}>\ penetration\_points;}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ \textcolor{comment}{//List\ of\ objects\ that\ are\ in\ surface\ contact\ with\ a\ given\ object\ (non-\/penetrating)}}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ unordered\_map<string,\ unordered\_set<string>>\ contacting\_object\_ids;}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ \textcolor{comment}{//List\ of\ objects\ that\ are\ in\ volume\ contact\ with\ a\ given\ object\ (penetrating)}}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ unordered\_map<string,\ unordered\_set<string>>\ penetrating\_object\_ids;}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \textcolor{comment}{//List\ of\ objects\ that\ are\ waiting\ for\ contacts\ to\ be\ added\ }}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ unordered\_set<string>\ objects\_waiting\_for\_contacts;}
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classContactsManager}{ContactsManager}}();}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classContactsManager}{\string~ContactsManager}}();}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classContactsManager_a100f14fb66185cfc3443ad7d3d90af96}{add\_contact}}(\mbox{\hyperlink{classContact}{Contact}}\ contact,\ \textcolor{keywordtype}{bool}\ is\_penetrating\ =\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classContactsManager_a0170071fadda319a725c9c24965ace70}{add\_contacts}}(std::vector<Contact>\ contacts,\ \textcolor{keywordtype}{bool}\ is\_penetrating\ =\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ std::vector<Contact>\ \mbox{\hyperlink{classContactsManager_aefd4a384c856a3b578232430198b8724}{get\_contact\_points}}(\textcolor{keywordtype}{string}\ id1,\ \textcolor{keywordtype}{string}\ id2,\ \textcolor{keywordtype}{bool}\ penetrating\ =\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ std::vector<Contact>\ \mbox{\hyperlink{classContactsManager_aefd4a384c856a3b578232430198b8724}{get\_contact\_points}}(\textcolor{keywordtype}{string}\ id1,\ \textcolor{keywordtype}{bool}\ penetrating\ =\ \textcolor{keyword}{false});}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \ \ std::unordered\_set<string>\ get\_contacted\_object\_ids(\textcolor{keywordtype}{string}\ target\_object);}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ std::unordered\_set<string>\ get\_penetrating\_object\_ids(\textcolor{keywordtype}{string}\ target\_object);}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classContactsManager_acf6188d171ff654945b0a5ab895d1a9e}{invalidate\_object\_state}}(\textcolor{keywordtype}{string}\ object\_id);}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classContactsManager_abf787509e203c7c4df0cf237c204e225}{remove\_object}}(\textcolor{keywordtype}{string}\ object\_id);}
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classContactsManager_ae9c5a5cf6992248a003bdd9f605b23fb}{remove\_all\_objects}}();}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classContactsManager_a0e6cb79862e22d6fce0fb85260e04b52}{needs\_update}}(\textcolor{keywordtype}{string}\ object\_id);}
+\DoxyCodeLine{00048\ \};}
+
+\end{DoxyCode}

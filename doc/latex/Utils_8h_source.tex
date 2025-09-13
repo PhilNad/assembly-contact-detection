@@ -1,0 +1,24 @@
+\doxysection{Utils.\+h}
+\hypertarget{Utils_8h_source}{}\label{Utils_8h_source}\index{lib/src/Utils.h@{lib/src/Utils.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}AssemblyCD.h"{}}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structObjectIDHashFunction}{ObjectIDHashFunction}}}
+\DoxyCodeLine{00006\ \{}
+\DoxyCodeLine{00007\ \ \ \ \ std::hash<string>\ hasher;}
+\DoxyCodeLine{00008\ \ \ \ \ \textcolor{keywordtype}{size\_t}\ operator()(\textcolor{keyword}{const}\ std::pair<string,\ string>\ \&obj\_id\_pair)\textcolor{keyword}{\ const}}
+\DoxyCodeLine{00009\ \textcolor{keyword}{\ \ \ \ }\{}
+\DoxyCodeLine{00010\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ obj1\_id\_hash\ =\ this-\/>hasher(obj\_id\_pair.first);}
+\DoxyCodeLine{00011\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{size\_t}\ obj2\_id\_hash\ =\ this-\/>hasher(obj\_id\_pair.second);}
+\DoxyCodeLine{00012\ \ \ \ \ \ \ \ \ \textcolor{comment}{//This\ is\ the\ hash\ function\ used\ by\ boost::hash\_combine}}
+\DoxyCodeLine{00013\ \ \ \ \ \ \ \ \ \textcolor{keywordflow}{return}\ obj1\_id\_hash\ \string^\ obj2\_id\_hash\ +\ 0x9e3779b9\ +\ (obj1\_id\_hash\ <<\ 6)\ +\ (obj1\_id\_hash\ >>\ 2);}
+\DoxyCodeLine{00014\ \ \ \ \ \}}
+\DoxyCodeLine{00015\ \};}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{comment}{//Return\ the\ skew-\/symmetric\ matrix\ of\ a\ vector.}}
+\DoxyCodeLine{00018\ Eigen::Matrix3f\ skew(Vector3f\ vector);}
+
+\end{DoxyCode}

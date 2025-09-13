@@ -1,0 +1,37 @@
+\doxysection{Contact.\+h}
+\hypertarget{Contact_8h_source}{}\label{Contact_8h_source}\index{lib/src/Contact.h@{lib/src/Contact.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}PxPhysicsAPI.h"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <eigen3/Eigen/Eigen>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}AssemblyCD.h"{}}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{using\ namespace\ }Eigen;}
+\DoxyCodeLine{00010\ \textcolor{keyword}{using\ namespace\ }physx;}
+\DoxyCodeLine{00011\ \textcolor{keyword}{using\ namespace\ }std;}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classContact}{Contact}}}
+\DoxyCodeLine{00014\ \{}
+\DoxyCodeLine{00015\ \ \ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00016\ \ \ \ \ \ \ \ \ Vector3f\ position;}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ \ \ Vector3f\ normal;}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ separation;}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{string}\ object1\_id;}
+\DoxyCodeLine{00020\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{string}\ object2\_id;}
+\DoxyCodeLine{00021\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00022\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classContact}{Contact}}(\textcolor{keywordtype}{string}\ object1\_id,\ \textcolor{keywordtype}{string}\ object2\_id,\ PxVec3\ position,\ PxVec3\ normal,\ PxReal\ separation);}
+\DoxyCodeLine{00023\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classContact}{Contact}}(\textcolor{keywordtype}{string}\ object1\_id,\ \textcolor{keywordtype}{string}\ object2\_id,\ Vector3f\ position,\ Vector3f\ normal,\ \textcolor{keywordtype}{float}\ separation);}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classContact}{\string~Contact}}();}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ Vector3f\ get\_position();}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \ \ Vector3f\ get\_normal();}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ set\_position(Vector3f);}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ set\_normal(Vector3f);}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ get\_separation();}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ pair<string,\ string>\ get\_object\_ids();}
+\DoxyCodeLine{00031\ \};}
+
+\end{DoxyCode}

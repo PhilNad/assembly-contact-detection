@@ -1,0 +1,40 @@
+\doxysection{Triangle.\+h}
+\hypertarget{Triangle_8h_source}{}\label{Triangle_8h_source}\index{lib/src/Triangle.h@{lib/src/Triangle.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <eigen3/Eigen/Eigen>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}PointSet.h"{}}}
+\DoxyCodeLine{00004\ }
+\DoxyCodeLine{00005\ \textcolor{keyword}{template}\ <\textcolor{keyword}{typename}\ T>}
+\DoxyCodeLine{00006\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classTriangle}{Triangle}}}
+\DoxyCodeLine{00007\ \{}
+\DoxyCodeLine{00008\ \ \ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00009\ \ \ \ \ \ \ \ \ \textcolor{keyword}{struct\ }point\_inside\_triangle\_computations\_cache\ \{}
+\DoxyCodeLine{00010\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ active\ =\ \textcolor{keyword}{false};}
+\DoxyCodeLine{00011\ \ \ \ \ \ \ \ \ \ \ \ \ T\ v0r;}
+\DoxyCodeLine{00012\ \ \ \ \ \ \ \ \ \ \ \ \ T\ v1r;}
+\DoxyCodeLine{00013\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ d00;}
+\DoxyCodeLine{00014\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ d01;}
+\DoxyCodeLine{00015\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ d11;}
+\DoxyCodeLine{00016\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ inv\_denom;}
+\DoxyCodeLine{00017\ \ \ \ \ \ \ \ \ \};}
+\DoxyCodeLine{00018\ \ \ \ \ \ \ \ \ point\_inside\_triangle\_computations\_cache\ pt\_in\_tri\_cache;}
+\DoxyCodeLine{00019\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ compute\_signed\_area();}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00021\ \ \ \ \ \ \ \ \ T\ vertex\_0;}
+\DoxyCodeLine{00022\ \ \ \ \ \ \ \ \ T\ vertex\_1;}
+\DoxyCodeLine{00023\ \ \ \ \ \ \ \ \ T\ vertex\_2;}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ signed\_area\ =\ 0;}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classTriangle}{Triangle}}(T\ vertex\_0,\ T\ vertex\_1,\ T\ vertex\_2);}
+\DoxyCodeLine{00026\ \ \ \ \ \ \ \ \ Eigen::Vector3f\ normal();}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classTriangle_ae5848691287d50eb3ba3b0b1550e15a7}{contains}}(\textcolor{keyword}{const}\ T\&\ point,\ \textcolor{keywordtype}{bool}\ boundary\_included);}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ shortest\_distance\_to\_plane(\textcolor{keyword}{const}\ Eigen::Vector3f\&\ point);}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ Eigen::Vector3f\ project\_on\_triangle(\textcolor{keyword}{const}\ Eigen::Vector3f\&\ point);}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ Eigen::Vector3f\ closest\_point\_in\_triangle(Eigen::Vector3f\ p);}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ nb\_points\_inside(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}\&\ points);}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ nb\_points\_inside(\textcolor{keyword}{const}\ \mbox{\hyperlink{classPointSet3D}{PointSet3D}}\&\ points);}
+\DoxyCodeLine{00033\ \};}
+\DoxyCodeLine{00034\ }
+
+\end{DoxyCode}

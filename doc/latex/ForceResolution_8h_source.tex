@@ -1,0 +1,109 @@
+\doxysection{Force\+Resolution.\+h}
+\hypertarget{ForceResolution_8h_source}{}\label{ForceResolution_8h_source}\index{lib/src/ForceResolution.h@{lib/src/ForceResolution.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <set>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <unordered\_map>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <random>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ <algorithm>}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}PxPhysicsAPI.h"{}}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ <eigen3/Eigen/Eigen>}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ "{}osqp.h"{}}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ "{}AssemblyCD.h"{}}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ }
+\DoxyCodeLine{00014\ \textcolor{keyword}{using\ namespace\ }Eigen;}
+\DoxyCodeLine{00015\ \textcolor{keyword}{using\ namespace\ }physx;}
+\DoxyCodeLine{00016\ \textcolor{keyword}{using\ namespace\ }std;}
+\DoxyCodeLine{00017\ }
+\DoxyCodeLine{00018\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classContactForce}{ContactForce}}}
+\DoxyCodeLine{00019\ \{}
+\DoxyCodeLine{00020\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00021\ \ \ \ \ \ \ \ \ \textcolor{comment}{//Position\ of\ the\ contact\ point\ in\ the\ global\ frame\ of\ reference.}}
+\DoxyCodeLine{00022\ \ \ \ \ \ \ \ \ Vector3f\ position;}
+\DoxyCodeLine{00023\ \ \ \ \ \ \ \ \ \textcolor{comment}{/*}}
+\DoxyCodeLine{00024\ \textcolor{comment}{\ \ \ \ \ \ \ \ A\ local\ frame\ of\ reference\ at\ the\ contact\ point\ is\ defined\ by\ the\ normal\ vector\ and\ two\ tangent\ vectors.}}
+\DoxyCodeLine{00025\ \textcolor{comment}{\ \ \ \ \ \ \ \ \ \ The\ normal\ is\ directed\ from\ object1\_by\ to\ object2\_to,\ so\ it\ is\ outward\ from\ object1\_by\ and\ inward\ to\ object2\_to.}}
+\DoxyCodeLine{00026\ \textcolor{comment}{\ \ \ \ \ \ \ \ */}}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ Vector3f\ normal\_dir;}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ Vector3f\ tangent\_dir\_u;}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ Vector3f\ tangent\_dir\_v;}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{string}\ object1\_by\_id;}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{string}\ object2\_to\_id;}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ \textcolor{comment}{//The\ force\ is\ expressed\ in\ the\ local\ frame\ of\ reference.}}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ \textcolor{comment}{//\ The\ force\ is\ directed\ from\ object1\_by\ to\ object2\_to.}}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ Vector3f\ local\_force\ =\ Vector3f(0.0f,\ 0.0f,\ 0.0f);}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ \textcolor{comment}{//The\ friction\ coefficient\ at\ the\ contact\ point\ depends\ on\ the\ materials\ of\ the\ two\ objects.}}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ friction\_coefficient;}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ \textcolor{comment}{//Wrench\ at\ the\ contact\ point\ expressed\ in\ the\ global\ frame\ of\ reference.}}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ Eigen::Vector<float,\ 6>\ get\_global\_wrench();}
+\DoxyCodeLine{00039\ }
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classContactForce}{ContactForce}}(Vector3f\ position,\ }
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ \ \ \ \ Vector3f\ normal\_dir,\ }
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \ \ \ \ \ \ Vector3f\ tangent\_dir\_u,\ }
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ \ \ \ \ Vector3f\ tangent\_dir\_v,\ }
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{string}\ object1\_by\_id,}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{string}\ object2\_to\_id,\ }
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ friction\_coefficient);}
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classContactForce}{\string~ContactForce}}();}
+\DoxyCodeLine{00048\ \};}
+\DoxyCodeLine{00049\ }
+\DoxyCodeLine{00050\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classForceSolver}{ForceSolver}}}
+\DoxyCodeLine{00051\ \{}
+\DoxyCodeLine{00052\ \ \ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classScene}{Scene}}*\ scene;}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ nb\_contacts\_per\_object\_pair\ =\ 10;}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ nb\_coulomb\_polygon\_sides\ =\ 8;}
+\DoxyCodeLine{00056\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ nb\_optim\_variables;}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ nb\_constraints;}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ nb\_contact\_forces;}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ std::vector<ContactForce>\ all\_contact\_forces;}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ set\_nb\_contacts\_per\_object\_pair(\textcolor{keywordtype}{int}\ nb\_contacts\_per\_object\_pair);}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ std::vector<Contact>\ select\_contact\_points(\textcolor{keywordtype}{string}\ id1,\ \textcolor{keywordtype}{string}\ id2);}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \textcolor{comment}{//The\ acceleration\ is\ the\ instantaneous\ acceleration\ of\ the\ center\ of\ mass\ of\ the\ objects.}}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ Vector3f\ acceleration\ =\ Vector3f(0.0f,\ 0.0f,\ -\/9.81f);}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ std::vector<ContactForce>\ solve\_forces();}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classPointSet3D}{PointSet3D}}\ get\_contact\_points(\textcolor{keywordtype}{string}\ object\_id1,\ \textcolor{keywordtype}{string}\ object\_id2);}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \textcolor{comment}{//B\_i\ is\ the\ matrix\ that\ maps\ a\ force\ from\ the\ local\ frame\ at\ i\ to\ the\ global\ frame.}}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ Eigen::Matrix<float,\ 6,\ 3>\ build\_B\_matrix(\mbox{\hyperlink{classContactForce}{ContactForce}}\ contact\_force);}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \textcolor{comment}{//C\_i\ is\ the\ matrix\ of\ Coulomb\ polygon\ (linearized\ circle)\ at\ i.}}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ Eigen::Matrix<float,\ -\/1,\ 3>\ build\_C\_matrix(\mbox{\hyperlink{classContactForce}{ContactForce}}\ contact\_force,\ \textcolor{keywordtype}{int}\ nb\_coulomb\_polygon\_sides);}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \textcolor{comment}{//D\ is\ the\ matrix\ encoding\ the\ normal\ force\ unilateral\ constraint.}}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ Eigen::Matrix<float,\ -\/1,\ -\/1>\ build\_D\_matrix();}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \textcolor{comment}{//Encode\ a\ given\ matrix\ into\ CSC\ format\ for\ OSQP.}}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ encode\_matrix\_to\_csc(Eigen::Matrix<float,\ -\/1,\ -\/1>\ matrix,\ OSQPCscMatrix*\ csc\_matrix);}
+\DoxyCodeLine{00076\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \textcolor{comment}{//Eigen\ Matrices}}
+\DoxyCodeLine{00078\ \ \ \ \ \ \ \ \ Eigen::Matrix<float,\ -\/1,\ -\/1>\ A;}
+\DoxyCodeLine{00079\ \ \ \ \ \ \ \ \ Eigen::Matrix<float,\ -\/1,\ -\/1>\ P;}
+\DoxyCodeLine{00080\ \ \ \ \ \ \ \ \ Eigen::Matrix<float,\ -\/1,\ 1>\ q;}
+\DoxyCodeLine{00081\ \ \ \ \ \ \ \ \ Eigen::Matrix<float,\ -\/1,\ 1>\ l;}
+\DoxyCodeLine{00082\ \ \ \ \ \ \ \ \ Eigen::Matrix<float,\ -\/1,\ 1>\ u;}
+\DoxyCodeLine{00083\ }
+\DoxyCodeLine{00084\ \ \ \ \ \ \ \ \ \textcolor{comment}{//OSQP\ Matrices}}
+\DoxyCodeLine{00085\ \ \ \ \ \ \ \ \ OSQPCscMatrix\ osqp\_csc\_A;}
+\DoxyCodeLine{00086\ \ \ \ \ \ \ \ \ OSQPCscMatrix\ osqp\_csc\_P;}
+\DoxyCodeLine{00087\ \ \ \ \ \ \ \ \ OSQPFloat\ *osqp\_q;}
+\DoxyCodeLine{00088\ \ \ \ \ \ \ \ \ OSQPFloat\ *osqp\_l;}
+\DoxyCodeLine{00089\ \ \ \ \ \ \ \ \ OSQPFloat\ *osqp\_u;}
+\DoxyCodeLine{00090\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00091\ \ \ \ \ \ \ \ \ \textcolor{comment}{//OSQP\ Data\ structures}}
+\DoxyCodeLine{00092\ \ \ \ \ \ \ \ \ OSQPSolver*\ osqp\_solver\ =\ NULL;}
+\DoxyCodeLine{00093\ \ \ \ \ \ \ \ \ OSQPSettings*\ osqp\_settings\ =\ NULL;}
+\DoxyCodeLine{00094\ \ \ \ \ \ \ \ \ OSQPInt\ osqp\_status;}
+\DoxyCodeLine{00095\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00096\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classForceSolver}{ForceSolver}}(\mbox{\hyperlink{classScene}{Scene}}*\ scene,\ \textcolor{keywordtype}{int}\ nb\_contacts\_per\_object\_pair\ =\ 10,\ \textcolor{keywordtype}{int}\ nb\_coulomb\_polygon\_sides\ =\ 8);}
+\DoxyCodeLine{00097\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classForceSolver}{\string~ForceSolver}}();}
+\DoxyCodeLine{00098\ \ \ \ \ \ \ \ \ \textcolor{comment}{//Update\ the\ OSQP\ bound\ vectors\ and\ re-\/solve\ the\ force\ distribution.}}
+\DoxyCodeLine{00099\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ set\_acceleration(Vector3f\ acceleration);}
+\DoxyCodeLine{00100\ \ \ \ \ \ \ \ \ std::vector<ContactForce>\ \mbox{\hyperlink{classForceSolver_a4394785b0ab86937cc65e7b5f7c7ec80}{get\_contact\_forces}}();}
+\DoxyCodeLine{00101\ \ \ \ \ \ \ \ \ \textcolor{keyword}{enum}\ result\_status\ \{UNSOLVED,\ STABLE,\ UNSTABLE,\ FAILURE\};}
+\DoxyCodeLine{00102\ \ \ \ \ \ \ \ \ result\_status\ \mbox{\hyperlink{classForceSolver_a39209b7dde9d41857f70633caf72f666}{get\_status}}();}
+\DoxyCodeLine{00103\ \};}
+
+\end{DoxyCode}

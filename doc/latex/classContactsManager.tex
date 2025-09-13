@@ -1,35 +1,35 @@
-\hypertarget{classContactsManager}{}\doxysection{Contacts\+Manager Class Reference}
-\label{classContactsManager}\index{ContactsManager@{ContactsManager}}
-\doxysubsection*{Public Member Functions}
+\doxysection{Contacts\+Manager Class Reference}
+\hypertarget{classContactsManager}{}\label{classContactsManager}\index{ContactsManager@{ContactsManager}}
+\doxysubsubsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
 void \mbox{\hyperlink{classContactsManager_a100f14fb66185cfc3443ad7d3d90af96}{add\+\_\+contact}} (\mbox{\hyperlink{classContact}{Contact}} contact, bool is\+\_\+penetrating=false)
 \begin{DoxyCompactList}\small\item\em Record a contact point between two objects. \end{DoxyCompactList}\item 
 void \mbox{\hyperlink{classContactsManager_a0170071fadda319a725c9c24965ace70}{add\+\_\+contacts}} (std\+::vector$<$ \mbox{\hyperlink{classContact}{Contact}} $>$ contacts, bool is\+\_\+penetrating=false)
-\begin{DoxyCompactList}\small\item\em Integrate the contact points from a list of \mbox{\hyperlink{classContact}{Contact}} objects. \end{DoxyCompactList}\item 
+\begin{DoxyCompactList}\small\item\em Integrate the contact points from a list of \doxylink{classContact}{Contact} objects. \end{DoxyCompactList}\item 
 std\+::vector$<$ \mbox{\hyperlink{classContact}{Contact}} $>$ \mbox{\hyperlink{classContactsManager_aefd4a384c856a3b578232430198b8724}{get\+\_\+contact\+\_\+points}} (string id1, string id2, bool penetrating=false)
 \begin{DoxyCompactList}\small\item\em Return the list of contact points between two objects. \end{DoxyCompactList}\item 
 std\+::vector$<$ \mbox{\hyperlink{classContact}{Contact}} $>$ \mbox{\hyperlink{classContactsManager_afaa7771c58721cd2f78e0623c57c68c1}{get\+\_\+contact\+\_\+points}} (string id1, bool penetrating=false)
 \begin{DoxyCompactList}\small\item\em Return the list of contact points between an object and all other objects. \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{classContactsManager_abb05c331bc878d5f3f06c59772741bbb}\label{classContactsManager_abb05c331bc878d5f3f06c59772741bbb}} 
+\Hypertarget{classContactsManager_abb05c331bc878d5f3f06c59772741bbb}\label{classContactsManager_abb05c331bc878d5f3f06c59772741bbb} 
 std\+::unordered\+\_\+set$<$ string $>$ {\bfseries get\+\_\+contacted\+\_\+object\+\_\+ids} (string target\+\_\+object)
 \item 
-\mbox{\Hypertarget{classContactsManager_a876f611e0da86839d853dc7c7b961eb6}\label{classContactsManager_a876f611e0da86839d853dc7c7b961eb6}} 
+\Hypertarget{classContactsManager_a876f611e0da86839d853dc7c7b961eb6}\label{classContactsManager_a876f611e0da86839d853dc7c7b961eb6} 
 std\+::unordered\+\_\+set$<$ string $>$ {\bfseries get\+\_\+penetrating\+\_\+object\+\_\+ids} (string target\+\_\+object)
 \item 
 void \mbox{\hyperlink{classContactsManager_acf6188d171ff654945b0a5ab895d1a9e}{invalidate\+\_\+object\+\_\+state}} (string object\+\_\+id)
-\begin{DoxyCompactList}\small\item\em Needs to be called whenever an object is moved or added to the scene to let the \mbox{\hyperlink{classContactsManager}{Contacts\+Manager}} know that the object needs to have its contacts updated. \end{DoxyCompactList}\item 
+\begin{DoxyCompactList}\small\item\em Needs to be called whenever an object is moved or added to the scene to let the \doxylink{classContactsManager}{Contacts\+Manager} know that the object needs to have its contacts updated. \end{DoxyCompactList}\item 
 void \mbox{\hyperlink{classContactsManager_abf787509e203c7c4df0cf237c204e225}{remove\+\_\+object}} (string object\+\_\+id)
 \begin{DoxyCompactList}\small\item\em Remove all contact points associated with an object. \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{classContactsManager_ae9c5a5cf6992248a003bdd9f605b23fb}\label{classContactsManager_ae9c5a5cf6992248a003bdd9f605b23fb}} 
-void \mbox{\hyperlink{classContactsManager_ae9c5a5cf6992248a003bdd9f605b23fb}{remove\+\_\+all\+\_\+objects}} ()
+\Hypertarget{classContactsManager_ae9c5a5cf6992248a003bdd9f605b23fb}\label{classContactsManager_ae9c5a5cf6992248a003bdd9f605b23fb} 
+void {\bfseries remove\+\_\+all\+\_\+objects} ()
 \begin{DoxyCompactList}\small\item\em Remove all contact points associated with all objects. \end{DoxyCompactList}\item 
 bool \mbox{\hyperlink{classContactsManager_a0e6cb79862e22d6fce0fb85260e04b52}{needs\+\_\+update}} (string object\+\_\+id)
 \begin{DoxyCompactList}\small\item\em Check whether the object needs to have its contacts updated. \end{DoxyCompactList}\end{DoxyCompactItemize}
 
 
 \doxysubsection{Member Function Documentation}
-\mbox{\Hypertarget{classContactsManager_a100f14fb66185cfc3443ad7d3d90af96}\label{classContactsManager_a100f14fb66185cfc3443ad7d3d90af96}} 
+\Hypertarget{classContactsManager_a100f14fb66185cfc3443ad7d3d90af96}\label{classContactsManager_a100f14fb66185cfc3443ad7d3d90af96} 
 \index{ContactsManager@{ContactsManager}!add\_contact@{add\_contact}}
 \index{add\_contact@{add\_contact}!ContactsManager@{ContactsManager}}
 \doxysubsubsection{\texorpdfstring{add\_contact()}{add\_contact()}}
@@ -41,12 +41,12 @@ Record a contact point between two objects.
 
 
 \begin{DoxyParams}{Parameters}
-{\em contact} & \mbox{\hyperlink{classContact}{Contact}} object representing the contact point. \\
+{\em contact} & \doxylink{classContact}{Contact} object representing the contact point. \\
 \hline
 {\em is\+\_\+penetrating} & Whether the contact point is embedded in the volume of the objects. \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classContactsManager_a0170071fadda319a725c9c24965ace70}\label{classContactsManager_a0170071fadda319a725c9c24965ace70}} 
+\Hypertarget{classContactsManager_a0170071fadda319a725c9c24965ace70}\label{classContactsManager_a0170071fadda319a725c9c24965ace70} 
 \index{ContactsManager@{ContactsManager}!add\_contacts@{add\_contacts}}
 \index{add\_contacts@{add\_contacts}!ContactsManager@{ContactsManager}}
 \doxysubsubsection{\texorpdfstring{add\_contacts()}{add\_contacts()}}
@@ -54,16 +54,16 @@ Record a contact point between two objects.
 
 
 
-Integrate the contact points from a list of \mbox{\hyperlink{classContact}{Contact}} objects. 
+Integrate the contact points from a list of \doxylink{classContact}{Contact} objects. 
 
 
 \begin{DoxyParams}{Parameters}
-{\em contacts} & List of \mbox{\hyperlink{classContact}{Contact}} objects. \\
+{\em contacts} & List of \doxylink{classContact}{Contact} objects. \\
 \hline
 {\em is\+\_\+penetrating} & Whether the contact points are embedded in the volume of the objects (default\+: false). \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classContactsManager_afaa7771c58721cd2f78e0623c57c68c1}\label{classContactsManager_afaa7771c58721cd2f78e0623c57c68c1}} 
+\Hypertarget{classContactsManager_afaa7771c58721cd2f78e0623c57c68c1}\label{classContactsManager_afaa7771c58721cd2f78e0623c57c68c1} 
 \index{ContactsManager@{ContactsManager}!get\_contact\_points@{get\_contact\_points}}
 \index{get\_contact\_points@{get\_contact\_points}!ContactsManager@{ContactsManager}}
 \doxysubsubsection{\texorpdfstring{get\_contact\_points()}{get\_contact\_points()}\hspace{0.1cm}{\footnotesize\ttfamily [1/2]}}
@@ -81,9 +81,9 @@ Return the list of contact points between an object and all other objects.
 \hline
 \end{DoxyParams}
 \begin{DoxyReturn}{Returns}
-List of contact points (\mbox{\hyperlink{classContact}{Contact}} objects). 
+List of contact points (\doxylink{classContact}{Contact} objects). 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classContactsManager_aefd4a384c856a3b578232430198b8724}\label{classContactsManager_aefd4a384c856a3b578232430198b8724}} 
+\Hypertarget{classContactsManager_aefd4a384c856a3b578232430198b8724}\label{classContactsManager_aefd4a384c856a3b578232430198b8724} 
 \index{ContactsManager@{ContactsManager}!get\_contact\_points@{get\_contact\_points}}
 \index{get\_contact\_points@{get\_contact\_points}!ContactsManager@{ContactsManager}}
 \doxysubsubsection{\texorpdfstring{get\_contact\_points()}{get\_contact\_points()}\hspace{0.1cm}{\footnotesize\ttfamily [2/2]}}
@@ -105,7 +105,7 @@ Return the list of contact points between two objects.
 \begin{DoxyReturn}{Returns}
 List of 3D positions of contact points. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classContactsManager_acf6188d171ff654945b0a5ab895d1a9e}\label{classContactsManager_acf6188d171ff654945b0a5ab895d1a9e}} 
+\Hypertarget{classContactsManager_acf6188d171ff654945b0a5ab895d1a9e}\label{classContactsManager_acf6188d171ff654945b0a5ab895d1a9e} 
 \index{ContactsManager@{ContactsManager}!invalidate\_object\_state@{invalidate\_object\_state}}
 \index{invalidate\_object\_state@{invalidate\_object\_state}!ContactsManager@{ContactsManager}}
 \doxysubsubsection{\texorpdfstring{invalidate\_object\_state()}{invalidate\_object\_state()}}
@@ -113,14 +113,14 @@ List of 3D positions of contact points.
 
 
 
-Needs to be called whenever an object is moved or added to the scene to let the \mbox{\hyperlink{classContactsManager}{Contacts\+Manager}} know that the object needs to have its contacts updated. 
+Needs to be called whenever an object is moved or added to the scene to let the \doxylink{classContactsManager}{Contacts\+Manager} know that the object needs to have its contacts updated. 
 
 
 \begin{DoxyParams}{Parameters}
 {\em object\+\_\+id} & Unique ID of the object. \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classContactsManager_a0e6cb79862e22d6fce0fb85260e04b52}\label{classContactsManager_a0e6cb79862e22d6fce0fb85260e04b52}} 
+\Hypertarget{classContactsManager_a0e6cb79862e22d6fce0fb85260e04b52}\label{classContactsManager_a0e6cb79862e22d6fce0fb85260e04b52} 
 \index{ContactsManager@{ContactsManager}!needs\_update@{needs\_update}}
 \index{needs\_update@{needs\_update}!ContactsManager@{ContactsManager}}
 \doxysubsubsection{\texorpdfstring{needs\_update()}{needs\_update()}}
@@ -138,7 +138,7 @@ Check whether the object needs to have its contacts updated.
 \begin{DoxyReturn}{Returns}
 Returns true if the object needs to have its contacts updated. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classContactsManager_abf787509e203c7c4df0cf237c204e225}\label{classContactsManager_abf787509e203c7c4df0cf237c204e225}} 
+\Hypertarget{classContactsManager_abf787509e203c7c4df0cf237c204e225}\label{classContactsManager_abf787509e203c7c4df0cf237c204e225} 
 \index{ContactsManager@{ContactsManager}!remove\_object@{remove\_object}}
 \index{remove\_object@{remove\_object}!ContactsManager@{ContactsManager}}
 \doxysubsubsection{\texorpdfstring{remove\_object()}{remove\_object()}}

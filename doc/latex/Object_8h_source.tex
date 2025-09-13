@@ -1,0 +1,84 @@
+\doxysection{Object.\+h}
+\hypertarget{Object_8h_source}{}\label{Object_8h_source}\index{lib/src/Object.h@{lib/src/Object.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ }
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <iostream>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}PxPhysicsAPI.h"{}}}
+\DoxyCodeLine{00008\ \textcolor{preprocessor}{\#include\ "{}extensions/PxTetMakerExt.h"{}}}
+\DoxyCodeLine{00009\ \textcolor{preprocessor}{\#include\ "{}geometry/PxSimpleTriangleMesh.h"{}}}
+\DoxyCodeLine{00010\ \textcolor{preprocessor}{\#include\ <eigen3/Eigen/Eigen>}}
+\DoxyCodeLine{00011\ \textcolor{preprocessor}{\#include\ "{}OccupancyGrid.h"{}}}
+\DoxyCodeLine{00012\ }
+\DoxyCodeLine{00013\ \textcolor{keyword}{using\ namespace\ }std;}
+\DoxyCodeLine{00014\ \textcolor{keyword}{using\ namespace\ }Eigen;}
+\DoxyCodeLine{00015\ \textcolor{keyword}{using\ namespace\ }physx;}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \textcolor{comment}{//Forward\ declaration}}
+\DoxyCodeLine{00018\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classScene}{Scene}};}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00020\ \textcolor{keyword}{class\ }\mbox{\hyperlink{classObject}{Object}}}
+\DoxyCodeLine{00021\ \{}
+\DoxyCodeLine{00022\ \ \ \ \ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00023\ \ \ \ \ \ \ \ \ shared\_ptr<PxVec3>\ tri\_mesh\_vertices;}
+\DoxyCodeLine{00024\ \ \ \ \ \ \ \ \ shared\_ptr<PxU32>\ tri\_mesh\_indices;}
+\DoxyCodeLine{00025\ \ \ \ \ \ \ \ \ shared\_ptr<PxTriangleMeshGeometry>\ tri\_mesh\_geometry;}
+\DoxyCodeLine{00026\ \ \ \ \ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00027\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{string}\ id;}
+\DoxyCodeLine{00028\ \ \ \ \ \ \ \ \ Matrix4f\ pose;}
+\DoxyCodeLine{00029\ \ \ \ \ \ \ \ \ MatrixX3f\ tri\_vertices;}
+\DoxyCodeLine{00030\ \ \ \ \ \ \ \ \ MatrixX3i\ tri\_triangles;}
+\DoxyCodeLine{00031\ \ \ \ \ \ \ \ \ MatrixX3f\ tetra\_vertices;}
+\DoxyCodeLine{00032\ \ \ \ \ \ \ \ \ MatrixX4i\ tetra\_indices;}
+\DoxyCodeLine{00033\ \ \ \ \ \ \ \ \ MatrixX3f\ canary\_sphere\_positions;}
+\DoxyCodeLine{00034\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ is\_volumetric;}
+\DoxyCodeLine{00035\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ is\_fixed;}
+\DoxyCodeLine{00036\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ mass;}
+\DoxyCodeLine{00037\ \ \ \ \ \ \ \ \ Vector3f\ com;}
+\DoxyCodeLine{00038\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{string}\ material\_name;}
+\DoxyCodeLine{00039\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ max\_separation;}
+\DoxyCodeLine{00040\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classScene}{Scene}}*\ scene;}
+\DoxyCodeLine{00041\ \ \ \ \ \ \ \ \ shared\_ptr<PxSimpleTriangleMesh>\ tri\_mesh;}
+\DoxyCodeLine{00042\ \ \ \ \ \ \ \ \ shared\_ptr<OccupancyGrid>\ occupancy\_grid;}
+\DoxyCodeLine{00043\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classObject}{Object}}(}
+\DoxyCodeLine{00044\ \ \ \ \ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classScene}{Scene}}*\ scene,}
+\DoxyCodeLine{00045\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{string}\ \textcolor{keywordtype}{id},\ }
+\DoxyCodeLine{00046\ \ \ \ \ \ \ \ \ \ \ \ \ Matrix4f\ pose,\ }
+\DoxyCodeLine{00047\ \ \ \ \ \ \ \ \ \ \ \ \ MatrixX3f\ vertices,\ }
+\DoxyCodeLine{00048\ \ \ \ \ \ \ \ \ \ \ \ \ MatrixX3i\ triangles,}
+\DoxyCodeLine{00049\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ is\_volumetric,}
+\DoxyCodeLine{00050\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ is\_fixed,}
+\DoxyCodeLine{00051\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{float}\ mass,}
+\DoxyCodeLine{00052\ \ \ \ \ \ \ \ \ \ \ \ \ Vector3f\ com,}
+\DoxyCodeLine{00053\ \ \ \ \ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{string}\ material\_name}
+\DoxyCodeLine{00054\ \ \ \ \ \ \ \ \ );}
+\DoxyCodeLine{00055\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{classObject}{\string~Object}}();}
+\DoxyCodeLine{00056\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classObject_a0638f02e88ce81408daf923f7d14c1c4}{has\_tri\_mesh}}();}
+\DoxyCodeLine{00057\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classObject_a76c81edcfc6dfb92d683ef6b98a67028}{has\_tetra\_mesh}}();}
+\DoxyCodeLine{00058\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classObject_a9d21340e1dab67c2867f37d969723ccf}{has\_canary\_spheres}}();}
+\DoxyCodeLine{00059\ \ \ \ \ \ \ \ \ MatrixX3f\ \mbox{\hyperlink{classObject_a7d7317063b47fbb95e7a76dfa13ce3f5}{get\_voxel\_centres}}();}
+\DoxyCodeLine{00060\ \ \ \ \ \ \ \ \ Vector3f\ \mbox{\hyperlink{classObject_ad54c27b00bd12ae4f953a39a882cad57}{get\_voxel\_side\_lengths}}();}
+\DoxyCodeLine{00061\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{classObject_a16ed03af77e5180eba817ce8b9c35104}{get\_grid\_resolution}}();}
+\DoxyCodeLine{00062\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classObject_a6dddaca0c70909801fe9726188cf036c}{set\_max\_separation}}(\textcolor{keywordtype}{float}\ max\_separation);}
+\DoxyCodeLine{00063\ \ \ \ \ \ \ \ \ PxTransform\ \mbox{\hyperlink{classObject_ac79db2a59f1a872882f9c0ee89a2e767}{get\_pose}}();}
+\DoxyCodeLine{00064\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classObject_a588a896d452b1b5d204212e5632836fa}{reset\_pose}}(Matrix4f\ new\_pose);}
+\DoxyCodeLine{00065\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classObject_a9c59439266f1869b1fc03f29e661773c}{is\_valid\_pose\_matrix}}(Matrix4f\ matrix);}
+\DoxyCodeLine{00066\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classObject_a69c33b0d668eac04feefa18c460a4a1b}{set\_tetra\_mesh}}(MatrixX3f\ vertices,\ MatrixX4i\ indices);}
+\DoxyCodeLine{00067\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classObject_a69c33b0d668eac04feefa18c460a4a1b}{set\_tetra\_mesh}}(PxArray<PxVec3>\ vertices,\ PxArray<PxU32>\ indices);}
+\DoxyCodeLine{00068\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classObject_a4c204e0f31d7dd82c958f90462dfb0bd}{set\_tri\_mesh}}(PxSimpleTriangleMesh\&\ simpleTriMesh);}
+\DoxyCodeLine{00069\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classObject_a4c204e0f31d7dd82c958f90462dfb0bd}{set\_tri\_mesh}}(MatrixX3f\&\ vertices,\ MatrixX3i\&\ triangles);}
+\DoxyCodeLine{00070\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classObject_a64f6158a6cf4398746a5de1d42e183c7}{validate\_mesh}}(PxSimpleTriangleMesh\&\ surfaceMesh);}
+\DoxyCodeLine{00071\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classObject_ada9a469202a62c32c7b586f6b9c5fe7b}{remesh\_surface\_trimesh}}();}
+\DoxyCodeLine{00072\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{classObject_a6b29f48e6f3bddf9c2f39d46fbad240f}{create\_tri\_mesh\_geometry}}();}
+\DoxyCodeLine{00073\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classObject_a4afad3d5b097349b44e18488806f27f4}{create\_tetra\_mesh}}(PxSimpleTriangleMesh\&\ triSurfaceMesh,\ PxArray<PxVec3>\&\ tetMeshVertices,\ PxArray<PxU32>\&\ tetMeshIndices);}
+\DoxyCodeLine{00074\ \ \ \ \ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{classObject_a419f85b7055a23357f2a090e8de10182}{create\_tetra\_convex\_set}}(PxArray<PxVec3>\ tetVertices,\ PxArray<PxU32>\ tetIndices,\ PxArray<PxConvexMeshDesc>\&\ convexMeshDescs);}
+\DoxyCodeLine{00075\ \ \ \ \ \ \ \ \ shared\_ptr<OccupancyGrid>\ \mbox{\hyperlink{classObject_a9c560fbb83fbba80268273e370accd72}{create\_occupancy\_grid}}(\textcolor{keywordtype}{int}\ resolution,\ \textcolor{keywordtype}{int}\ sampling\_method);}
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00077\ \ \ \ \ \ \ \ \ \mbox{\hyperlink{structOrientedPoint}{OrientedPoint}}\ \mbox{\hyperlink{classObject_a510d278a42dc9463e0cc10e8fb9a55d4}{get\_closest\_point\_on\_surface}}(Vector3f\ query\_point);}
+\DoxyCodeLine{00078\ \};}
+
+\end{DoxyCode}

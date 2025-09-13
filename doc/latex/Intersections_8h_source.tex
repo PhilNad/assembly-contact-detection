@@ -1,0 +1,35 @@
+\doxysection{Intersections.\+h}
+\hypertarget{Intersections_8h_source}{}\label{Intersections_8h_source}\index{lib/src/Intersections.h@{lib/src/Intersections.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#pragma\ once}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#include\ <memory>}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ "{}Triangle.h"{}}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ "{}AARectangle.h"{}}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}PointSet.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}Polygon.h"{}}}
+\DoxyCodeLine{00007\ }
+\DoxyCodeLine{00008\ }
+\DoxyCodeLine{00009\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{structLineSegmentIntersection}{LineSegmentIntersection}}\ \{}
+\DoxyCodeLine{00010\ \ \ \ \ Eigen::Vector2f\ intersection\_point\_1\ =\ Eigen::Vector2f(NAN,\ NAN);}
+\DoxyCodeLine{00011\ \ \ \ \ Eigen::Vector2f\ intersection\_point\_2\ =\ Eigen::Vector2f(NAN,\ NAN);}
+\DoxyCodeLine{00012\ \ \ \ \ \textcolor{keywordtype}{int}\ nb\_intersections\ =\ 0;}
+\DoxyCodeLine{00013\ \};}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ Eigen::Vector3f\ line\_plane\_intersection(\textcolor{keyword}{const}\ Eigen::Vector3f\ vector\_start,\ \textcolor{keyword}{const}\ Eigen::Vector3f\ vector\_dir,\ \textcolor{keyword}{const}\ Eigen::Vector3f\ plane\_normal,\ \textcolor{keyword}{const}\ \textcolor{keywordtype}{float}\ plane\_distance);}
+\DoxyCodeLine{00016\ }
+\DoxyCodeLine{00017\ \mbox{\hyperlink{classPointSet3D}{PointSet3D}}\ triangle\_triangle\_AARectangle\_intersection(\mbox{\hyperlink{classAARectangle}{AARectangle}}\&\ aarec,\ std::shared\_ptr<\mbox{\hyperlink{classTriangle}{Triangle<Eigen::Vector3f>}}>\ t1,\ std::shared\_ptr<\mbox{\hyperlink{classTriangle}{Triangle<Eigen::Vector3f>}}>\ t2,\ \textcolor{keywordtype}{float}\ max\_distance);}
+\DoxyCodeLine{00018\ }
+\DoxyCodeLine{00019\ \mbox{\hyperlink{classPointSet3D}{PointSet3D}}\ triangle\_overlap\_over\_AARectangle(\mbox{\hyperlink{classAARectangle}{AARectangle}}\&\ aarec,\ std::shared\_ptr<\mbox{\hyperlink{classTriangle}{Triangle<Eigen::Vector3f>}}>\ t1,\ std::shared\_ptr<\mbox{\hyperlink{classTriangle}{Triangle<Eigen::Vector3f>}}>\ t2);}
+\DoxyCodeLine{00020\ }
+\DoxyCodeLine{00021\ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}\ line\_AARectangle\_intersection(\textcolor{keyword}{const}\ Eigen::Vector2f\&\ segment\_p0,\ \textcolor{keyword}{const}\ Eigen::Vector2f\&\ segment\_p1,\ \mbox{\hyperlink{classAARectangle}{AARectangle}}\&\ rectangle);}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00023\ \mbox{\hyperlink{classPointSet2D}{PointSet2D}}\ edge\_triangle\_intersection(\textcolor{keyword}{const}\ Eigen::Vector2f\&\ edge\_p0,\ \textcolor{keyword}{const}\ Eigen::Vector2f\&\ edge\_p1,\ \mbox{\hyperlink{classTriangle}{Triangle<Eigen::Vector2f>}}\&\ triangle);}
+\DoxyCodeLine{00024\ }
+\DoxyCodeLine{00025\ \mbox{\hyperlink{structLineSegmentIntersection}{LineSegmentIntersection}}\ line\_segment\_intersection(Eigen::Vector2f\ p1,\ Eigen::Vector2f\ q1,\ Eigen::Vector2f\ p2,\ Eigen::Vector2f\ q2,\ \textcolor{keywordtype}{bool}\ closed\_segments\ =\ \textcolor{keyword}{true});}
+\DoxyCodeLine{00026\ }
+\DoxyCodeLine{00027\ \textcolor{keywordtype}{bool}\ AARectangle\_in\_triangle(\mbox{\hyperlink{classAARectangle}{AARectangle}}\&\ aarec,\ \mbox{\hyperlink{classTriangle}{Triangle<Eigen::Vector2f>}}\&\ triangle);}
+\DoxyCodeLine{00028\ }
+\DoxyCodeLine{00029\ \mbox{\hyperlink{structLineSegmentIntersection}{LineSegmentIntersection}}\ line\_segment\_ConvexPolygon\_intersection(Eigen::Vector2f\ p1,\ Eigen::Vector2f\ q1,\ \mbox{\hyperlink{classConvex2DPolygon}{Convex2DPolygon}}\&\ polygon,\ \textcolor{keywordtype}{bool}\ closed\_segments\ =\ \textcolor{keyword}{true});}
+
+\end{DoxyCode}

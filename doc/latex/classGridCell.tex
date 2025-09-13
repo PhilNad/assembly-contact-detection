@@ -1,44 +1,44 @@
-\hypertarget{classGridCell}{}\doxysection{Grid\+Cell Class Reference}
-\label{classGridCell}\index{GridCell@{GridCell}}
-\doxysubsection*{Public Member Functions}
+\doxysection{Grid\+Cell Class Reference}
+\hypertarget{classGridCell}{}\label{classGridCell}\index{GridCell@{GridCell}}
+\doxysubsubsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\mbox{\hyperlink{classGridCell_aad52cbc8de8149e0af13a80e3300b4f7}{Grid\+Cell}} (uint32\+\_\+t id, shared\+\_\+ptr$<$ \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} $>$ surface\+\_\+point, const Vector3f \&cell\+\_\+size, const Vector3f \&cell\+\_\+centre, shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$$>$ triangle)
+\mbox{\hyperlink{classGridCell_a28c3c1ed7959f81fe222622443930bf3}{Grid\+Cell}} (uint32\+\_\+t id, shared\+\_\+ptr$<$ \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} $>$ surface\+\_\+point, const Vector3f \&cell\+\_\+size, const Vector3f \&cell\+\_\+centre, shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$ $>$ triangle)
 \begin{DoxyCompactList}\small\item\em Build a grid cell that contains all necessary information for collision detection. \end{DoxyCompactList}\item 
 void \mbox{\hyperlink{classGridCell_a2febf5f861375ab0d96888babb045259}{additional\+\_\+point}} (shared\+\_\+ptr$<$ \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} $>$ surface\+\_\+point)
 \begin{DoxyCompactList}\small\item\em Add information about a surface point to the grid cell. \end{DoxyCompactList}\item 
-void \mbox{\hyperlink{classGridCell_a347bcb486b7d4c022b3784aa5d71aca9}{additional\+\_\+triangle}} (shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$$>$ triangle)
+void \mbox{\hyperlink{classGridCell_a6dcfa4228fe6d39b951a28503e0969d4}{additional\+\_\+triangle}} (shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$ $>$ triangle)
 \begin{DoxyCompactList}\small\item\em Add information about a triangle to the grid cell. \end{DoxyCompactList}\item 
 \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} \mbox{\hyperlink{classGridCell_a3d708f3baea265178b29830ad2f66839}{weighted\+\_\+average}} (const Vector3f \&query\+\_\+point)
 \begin{DoxyCompactList}\small\item\em Compute the weighted average of the surface points positions and normals based on their distance to the query point. \end{DoxyCompactList}\item 
 \mbox{\hyperlink{classAARectangle}{AARectangle}} \mbox{\hyperlink{classGridCell_ae17bd0d8e7cd7798cb8bd7d3e2532633}{gridcell\+\_\+to\+\_\+gridcell\+\_\+intersection}} (const \mbox{\hyperlink{classGridCell}{Grid\+Cell}} \&other, const AARectangle\+::\+NORMAL\+\_\+\+AXIS normal\+\_\+axis)
 \begin{DoxyCompactList}\small\item\em Determine the intersection rectangle between two grid cells assumed to be in contact. \end{DoxyCompactList}\end{DoxyCompactItemize}
-\doxysubsection*{Public Attributes}
+\doxysubsubsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\mbox{\Hypertarget{classGridCell_afd19f638523cd12b084bb132ffc926db}\label{classGridCell_afd19f638523cd12b084bb132ffc926db}} 
+\Hypertarget{classGridCell_afd19f638523cd12b084bb132ffc926db}\label{classGridCell_afd19f638523cd12b084bb132ffc926db} 
 uint32\+\_\+t {\bfseries id} = 0
 \item 
-\mbox{\Hypertarget{classGridCell_a0fa6c9fee133f54732d8f6144ae370f6}\label{classGridCell_a0fa6c9fee133f54732d8f6144ae370f6}} 
+\Hypertarget{classGridCell_a0fa6c9fee133f54732d8f6144ae370f6}\label{classGridCell_a0fa6c9fee133f54732d8f6144ae370f6} 
 vector$<$ shared\+\_\+ptr$<$ \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} $>$ $>$ {\bfseries surface\+\_\+points} = \{\}
 \item 
-\mbox{\Hypertarget{classGridCell_a21c35531eb5d0f3e67643ad616c1c386}\label{classGridCell_a21c35531eb5d0f3e67643ad616c1c386}} 
+\Hypertarget{classGridCell_a21c35531eb5d0f3e67643ad616c1c386}\label{classGridCell_a21c35531eb5d0f3e67643ad616c1c386} 
 vector$<$ shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$ $>$ $>$ {\bfseries triangles} = \{\}
 \item 
-\mbox{\Hypertarget{classGridCell_a62f4d1c19e4abc4043decbc542dabed4}\label{classGridCell_a62f4d1c19e4abc4043decbc542dabed4}} 
+\Hypertarget{classGridCell_a62f4d1c19e4abc4043decbc542dabed4}\label{classGridCell_a62f4d1c19e4abc4043decbc542dabed4} 
 Vector3f {\bfseries half\+\_\+extents}
 \item 
-\mbox{\Hypertarget{classGridCell_a530ae2b1d3990f722f28a4c7d0e420ce}\label{classGridCell_a530ae2b1d3990f722f28a4c7d0e420ce}} 
+\Hypertarget{classGridCell_a530ae2b1d3990f722f28a4c7d0e420ce}\label{classGridCell_a530ae2b1d3990f722f28a4c7d0e420ce} 
 Vector3f {\bfseries centre}
 \end{DoxyCompactItemize}
 
 
 \doxysubsection{Constructor \& Destructor Documentation}
-\mbox{\Hypertarget{classGridCell_aad52cbc8de8149e0af13a80e3300b4f7}\label{classGridCell_aad52cbc8de8149e0af13a80e3300b4f7}} 
+\Hypertarget{classGridCell_a28c3c1ed7959f81fe222622443930bf3}\label{classGridCell_a28c3c1ed7959f81fe222622443930bf3} 
 \index{GridCell@{GridCell}!GridCell@{GridCell}}
 \index{GridCell@{GridCell}!GridCell@{GridCell}}
 \doxysubsubsection{\texorpdfstring{GridCell()}{GridCell()}}
-{\footnotesize\ttfamily Grid\+Cell\+::\+Grid\+Cell (\begin{DoxyParamCaption}\item[{uint32\+\_\+t}]{id,  }\item[{shared\+\_\+ptr$<$ \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} $>$}]{surface\+\_\+point,  }\item[{const Vector3f \&}]{cell\+\_\+size,  }\item[{const Vector3f \&}]{cell\+\_\+centre,  }\item[{shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$$>$}]{triangle }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily Grid\+Cell\+::\+Grid\+Cell (\begin{DoxyParamCaption}\item[{uint32\+\_\+t}]{id,  }\item[{shared\+\_\+ptr$<$ \mbox{\hyperlink{structOrientedPoint}{Oriented\+Point}} $>$}]{surface\+\_\+point,  }\item[{const Vector3f \&}]{cell\+\_\+size,  }\item[{const Vector3f \&}]{cell\+\_\+centre,  }\item[{shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$ $>$}]{triangle }\end{DoxyParamCaption})}
 
 
 
@@ -58,7 +58,7 @@ Build a grid cell that contains all necessary information for collision detectio
 
 
 \doxysubsection{Member Function Documentation}
-\mbox{\Hypertarget{classGridCell_a2febf5f861375ab0d96888babb045259}\label{classGridCell_a2febf5f861375ab0d96888babb045259}} 
+\Hypertarget{classGridCell_a2febf5f861375ab0d96888babb045259}\label{classGridCell_a2febf5f861375ab0d96888babb045259} 
 \index{GridCell@{GridCell}!additional\_point@{additional\_point}}
 \index{additional\_point@{additional\_point}!GridCell@{GridCell}}
 \doxysubsubsection{\texorpdfstring{additional\_point()}{additional\_point()}}
@@ -73,11 +73,11 @@ Add information about a surface point to the grid cell.
 {\em surface\+\_\+point} & Oriented point (position and normal) that was sampled on the surface. \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classGridCell_a347bcb486b7d4c022b3784aa5d71aca9}\label{classGridCell_a347bcb486b7d4c022b3784aa5d71aca9}} 
+\Hypertarget{classGridCell_a6dcfa4228fe6d39b951a28503e0969d4}\label{classGridCell_a6dcfa4228fe6d39b951a28503e0969d4} 
 \index{GridCell@{GridCell}!additional\_triangle@{additional\_triangle}}
 \index{additional\_triangle@{additional\_triangle}!GridCell@{GridCell}}
 \doxysubsubsection{\texorpdfstring{additional\_triangle()}{additional\_triangle()}}
-{\footnotesize\ttfamily void Grid\+Cell\+::additional\+\_\+triangle (\begin{DoxyParamCaption}\item[{shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$$>$}]{triangle }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily void Grid\+Cell\+::additional\+\_\+triangle (\begin{DoxyParamCaption}\item[{shared\+\_\+ptr$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$ $>$}]{triangle }\end{DoxyParamCaption})}
 
 
 
@@ -85,10 +85,10 @@ Add information about a triangle to the grid cell.
 
 
 \begin{DoxyParams}{Parameters}
-{\em triangle} & \mbox{\hyperlink{classTriangle}{Triangle}} on which a surface point was sampled. \\
+{\em triangle} & \doxylink{classTriangle}{Triangle} on which a surface point was sampled. \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classGridCell_ae17bd0d8e7cd7798cb8bd7d3e2532633}\label{classGridCell_ae17bd0d8e7cd7798cb8bd7d3e2532633}} 
+\Hypertarget{classGridCell_ae17bd0d8e7cd7798cb8bd7d3e2532633}\label{classGridCell_ae17bd0d8e7cd7798cb8bd7d3e2532633} 
 \index{GridCell@{GridCell}!gridcell\_to\_gridcell\_intersection@{gridcell\_to\_gridcell\_intersection}}
 \index{gridcell\_to\_gridcell\_intersection@{gridcell\_to\_gridcell\_intersection}!GridCell@{GridCell}}
 \doxysubsubsection{\texorpdfstring{gridcell\_to\_gridcell\_intersection()}{gridcell\_to\_gridcell\_intersection()}}
@@ -100,13 +100,13 @@ Determine the intersection rectangle between two grid cells assumed to be in con
 
 
 \begin{DoxyParams}{Parameters}
-{\em other} & \mbox{\hyperlink{classGridCell}{Grid\+Cell}} different from the current one that is in contact with it. \\
+{\em other} & \doxylink{classGridCell}{Grid\+Cell} different from the current one that is in contact with it. \\
 \hline
 \end{DoxyParams}
 \begin{DoxyReturn}{Returns}
 Axis Aligned Rectangle that represents the intersection between the two grid cells. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classGridCell_a3d708f3baea265178b29830ad2f66839}\label{classGridCell_a3d708f3baea265178b29830ad2f66839}} 
+\Hypertarget{classGridCell_a3d708f3baea265178b29830ad2f66839}\label{classGridCell_a3d708f3baea265178b29830ad2f66839} 
 \index{GridCell@{GridCell}!weighted\_average@{weighted\_average}}
 \index{weighted\_average@{weighted\_average}!GridCell@{GridCell}}
 \doxysubsubsection{\texorpdfstring{weighted\_average()}{weighted\_average()}}

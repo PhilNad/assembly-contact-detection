@@ -1,11 +1,9 @@
-\hypertarget{classScene}{}\doxysection{Scene Class Reference}
-\label{classScene}\index{Scene@{Scene}}
-\doxysubsection*{Public Member Functions}
+\doxysection{Scene Class Reference}
+\hypertarget{classScene}{}\label{classScene}\index{Scene@{Scene}}
+\doxysubsubsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-void \mbox{\hyperlink{classScene_a5b7bd9ce07b60c5a1c870328abd82c6b}{add\+\_\+volumetric\+\_\+object}} (string id, Matrix4f pose, Matrix\+X3f tri\+\_\+vertices, Matrix\+X3i tri\+\_\+indices, Matrix\+X3f tetra\+\_\+vertices, Matrix\+X4i tetra\+\_\+indices, Matrix\+X3f canary\+\_\+sphere\+\_\+positions, int resolution=15, bool is\+\_\+fixed=false, float mass=1, Vector3f com=Vector3f\+::\+Zero(), string material\+\_\+name=\char`\"{}wood\char`\"{})
-\begin{DoxyCompactList}\small\item\em Add a volumetric object to the scene defined by its triangular surface mesh, its tetrahedral volume mesh, and its canary spheres. If the tetrahedral mesh and the canary spheres matrices are empty, they will be generated. \end{DoxyCompactList}\item 
-void \mbox{\hyperlink{classScene_aee6917e724a22fdec4de1cf57da753f6}{add\+\_\+object}} (string id, Matrix4f pose, Matrix\+X3f tri\+\_\+vertices, Matrix\+X3i tri\+\_\+indices, int resolution=15, bool compute\+\_\+volume=false, bool is\+\_\+fixed=false, float mass=1, Vector3f com=Vector3f\+::\+Zero(), string material\+\_\+name=\char`\"{}wood\char`\"{})
+void \mbox{\hyperlink{classScene_aee6917e724a22fdec4de1cf57da753f6}{add\+\_\+object}} (string id, Matrix4f pose, Matrix\+X3f tri\+\_\+vertices, Matrix\+X3i tri\+\_\+indices, int resolution=15, bool compute\+\_\+volume=false, bool is\+\_\+fixed=false, float mass=1, Vector3f com=Vector3f\+::\+Zero(), string material\+\_\+name="{}wood"{})
 \begin{DoxyCompactList}\small\item\em Add an object to the scene. \end{DoxyCompactList}\item 
 void \mbox{\hyperlink{classScene_a0205ad8a99750d032191d671d79f6476}{remove\+\_\+object}} (string id)
 \begin{DoxyCompactList}\small\item\em Remove an object from the scene along with its attached shapes. \end{DoxyCompactList}\item 
@@ -21,9 +19,9 @@ vector$<$ string $>$ \mbox{\hyperlink{classScene_a010e0eeae41d71bd4d4a67c4f60ca2
 \begin{DoxyCompactList}\small\item\em Return a list of object IDs in the scene. \end{DoxyCompactList}\item 
 unordered\+\_\+set$<$ string $>$ \mbox{\hyperlink{classScene_a2050e56325f8a18187a21d2d126b781a}{get\+\_\+contacted\+\_\+objects}} (string target\+\_\+object)
 \begin{DoxyCompactList}\small\item\em Get the list of objects in contact with a given object. \end{DoxyCompactList}\item 
-vector$<$ \mbox{\hyperlink{classContact}{Contact}} $>$ \mbox{\hyperlink{classScene_a6ed847a33a37f7b482c39509860cf159}{get\+\_\+contact\+\_\+points}} (string id1, string id2=\char`\"{}\char`\"{}, bool penetrating=false)
+vector$<$ \mbox{\hyperlink{classContact}{Contact}} $>$ \mbox{\hyperlink{classScene_a6ed847a33a37f7b482c39509860cf159}{get\+\_\+contact\+\_\+points}} (string id1, string id2="{}"{}, bool penetrating=false)
 \begin{DoxyCompactList}\small\item\em Get the contact points between two objects that are not penetrating. \end{DoxyCompactList}\item 
-Matrix\+X3f \mbox{\hyperlink{classScene_aab1236c10994c3b243d54355588d27c2}{get\+\_\+contact\+\_\+points\+\_\+positions}} (string id1, string id2=\char`\"{}\char`\"{})
+Matrix\+X3f \mbox{\hyperlink{classScene_aab1236c10994c3b243d54355588d27c2}{get\+\_\+contact\+\_\+points\+\_\+positions}} (string id1, string id2="{}"{})
 \begin{DoxyCompactList}\small\item\em Get the contact points between two objects that are not penetrating. \end{DoxyCompactList}\item 
 Vector3f \mbox{\hyperlink{classScene_a893a5a7f10a7610e2ce019c8dca2cc28}{get\+\_\+closest\+\_\+contact\+\_\+point}} (string id1, string id2, const Vector3f point)
 \begin{DoxyCompactList}\small\item\em Find the contact point between two objects that is the closest to the given point. \end{DoxyCompactList}\item 
@@ -33,14 +31,10 @@ Matrix\+X3f \mbox{\hyperlink{classScene_ab07f56e7072a6d809fc6add0cf0f29cd}{get\+
 \begin{DoxyCompactList}\small\item\em Get all contact points involving the object with the given id. \end{DoxyCompactList}\item 
 Matrix\+X3f \mbox{\hyperlink{classScene_ac1781bdc0be970a7412af0bc35d38d7e}{get\+\_\+all\+\_\+penetrating\+\_\+contact\+\_\+points}} (string id)
 \begin{DoxyCompactList}\small\item\em Get all penetrating contact points involving the object with the given id. \end{DoxyCompactList}\item 
-Matrix\+X3f \mbox{\hyperlink{classScene_ab09d0b38f74bf4ad5efbbd56682dd71f}{get\+\_\+contact\+\_\+convex\+\_\+hull}} (string id1, string id2=\char`\"{}\char`\"{}, int vertex\+\_\+limit=255)
+Matrix\+X3f \mbox{\hyperlink{classScene_ab09d0b38f74bf4ad5efbbd56682dd71f}{get\+\_\+contact\+\_\+convex\+\_\+hull}} (string id1, string id2="{}"{}, int vertex\+\_\+limit=255)
 \begin{DoxyCompactList}\small\item\em Return the vertices of the convex hull over the contact points between two objects, or between an object and the scene. \end{DoxyCompactList}\item 
 vector$<$ \mbox{\hyperlink{classContactForce}{Contact\+Force}} $>$ \mbox{\hyperlink{classScene_a95dc13076ec4fe94824c30c5aa2e1058}{get\+\_\+contact\+\_\+forces}} (int nb\+\_\+contacts\+\_\+per\+\_\+object\+\_\+pair=10, int nb\+\_\+coulomb\+\_\+polygon\+\_\+sides=8)
 \begin{DoxyCompactList}\small\item\em Get the contact forces between objects in the scene. \end{DoxyCompactList}\item 
-Matrix3f \mbox{\hyperlink{classScene_aafb8eb4cc7be34e8cc859b0a5e4c34bd}{get\+\_\+best\+\_\+contact\+\_\+triangle}} (string id, vector$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$$>$ triangles, bool stable, int max\+\_\+tri\+\_\+to\+\_\+consider=-\/1)
-\begin{DoxyCompactList}\small\item\em Amongst the given triangles, find the one that creates the best stable support for an object. \end{DoxyCompactList}\item 
-vector$<$ pair$<$ string, Vector3f $>$ $>$ \mbox{\hyperlink{classScene_a84b310812b251f54c622678c6d12e119}{get\+\_\+three\+\_\+most\+\_\+stable\+\_\+contact\+\_\+points}} (string id, int hull\+\_\+max\+\_\+size=255, bool random\+\_\+third\+\_\+point=false)
-\begin{DoxyCompactList}\small\item\em Find the three contact points that create the best stable support for an object. \end{DoxyCompactList}\item 
 void \mbox{\hyperlink{classScene_a70613e44035e9ea2660ddcd424488cd3}{merge\+\_\+similar\+\_\+contact\+\_\+points}} (vector$<$ \mbox{\hyperlink{classContact}{Contact}} $>$ contact\+\_\+points, float position\+\_\+threshold, float normal\+\_\+threshold)
 \begin{DoxyCompactList}\small\item\em Compare each pair of contact points and merge them if they are close enough. \end{DoxyCompactList}\item 
 Matrix\+X3f \mbox{\hyperlink{classScene_a4d5d2bc18bd1b7265c1391584db1bc38}{get\+\_\+tri\+\_\+vertices}} (string id)
@@ -57,38 +51,32 @@ Vector3f \mbox{\hyperlink{classScene_a7f1eadae442ffeb914a78e40585e4c31}{get\+\_\
 \begin{DoxyCompactList}\small\item\em Get the voxel side lengths of the voxels of an object (assuming at least one voxel is occupied) \end{DoxyCompactList}\item 
 Matrix\+X3f \mbox{\hyperlink{classScene_a2ec34211e9903b9811a139ac2b4d98a3}{get\+\_\+canary\+\_\+sphere\+\_\+positions}} (string id)
 \begin{DoxyCompactList}\small\item\em Get the positions of the canary spheres embedded in the volume of an object for interpenetration detection, expressed in the object frame. \end{DoxyCompactList}\item 
-\mbox{\Hypertarget{classScene_a7519a21c2501b242d66f218db6f1e0cf}\label{classScene_a7519a21c2501b242d66f218db6f1e0cf}} 
-void {\bfseries set\+\_\+tetra\+\_\+mesh} (string id, Matrix\+X3f vertices, Matrix\+X4i indices)
-\item 
-\mbox{\Hypertarget{classScene_a1697ed1d68c87816b6e1d4dbd3f319d7}\label{classScene_a1697ed1d68c87816b6e1d4dbd3f319d7}} 
-void {\bfseries set\+\_\+canary\+\_\+sphere\+\_\+positions} (string id, Matrix\+X3f canary\+\_\+sphere\+\_\+positions)
-\item 
-\mbox{\Hypertarget{classScene_aae58ec8061d843e32311925087d925f8}\label{classScene_aae58ec8061d843e32311925087d925f8}} 
+\Hypertarget{classScene_aae58ec8061d843e32311925087d925f8}\label{classScene_aae58ec8061d843e32311925087d925f8} 
 float {\bfseries get\+\_\+friction\+\_\+coefficient} (string mat\+\_\+name1, string mat\+\_\+name2)
 \item 
-\mbox{\Hypertarget{classScene_a55c115b77f4029afa423ebba4770929d}\label{classScene_a55c115b77f4029afa423ebba4770929d}} 
+\Hypertarget{classScene_a55c115b77f4029afa423ebba4770929d}\label{classScene_a55c115b77f4029afa423ebba4770929d} 
 void {\bfseries set\+\_\+friction\+\_\+coefficient} (string mat\+\_\+name1, string mat\+\_\+name2, float friction\+\_\+coefficient)
 \end{DoxyCompactItemize}
-\doxysubsection*{Public Attributes}
+\doxysubsubsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\mbox{\Hypertarget{classScene_ac2ccab9c152b00e598d08eda565dac5d}\label{classScene_ac2ccab9c152b00e598d08eda565dac5d}} 
+\Hypertarget{classScene_ac2ccab9c152b00e598d08eda565dac5d}\label{classScene_ac2ccab9c152b00e598d08eda565dac5d} 
 float {\bfseries max\+\_\+distance\+\_\+factor} = 0.\+2
 \end{DoxyCompactItemize}
-\doxysubsection*{Friends}
+\doxysubsubsection*{Friends}
 \begin{DoxyCompactItemize}
 \item 
-\mbox{\Hypertarget{classScene_ad51b1f11b7085b347b03f59cb071dbd6}\label{classScene_ad51b1f11b7085b347b03f59cb071dbd6}} 
+\Hypertarget{classScene_ad51b1f11b7085b347b03f59cb071dbd6}\label{classScene_ad51b1f11b7085b347b03f59cb071dbd6} 
 class {\bfseries Force\+Solver}
 \end{DoxyCompactItemize}
 
 
 \doxysubsection{Member Function Documentation}
-\mbox{\Hypertarget{classScene_aee6917e724a22fdec4de1cf57da753f6}\label{classScene_aee6917e724a22fdec4de1cf57da753f6}} 
+\Hypertarget{classScene_aee6917e724a22fdec4de1cf57da753f6}\label{classScene_aee6917e724a22fdec4de1cf57da753f6} 
 \index{Scene@{Scene}!add\_object@{add\_object}}
 \index{add\_object@{add\_object}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{add\_object()}{add\_object()}}
-{\footnotesize\ttfamily void Scene\+::add\+\_\+object (\begin{DoxyParamCaption}\item[{string}]{id,  }\item[{Matrix4f}]{pose,  }\item[{Matrix\+X3f}]{tri\+\_\+vertices,  }\item[{Matrix\+X3i}]{tri\+\_\+indices,  }\item[{int}]{resolution = {\ttfamily 15},  }\item[{bool}]{compute\+\_\+volume = {\ttfamily false},  }\item[{bool}]{is\+\_\+fixed = {\ttfamily false},  }\item[{float}]{mass = {\ttfamily 1},  }\item[{Vector3f}]{com = {\ttfamily Vector3f\+:\+:Zero()},  }\item[{string}]{material\+\_\+name = {\ttfamily \char`\"{}wood\char`\"{}} }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily void Scene\+::add\+\_\+object (\begin{DoxyParamCaption}\item[{string}]{id,  }\item[{Matrix4f}]{pose,  }\item[{Matrix\+X3f}]{tri\+\_\+vertices,  }\item[{Matrix\+X3i}]{tri\+\_\+indices,  }\item[{int}]{resolution = {\ttfamily 15},  }\item[{bool}]{compute\+\_\+volume = {\ttfamily false},  }\item[{bool}]{is\+\_\+fixed = {\ttfamily false},  }\item[{float}]{mass = {\ttfamily 1},  }\item[{Vector3f}]{com = {\ttfamily Vector3f\+:\+:Zero()},  }\item[{string}]{material\+\_\+name = {\ttfamily "{}wood"{}} }\end{DoxyParamCaption})}
 
 
 
@@ -117,44 +105,7 @@ Add an object to the scene.
 {\em material\+\_\+name} & name of the material of the object (default\+: wood) \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classScene_a5b7bd9ce07b60c5a1c870328abd82c6b}\label{classScene_a5b7bd9ce07b60c5a1c870328abd82c6b}} 
-\index{Scene@{Scene}!add\_volumetric\_object@{add\_volumetric\_object}}
-\index{add\_volumetric\_object@{add\_volumetric\_object}!Scene@{Scene}}
-\doxysubsubsection{\texorpdfstring{add\_volumetric\_object()}{add\_volumetric\_object()}}
-{\footnotesize\ttfamily void Scene\+::add\+\_\+volumetric\+\_\+object (\begin{DoxyParamCaption}\item[{string}]{id,  }\item[{Matrix4f}]{pose,  }\item[{Matrix\+X3f}]{tri\+\_\+vertices,  }\item[{Matrix\+X3i}]{tri\+\_\+indices,  }\item[{Matrix\+X3f}]{tetra\+\_\+vertices,  }\item[{Matrix\+X4i}]{tetra\+\_\+indices,  }\item[{Matrix\+X3f}]{canary\+\_\+sphere\+\_\+positions,  }\item[{int}]{resolution = {\ttfamily 15},  }\item[{bool}]{is\+\_\+fixed = {\ttfamily false},  }\item[{float}]{mass = {\ttfamily 1},  }\item[{Vector3f}]{com = {\ttfamily Vector3f\+:\+:Zero()},  }\item[{string}]{material\+\_\+name = {\ttfamily \char`\"{}wood\char`\"{}} }\end{DoxyParamCaption})}
-
-
-
-Add a volumetric object to the scene defined by its triangular surface mesh, its tetrahedral volume mesh, and its canary spheres. If the tetrahedral mesh and the canary spheres matrices are empty, they will be generated. 
-
-
-\begin{DoxyParams}{Parameters}
-{\em id} & unique identifier for the object \\
-\hline
-{\em pose} & 4x4 matrix representing the pose of the object \\
-\hline
-{\em vertices} & Nx3 matrix representing the vertices of the object expressed in the local/object frame \\
-\hline
-{\em triangles} & Mx3 matrix representing the triangles of the object \\
-\hline
-{\em tetra\+\_\+vertices} & (Optional) Nx3 matrix representing the vertices of the tetrahedra of the object expressed in the local/object frame \\
-\hline
-{\em tetra\+\_\+indices} & (Optional) Mx4 matrix representing the indices of the vertices of the tetrahedra of the object \\
-\hline
-{\em canary\+\_\+sphere\+\_\+positions} & (Optional) Nx3 matrix representing the positions of the canary spheres of the object expressed in the local/object frame \\
-\hline
-{\em resolution} & resolution of the occupancy grid (default\+: 15) \\
-\hline
-{\em is\+\_\+fixed} & boolean representing whether the object is fixed in space (default\+: false) \\
-\hline
-{\em mass} & mass of the object (default\+: 1) \\
-\hline
-{\em com} & 3x1 vector representing the center of mass of the object WRT the object frame (default\+: \mbox{[}0, 0, 0\mbox{]}) \\
-\hline
-{\em material\+\_\+name} & name of the material of the object (default\+: wood) \\
-\hline
-\end{DoxyParams}
-\mbox{\Hypertarget{classScene_ab07f56e7072a6d809fc6add0cf0f29cd}\label{classScene_ab07f56e7072a6d809fc6add0cf0f29cd}} 
+\Hypertarget{classScene_ab07f56e7072a6d809fc6add0cf0f29cd}\label{classScene_ab07f56e7072a6d809fc6add0cf0f29cd} 
 \index{Scene@{Scene}!get\_all\_contact\_points@{get\_all\_contact\_points}}
 \index{get\_all\_contact\_points@{get\_all\_contact\_points}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_all\_contact\_points()}{get\_all\_contact\_points()}}
@@ -172,7 +123,7 @@ Get all contact points involving the object with the given id.
 \begin{DoxyReturn}{Returns}
 Nx3 matrix representing the contact points with the scene. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classScene_a010e0eeae41d71bd4d4a67c4f60ca2b1}\label{classScene_a010e0eeae41d71bd4d4a67c4f60ca2b1}} 
+\Hypertarget{classScene_a010e0eeae41d71bd4d4a67c4f60ca2b1}\label{classScene_a010e0eeae41d71bd4d4a67c4f60ca2b1} 
 \index{Scene@{Scene}!get\_all\_object\_ids@{get\_all\_object\_ids}}
 \index{get\_all\_object\_ids@{get\_all\_object\_ids}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_all\_object\_ids()}{get\_all\_object\_ids()}}
@@ -185,7 +136,7 @@ Return a list of object IDs in the scene.
 \begin{DoxyReturn}{Returns}
 List of object IDs. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classScene_ac1781bdc0be970a7412af0bc35d38d7e}\label{classScene_ac1781bdc0be970a7412af0bc35d38d7e}} 
+\Hypertarget{classScene_ac1781bdc0be970a7412af0bc35d38d7e}\label{classScene_ac1781bdc0be970a7412af0bc35d38d7e} 
 \index{Scene@{Scene}!get\_all\_penetrating\_contact\_points@{get\_all\_penetrating\_contact\_points}}
 \index{get\_all\_penetrating\_contact\_points@{get\_all\_penetrating\_contact\_points}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_all\_penetrating\_contact\_points()}{get\_all\_penetrating\_contact\_points()}}
@@ -203,31 +154,7 @@ Get all penetrating contact points involving the object with the given id.
 \begin{DoxyReturn}{Returns}
 Nx3 matrix representing the contact points with the scene. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classScene_aafb8eb4cc7be34e8cc859b0a5e4c34bd}\label{classScene_aafb8eb4cc7be34e8cc859b0a5e4c34bd}} 
-\index{Scene@{Scene}!get\_best\_contact\_triangle@{get\_best\_contact\_triangle}}
-\index{get\_best\_contact\_triangle@{get\_best\_contact\_triangle}!Scene@{Scene}}
-\doxysubsubsection{\texorpdfstring{get\_best\_contact\_triangle()}{get\_best\_contact\_triangle()}}
-{\footnotesize\ttfamily Matrix3f Scene\+::get\+\_\+best\+\_\+contact\+\_\+triangle (\begin{DoxyParamCaption}\item[{string}]{id,  }\item[{vector$<$ \mbox{\hyperlink{classTriangle}{Triangle}}$<$ Vector3f $>$$>$}]{triangles,  }\item[{bool}]{stable,  }\item[{int}]{max\+\_\+tri\+\_\+to\+\_\+consider = {\ttfamily -\/1} }\end{DoxyParamCaption})}
-
-
-
-Amongst the given triangles, find the one that creates the best stable support for an object. 
-
-
-\begin{DoxyParams}{Parameters}
-{\em id} & Id of the object for which to get the contact points. \\
-\hline
-{\em triangles} & List of triangles to consider, with each triangle represented by a tuple of three 3D points. \\
-\hline
-{\em stable} & If true, the triangle must be stable under gravity. Otherwise, the largest triangle is returned. \\
-\hline
-{\em max\+\_\+tri\+\_\+to\+\_\+consider} & Consider only the N largest triangles. Set to -\/1 to consider all triangles (default). \\
-\hline
-\end{DoxyParams}
-\begin{DoxyReturn}{Returns}
-3x3 matrix representing the three contact points that create the best stable support, with each row representing a contact point. 
-\end{DoxyReturn}
-\mbox{\Hypertarget{classScene_a2ec34211e9903b9811a139ac2b4d98a3}\label{classScene_a2ec34211e9903b9811a139ac2b4d98a3}} 
+\Hypertarget{classScene_a2ec34211e9903b9811a139ac2b4d98a3}\label{classScene_a2ec34211e9903b9811a139ac2b4d98a3} 
 \index{Scene@{Scene}!get\_canary\_sphere\_positions@{get\_canary\_sphere\_positions}}
 \index{get\_canary\_sphere\_positions@{get\_canary\_sphere\_positions}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_canary\_sphere\_positions()}{get\_canary\_sphere\_positions()}}
@@ -245,7 +172,7 @@ Get the positions of the canary spheres embedded in the volume of an object for 
 \begin{DoxyReturn}{Returns}
 Nx3 matrix with each row representing the 3D position of a sphere. 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classScene_a893a5a7f10a7610e2ce019c8dca2cc28}\label{classScene_a893a5a7f10a7610e2ce019c8dca2cc28}} 
+\Hypertarget{classScene_a893a5a7f10a7610e2ce019c8dca2cc28}\label{classScene_a893a5a7f10a7610e2ce019c8dca2cc28} 
 \index{Scene@{Scene}!get\_closest\_contact\_point@{get\_closest\_contact\_point}}
 \index{get\_closest\_contact\_point@{get\_closest\_contact\_point}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_closest\_contact\_point()}{get\_closest\_contact\_point()}}
@@ -270,11 +197,11 @@ Find the contact point between two objects that is the closest to the given poin
 \begin{DoxyNote}{Note}
 This iterates over contact points and could be improved by using a spatial data structure. 
 \end{DoxyNote}
-\mbox{\Hypertarget{classScene_ab09d0b38f74bf4ad5efbbd56682dd71f}\label{classScene_ab09d0b38f74bf4ad5efbbd56682dd71f}} 
+\Hypertarget{classScene_ab09d0b38f74bf4ad5efbbd56682dd71f}\label{classScene_ab09d0b38f74bf4ad5efbbd56682dd71f} 
 \index{Scene@{Scene}!get\_contact\_convex\_hull@{get\_contact\_convex\_hull}}
 \index{get\_contact\_convex\_hull@{get\_contact\_convex\_hull}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_contact\_convex\_hull()}{get\_contact\_convex\_hull()}}
-{\footnotesize\ttfamily Matrix\+X3f Scene\+::get\+\_\+contact\+\_\+convex\+\_\+hull (\begin{DoxyParamCaption}\item[{string}]{id1,  }\item[{string}]{id2 = {\ttfamily \char`\"{}\char`\"{}},  }\item[{int}]{vertex\+\_\+limit = {\ttfamily 255} }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily Matrix\+X3f Scene\+::get\+\_\+contact\+\_\+convex\+\_\+hull (\begin{DoxyParamCaption}\item[{string}]{id1,  }\item[{string}]{id2 = {\ttfamily "{}"{}},  }\item[{int}]{vertex\+\_\+limit = {\ttfamily 255} }\end{DoxyParamCaption})}
 
 
 
@@ -293,9 +220,9 @@ Return the vertices of the convex hull over the contact points between two objec
 Nx3 matrix representing the subset of contact points lying on the convex hull. 
 \end{DoxyReturn}
 \begin{DoxyNote}{Note}
-A small perturbation is added to each contact point to make sure that the convex hull is full dimensional. Equivalent to QHull\textquotesingle{}s \char`\"{}\+QJ\char`\"{} option. 
+A small perturbation is added to each contact point to make sure that the convex hull is full dimensional. Equivalent to QHull\textquotesingle{}s "{}\+QJ"{} option. 
 \end{DoxyNote}
-\mbox{\Hypertarget{classScene_a95dc13076ec4fe94824c30c5aa2e1058}\label{classScene_a95dc13076ec4fe94824c30c5aa2e1058}} 
+\Hypertarget{classScene_a95dc13076ec4fe94824c30c5aa2e1058}\label{classScene_a95dc13076ec4fe94824c30c5aa2e1058} 
 \index{Scene@{Scene}!get\_contact\_forces@{get\_contact\_forces}}
 \index{get\_contact\_forces@{get\_contact\_forces}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_contact\_forces()}{get\_contact\_forces()}}
@@ -315,11 +242,11 @@ Get the contact forces between objects in the scene.
 \begin{DoxyReturn}{Returns}
 List of contact forces (empty if the forces could not be computed). 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classScene_a6ed847a33a37f7b482c39509860cf159}\label{classScene_a6ed847a33a37f7b482c39509860cf159}} 
+\Hypertarget{classScene_a6ed847a33a37f7b482c39509860cf159}\label{classScene_a6ed847a33a37f7b482c39509860cf159} 
 \index{Scene@{Scene}!get\_contact\_points@{get\_contact\_points}}
 \index{get\_contact\_points@{get\_contact\_points}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_contact\_points()}{get\_contact\_points()}}
-{\footnotesize\ttfamily std\+::vector$<$ \mbox{\hyperlink{classContact}{Contact}} $>$ Scene\+::get\+\_\+contact\+\_\+points (\begin{DoxyParamCaption}\item[{string}]{id1,  }\item[{string}]{id2 = {\ttfamily \char`\"{}\char`\"{}},  }\item[{bool}]{penetrating = {\ttfamily false} }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily std\+::vector$<$ \mbox{\hyperlink{classContact}{Contact}} $>$ Scene\+::get\+\_\+contact\+\_\+points (\begin{DoxyParamCaption}\item[{string}]{id1,  }\item[{string}]{id2 = {\ttfamily "{}"{}},  }\item[{bool}]{penetrating = {\ttfamily false} }\end{DoxyParamCaption})}
 
 
 
@@ -339,12 +266,14 @@ vector of contact points between the two objects
 \end{DoxyReturn}
 \begin{DoxyNote}{Note}
 If id2 is not set, returns all contact points involving id1. 
+
+The normal of a contact point is the one at the surface of object ID1. get\+\_\+contact\+\_\+points(id1, id2) =/= get\+\_\+contact\+\_\+points(id2, id1). 
 \end{DoxyNote}
-\mbox{\Hypertarget{classScene_aab1236c10994c3b243d54355588d27c2}\label{classScene_aab1236c10994c3b243d54355588d27c2}} 
+\Hypertarget{classScene_aab1236c10994c3b243d54355588d27c2}\label{classScene_aab1236c10994c3b243d54355588d27c2} 
 \index{Scene@{Scene}!get\_contact\_points\_positions@{get\_contact\_points\_positions}}
 \index{get\_contact\_points\_positions@{get\_contact\_points\_positions}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_contact\_points\_positions()}{get\_contact\_points\_positions()}}
-{\footnotesize\ttfamily Matrix\+X3f Scene\+::get\+\_\+contact\+\_\+points\+\_\+positions (\begin{DoxyParamCaption}\item[{string}]{id1,  }\item[{string}]{id2 = {\ttfamily \char`\"{}\char`\"{}} }\end{DoxyParamCaption})}
+{\footnotesize\ttfamily Matrix\+X3f Scene\+::get\+\_\+contact\+\_\+points\+\_\+positions (\begin{DoxyParamCaption}\item[{string}]{id1,  }\item[{string}]{id2 = {\ttfamily "{}"{}} }\end{DoxyParamCaption})}
 
 
 
@@ -363,7 +292,7 @@ Nx3 matrix representing the contact points between the two objects
 \begin{DoxyNote}{Note}
 If id2 is set to an empty string, returns all contact points involving id1. 
 \end{DoxyNote}
-\mbox{\Hypertarget{classScene_a2050e56325f8a18187a21d2d126b781a}\label{classScene_a2050e56325f8a18187a21d2d126b781a}} 
+\Hypertarget{classScene_a2050e56325f8a18187a21d2d126b781a}\label{classScene_a2050e56325f8a18187a21d2d126b781a} 
 \index{Scene@{Scene}!get\_contacted\_objects@{get\_contacted\_objects}}
 \index{get\_contacted\_objects@{get\_contacted\_objects}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_contacted\_objects()}{get\_contacted\_objects()}}
@@ -381,7 +310,7 @@ Get the list of objects in contact with a given object.
 \begin{DoxyReturn}{Returns}
 list of objects in contact with the target object 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classScene_abc0cf870d3897b6df183a09852627e6c}\label{classScene_abc0cf870d3897b6df183a09852627e6c}} 
+\Hypertarget{classScene_abc0cf870d3897b6df183a09852627e6c}\label{classScene_abc0cf870d3897b6df183a09852627e6c} 
 \index{Scene@{Scene}!get\_object\_pose@{get\_object\_pose}}
 \index{get\_object\_pose@{get\_object\_pose}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_object\_pose()}{get\_object\_pose()}}
@@ -399,7 +328,7 @@ Get the pose of an object.
 \begin{DoxyReturn}{Returns}
 4x4 matrix representing the pose of the object 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classScene_a58bdcb77e3b4adfd85f433da3c1ac32c}\label{classScene_a58bdcb77e3b4adfd85f433da3c1ac32c}} 
+\Hypertarget{classScene_a58bdcb77e3b4adfd85f433da3c1ac32c}\label{classScene_a58bdcb77e3b4adfd85f433da3c1ac32c} 
 \index{Scene@{Scene}!get\_penetrating\_contact\_point\_positions@{get\_penetrating\_contact\_point\_positions}}
 \index{get\_penetrating\_contact\_point\_positions@{get\_penetrating\_contact\_point\_positions}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_penetrating\_contact\_point\_positions()}{get\_penetrating\_contact\_point\_positions()}}
@@ -422,7 +351,7 @@ Nx3 matrix representing the contact points between the two objects
 \begin{DoxyNote}{Note}
 If id2 is set to an empty string, returns all contact points involving id1. 
 \end{DoxyNote}
-\mbox{\Hypertarget{classScene_a521c492c9da2f3dc10d65c6b3b2cc6a3}\label{classScene_a521c492c9da2f3dc10d65c6b3b2cc6a3}} 
+\Hypertarget{classScene_a521c492c9da2f3dc10d65c6b3b2cc6a3}\label{classScene_a521c492c9da2f3dc10d65c6b3b2cc6a3} 
 \index{Scene@{Scene}!get\_tetra\_indices@{get\_tetra\_indices}}
 \index{get\_tetra\_indices@{get\_tetra\_indices}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_tetra\_indices()}{get\_tetra\_indices()}}
@@ -440,7 +369,7 @@ Get the tetrahedra of the tetrahedral mesh of an object.
 \begin{DoxyReturn}{Returns}
 Mx4 matrix representing the tetrahedra of the object 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classScene_ab5511afad0a0b6ac7324771eca451f57}\label{classScene_ab5511afad0a0b6ac7324771eca451f57}} 
+\Hypertarget{classScene_ab5511afad0a0b6ac7324771eca451f57}\label{classScene_ab5511afad0a0b6ac7324771eca451f57} 
 \index{Scene@{Scene}!get\_tetra\_vertices@{get\_tetra\_vertices}}
 \index{get\_tetra\_vertices@{get\_tetra\_vertices}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_tetra\_vertices()}{get\_tetra\_vertices()}}
@@ -458,30 +387,7 @@ Get the vertices of the tetrahedral mesh of an object expressed in the local/obj
 \begin{DoxyReturn}{Returns}
 Nx3 matrix representing the vertices of the object 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classScene_a84b310812b251f54c622678c6d12e119}\label{classScene_a84b310812b251f54c622678c6d12e119}} 
-\index{Scene@{Scene}!get\_three\_most\_stable\_contact\_points@{get\_three\_most\_stable\_contact\_points}}
-\index{get\_three\_most\_stable\_contact\_points@{get\_three\_most\_stable\_contact\_points}!Scene@{Scene}}
-\doxysubsubsection{\texorpdfstring{get\_three\_most\_stable\_contact\_points()}{get\_three\_most\_stable\_contact\_points()}}
-{\footnotesize\ttfamily vector$<$ pair$<$ string, Vector3f $>$ $>$ Scene\+::get\+\_\+three\+\_\+most\+\_\+stable\+\_\+contact\+\_\+points (\begin{DoxyParamCaption}\item[{string}]{id,  }\item[{int}]{hull\+\_\+max\+\_\+size = {\ttfamily 255},  }\item[{bool}]{random\+\_\+third\+\_\+point = {\ttfamily false} }\end{DoxyParamCaption})}
-
-
-
-Find the three contact points that create the best stable support for an object. 
-
-
-\begin{DoxyParams}{Parameters}
-{\em id} & Id of the object for which to get the contact points. \\
-\hline
-{\em hull\+\_\+max\+\_\+size} & Maximum number of points on the convex hull (default\+: 255) \\
-\hline
-\end{DoxyParams}
-\begin{DoxyReturn}{Returns}
-Vector of pairs of object IDs and contact points positions. 
-\end{DoxyReturn}
-\begin{DoxyNote}{Note}
-This is computationally very expensive with worst case O(hull\+\_\+max\+\_\+size$^\wedge$3) 
-\end{DoxyNote}
-\mbox{\Hypertarget{classScene_a4d8bfae52b4a52bfc523461a8956ec34}\label{classScene_a4d8bfae52b4a52bfc523461a8956ec34}} 
+\Hypertarget{classScene_a4d8bfae52b4a52bfc523461a8956ec34}\label{classScene_a4d8bfae52b4a52bfc523461a8956ec34} 
 \index{Scene@{Scene}!get\_tri\_triangles@{get\_tri\_triangles}}
 \index{get\_tri\_triangles@{get\_tri\_triangles}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_tri\_triangles()}{get\_tri\_triangles()}}
@@ -499,7 +405,7 @@ Get the triangles of the triangle mesh of an object.
 \begin{DoxyReturn}{Returns}
 Mx3 matrix representing the triangles of the object 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classScene_a4d5d2bc18bd1b7265c1391584db1bc38}\label{classScene_a4d5d2bc18bd1b7265c1391584db1bc38}} 
+\Hypertarget{classScene_a4d5d2bc18bd1b7265c1391584db1bc38}\label{classScene_a4d5d2bc18bd1b7265c1391584db1bc38} 
 \index{Scene@{Scene}!get\_tri\_vertices@{get\_tri\_vertices}}
 \index{get\_tri\_vertices@{get\_tri\_vertices}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_tri\_vertices()}{get\_tri\_vertices()}}
@@ -517,7 +423,7 @@ Get the vertices of the triangle mesh of an object expressed in the local/object
 \begin{DoxyReturn}{Returns}
 Nx3 matrix representing the vertices of the object 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classScene_a6fc7e0abb4cc5a9ca0b03aadf47ab96b}\label{classScene_a6fc7e0abb4cc5a9ca0b03aadf47ab96b}} 
+\Hypertarget{classScene_a6fc7e0abb4cc5a9ca0b03aadf47ab96b}\label{classScene_a6fc7e0abb4cc5a9ca0b03aadf47ab96b} 
 \index{Scene@{Scene}!get\_voxel\_centres@{get\_voxel\_centres}}
 \index{get\_voxel\_centres@{get\_voxel\_centres}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_voxel\_centres()}{get\_voxel\_centres()}}
@@ -535,7 +441,7 @@ Get the voxel centres of the occupied voxels of an object expressed in the world
 \begin{DoxyReturn}{Returns}
 Nx3 matrix representing the voxel centres of the object 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classScene_a7f1eadae442ffeb914a78e40585e4c31}\label{classScene_a7f1eadae442ffeb914a78e40585e4c31}} 
+\Hypertarget{classScene_a7f1eadae442ffeb914a78e40585e4c31}\label{classScene_a7f1eadae442ffeb914a78e40585e4c31} 
 \index{Scene@{Scene}!get\_voxel\_side\_lengths@{get\_voxel\_side\_lengths}}
 \index{get\_voxel\_side\_lengths@{get\_voxel\_side\_lengths}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{get\_voxel\_side\_lengths()}{get\_voxel\_side\_lengths()}}
@@ -553,7 +459,7 @@ Get the voxel side lengths of the voxels of an object (assuming at least one vox
 \begin{DoxyReturn}{Returns}
 3x1 vector representing the voxel side lengths of the object 
 \end{DoxyReturn}
-\mbox{\Hypertarget{classScene_a70613e44035e9ea2660ddcd424488cd3}\label{classScene_a70613e44035e9ea2660ddcd424488cd3}} 
+\Hypertarget{classScene_a70613e44035e9ea2660ddcd424488cd3}\label{classScene_a70613e44035e9ea2660ddcd424488cd3} 
 \index{Scene@{Scene}!merge\_similar\_contact\_points@{merge\_similar\_contact\_points}}
 \index{merge\_similar\_contact\_points@{merge\_similar\_contact\_points}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{merge\_similar\_contact\_points()}{merge\_similar\_contact\_points()}}
@@ -573,7 +479,7 @@ Compare each pair of contact points and merge them if they are close enough.
 \begin{DoxyNote}{Note}
 This is slow, use it only when necessary. 
 \end{DoxyNote}
-\mbox{\Hypertarget{classScene_a0205ad8a99750d032191d671d79f6476}\label{classScene_a0205ad8a99750d032191d671d79f6476}} 
+\Hypertarget{classScene_a0205ad8a99750d032191d671d79f6476}\label{classScene_a0205ad8a99750d032191d671d79f6476} 
 \index{Scene@{Scene}!remove\_object@{remove\_object}}
 \index{remove\_object@{remove\_object}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{remove\_object()}{remove\_object()}}
@@ -588,7 +494,7 @@ Remove an object from the scene along with its attached shapes.
 {\em id} & unique identifier for the object \\
 \hline
 \end{DoxyParams}
-\mbox{\Hypertarget{classScene_aeeb3111f0c212358d055d1fcd21283b5}\label{classScene_aeeb3111f0c212358d055d1fcd21283b5}} 
+\Hypertarget{classScene_aeeb3111f0c212358d055d1fcd21283b5}\label{classScene_aeeb3111f0c212358d055d1fcd21283b5} 
 \index{Scene@{Scene}!set\_max\_distance\_factor@{set\_max\_distance\_factor}}
 \index{set\_max\_distance\_factor@{set\_max\_distance\_factor}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{set\_max\_distance\_factor()}{set\_max\_distance\_factor()}}
@@ -608,7 +514,7 @@ Setting this to zero will disable filtering, and is not recommended.
 
 See\+: all\+\_\+triangles\+\_\+overlap\+\_\+over\+\_\+\+AARectangle() in Scene.\+cpp 
 \end{DoxyNote}
-\mbox{\Hypertarget{classScene_adb6f6da9d5edde0db30dac2eccbd2a5c}\label{classScene_adb6f6da9d5edde0db30dac2eccbd2a5c}} 
+\Hypertarget{classScene_adb6f6da9d5edde0db30dac2eccbd2a5c}\label{classScene_adb6f6da9d5edde0db30dac2eccbd2a5c} 
 \index{Scene@{Scene}!set\_object\_pose@{set\_object\_pose}}
 \index{set\_object\_pose@{set\_object\_pose}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{set\_object\_pose()}{set\_object\_pose()}}
@@ -628,7 +534,7 @@ Set the pose of an object by recreating a new object.
 \begin{DoxyNote}{Note}
 This is a relatively expensive operation. 
 \end{DoxyNote}
-\mbox{\Hypertarget{classScene_a34629922d26ba75ce4ce3eaf59934693}\label{classScene_a34629922d26ba75ce4ce3eaf59934693}} 
+\Hypertarget{classScene_a34629922d26ba75ce4ce3eaf59934693}\label{classScene_a34629922d26ba75ce4ce3eaf59934693} 
 \index{Scene@{Scene}!step\_simulation@{step\_simulation}}
 \index{step\_simulation@{step\_simulation}!Scene@{Scene}}
 \doxysubsubsection{\texorpdfstring{step\_simulation()}{step\_simulation()}}
