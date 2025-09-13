@@ -1,0 +1,46 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/build/CMakeFiles/PhysX"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/build/CMakeFiles/PhysX.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/build/CMakeFiles/PhysX-complete.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/physx/src/PhysX-stamp/PhysX-build.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/physx/src/PhysX-stamp/PhysX-configure.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/physx/src/PhysX-stamp/PhysX-download.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/physx/src/PhysX-stamp/PhysX-install.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/physx/src/PhysX-stamp/PhysX-mkdir.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/physx/src/PhysX-stamp/PhysX-patch.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/physx/src/PhysX-stamp/PhysX-test.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/physx/src/PhysX-stamp/PhysX-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"PhysX"
+		],
+		"name" : "PhysX"
+	}
+}

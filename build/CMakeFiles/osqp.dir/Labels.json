@@ -1,0 +1,43 @@
+{
+	"sources" : 
+	[
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/build/CMakeFiles/osqp"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/build/CMakeFiles/osqp.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/build/CMakeFiles/osqp-complete.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/osqp/src/osqp-stamp/osqp-build.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/osqp/src/osqp-stamp/osqp-configure.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/osqp/src/osqp-stamp/osqp-download.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/osqp/src/osqp-stamp/osqp-install.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/osqp/src/osqp-stamp/osqp-mkdir.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/osqp/src/osqp-stamp/osqp-patch.rule"
+		},
+		{
+			"file" : "/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/osqp/src/osqp-stamp/osqp-update.rule"
+		}
+	],
+	"target" : 
+	{
+		"labels" : 
+		[
+			"osqp"
+		],
+		"name" : "osqp"
+	}
+}

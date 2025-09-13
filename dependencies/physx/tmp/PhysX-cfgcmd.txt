@@ -1,0 +1,1 @@
+cmd='/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/physx/src/PhysX/physx/generate_projects.sh;linux-gcc'
