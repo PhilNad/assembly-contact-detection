@@ -40,7 +40,7 @@ if(ACD_BUILD_GTEST_TESTS)
     # Collect all gtest test source files
     file(GLOB GTEST_SOURCES "src/gtest_*.cpp")
     
-    # Only create the target if we have gtest test files
+    # Only create the target if we have gtest test files and gtest is enabled
     if(GTEST_SOURCES)
         add_executable(${GTEST_PROJECT_NAME} ${GTEST_SOURCES})
         

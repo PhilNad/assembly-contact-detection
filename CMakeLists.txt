@@ -11,7 +11,7 @@ set(ACD_BUILD_PYTHON_VERSION 3.12)
 set(ACD_DO_TESTS ON)
 
 # Specify wheather to build unit tests with gtest
-set(ACD_BUILD_GTEST_TESTS ON)
+option(ACD_BUILD_GTEST_TESTS "Build unit tests with Google Test framework" ON)
 
 # Specify wheather the build should rely on GPU or not
 set(ACD_USE_GPU OFF)
