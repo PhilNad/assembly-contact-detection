@@ -63,6 +63,31 @@ The library can be used in C++ or through Python bindings. Test examples are pro
 - `test/src/test.cpp` : C++ example
 - `test/test.py` : Python example
 
+## Testing
+The project includes both traditional test examples and structured unit tests using Google Test (gtest):
+
+### Traditional Tests
+- Located in `test/src/test*.cpp` files
+- Run with: `./build/test/acd-tests`
+
+### Unit Tests (gtest)
+- Located in `test/src/gtest_*.cpp` files  
+- Run with: `./build/test/acd-unit-tests`
+- Enable/disable with CMake option: `-DACD_BUILD_GTEST_TESTS=ON/OFF`
+- See `test/README_gtest.md` for detailed documentation
+
+Example gtest usage:
+```bash
+# Run all unit tests
+./build/test/acd-unit-tests
+
+# Run specific test suite
+./build/test/acd-unit-tests --gtest_filter="SceneTest*"
+
+# Run with CTest
+cd build && ctest
+```
+
 ### Minimal Example
 ```python
 import sys

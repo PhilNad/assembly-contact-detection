@@ -1,1 +1,0 @@
-cmd='/usr/local/bin/cmake;-DCMAKE_INSTALL_PREFIX=/home/runner/work/assembly-contact-detection/assembly-contact-detection/dependencies/eigen/src/eigen-build;-DEIGEN_BUILD_TESTING=OFF;-GUnix Makefiles;-S;<SOURCE_DIR><SOURCE_SUBDIR>;-B;<BINARY_DIR>'
