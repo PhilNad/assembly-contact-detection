@@ -83,7 +83,7 @@ std::vector<Contact> ForceSolver::select_contact_points(string id1, string id2)
         }
         
         //Amongst the random points, find the one that is farthest from the already selected points
-        int best_index = -1;
+        int best_index = random_indices[0];
         float best_distance = 0.0f;
         for (size_t j = 0; j < random_indices.size(); j++){
             int index = random_indices[j];
@@ -167,6 +167,10 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
             // Get all surface contact points and perform an approximate farthest point sampling
             std::vector<Contact> contact_points = this->select_contact_points(id1, id2);
 
+            #ifndef NDEBUG
+            cout << "Nb. contact points between " << id1 << " and " << id2 << ": " << contact_points.size() << endl;
+            #endif
+
             int max_points = std::min(this->nb_contacts_per_object_pair, (int)contact_points.size());
             
             //For each point, create a ContactForce object
@@ -199,8 +203,15 @@ ForceSolver::ForceSolver(Scene* scene, int nb_contacts_per_object_pair, int nb_c
                                                             mu);
                 all_contact_forces.push_back(contact_force);
             }
+            #ifndef NDEBUG
+            cout << "Contact forces between " << id1 << " and " << id2 << " added." << endl;
+            #endif
         }
     }
+
+    #ifndef NDEBUG
+    cout << "Nb. contact forces: " << all_contact_forces.size() << endl;
+    #endif
 
     this->nb_contact_forces = all_contact_forces.size();
     //This is OSQP's n

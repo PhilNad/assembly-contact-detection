@@ -57,19 +57,6 @@ PYBIND11_MODULE(assembly_cd, m) {
                 py::arg("mass") = 1.0f, 
                 py::arg("com") = (Vector3f() << 0.0f, 0.0f, 0.0f).finished(),
                 py::arg("material_name") = "wood")
-        .def("add_volumetric_object", &Scene::add_volumetric_object, "Add a volumetric object to the scene.",
-                py::arg("id"), 
-                py::arg("pose"), 
-                py::arg("tri_vertices"),
-                py::arg("tri_indices"),
-                py::arg("tetra_vertices"),
-                py::arg("tetra_indices"),
-                py::arg("canary_sphere_positions"),
-                py::arg("resolution") = 15,
-                py::arg("is_fixed") = false,
-                py::arg("mass") = 1.0f, 
-                py::arg("com") = (Vector3f() << 0.0f, 0.0f, 0.0f).finished(),
-                py::arg("material_name") = "wood")
         .def("set_friction_coefficient", &Scene::set_friction_coefficient, "Set the friction coefficient between two materials.",
                 py::arg("mat_name1"), 
                 py::arg("mat_name2"), 
@@ -116,10 +103,6 @@ PYBIND11_MODULE(assembly_cd, m) {
                 py::arg("id1"),
                 py::arg("id2") = "",
                 py::arg("vertex_limit") = 255)
-        .def("get_three_most_stable_contact_points", &Scene::get_three_most_stable_contact_points, "Get the three most stable contact points on an object.",
-                py::arg("id"),
-                py::arg("hull_max_size") = 255,
-                py::arg("random_third_point") = false)
         .def("get_tri_vertices", &Scene::get_tri_vertices, "Get the triangle vertices of an object.",
                 py::arg("id"))
         .def("get_tri_triangles", &Scene::get_tri_triangles, "Get the triangle indices of an object.",

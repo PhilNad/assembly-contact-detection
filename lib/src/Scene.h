@@ -60,20 +60,6 @@ class Scene
         float max_distance_factor = 0.2;
         Scene();
         ~Scene();
-        void add_volumetric_object(
-            string id, 
-            Matrix4f pose, 
-            MatrixX3f tri_vertices, 
-            MatrixX3i tri_indices,
-            MatrixX3f tetra_vertices,
-            MatrixX4i tetra_indices,
-            MatrixX3f canary_sphere_positions,
-            int resolution = 15,
-            bool is_fixed = false,
-            float mass = 1,
-            Vector3f com = Vector3f::Zero(),
-            string material_name = "wood"
-            );
         void add_object(
             string id, 
             Matrix4f pose, 
@@ -101,8 +87,6 @@ class Scene
         MatrixX3f get_all_penetrating_contact_points(string id);
         MatrixX3f get_contact_convex_hull(string id1, string id2 = "", int vertex_limit = 255);
         vector<ContactForce> get_contact_forces(int nb_contacts_per_object_pair = 10, int nb_coulomb_polygon_sides = 8);
-        Matrix3f get_best_contact_triangle(string id, vector<Triangle<Vector3f>> triangles, bool stable, int max_tri_to_consider = -1);
-        vector<pair<string, Vector3f>> get_three_most_stable_contact_points(string id, int hull_max_size = 255, bool random_third_point = false);
         void merge_similar_contact_points(vector<Contact> contact_points, float position_threshold, float normal_threshold);
         MatrixX3f get_tri_vertices(string id);
         MatrixX3i get_tri_triangles(string id);
@@ -111,8 +95,6 @@ class Scene
         MatrixX3f get_voxel_centres(string id);
         Vector3f get_voxel_side_lengths(string id);
         MatrixX3f get_canary_sphere_positions(string id);
-        void set_tetra_mesh(string id, MatrixX3f vertices, MatrixX4i indices);
-        void set_canary_sphere_positions(string id, MatrixX3f canary_sphere_positions);
 
         //Friction coefficients
         float get_friction_coefficient(string mat_name1, string mat_name2);
